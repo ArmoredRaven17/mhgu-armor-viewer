@@ -44,6 +44,8 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 .icon-btn{background:transparent;border:none;color:var(--text);font-size:18px;
   cursor:pointer;padding:6px 9px;border-radius:6px;line-height:1}
 .icon-btn:hover{background:#ffffff1a}
+/* an id rule setting display: would outrank the UA [hidden] rule */
+[hidden]{display:none !important}
 
 /* Layout */
 .layout{display:flex;flex:1;min-height:0}
@@ -57,7 +59,31 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 }
 /* The render area is the Weapon Tree's stage: --stage, the darkest shade in the set. It is
    the one surface with no backing of its own — the model sits directly on it. */
-.content{flex:1;min-width:0;position:relative;background:var(--stage)}
+.content{
+  flex:1;min-width:0;position:relative;
+  background-color:var(--stage);
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--stage) 78%,transparent),color-mix(in srgb,var(--stage) 78%,transparent)),
+    url('assets/rockyTextureDark2.png');
+  background-repeat:repeat;background-size:auto,200px 200px;
+}
+/* The render area is the Weapon Tree's stage: --stage, the darkest shade in the set — the one
+   surface with no backing of its own, with the model sitting directly on it.
+
+   The texture and its tint are the Hunting Log's .editor (its editorPane), verbatim, so the two
+   apps' main working surfaces match: rockyTextureDark.png under an 84% wash of the surface
+   colour, repeated at 200px. */
+.content{
+  flex:1;min-width:0;position:relative;
+  background-color:var(--stage);
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--stage) 84%,transparent),color-mix(in srgb,var(--stage) 84%,transparent)),
+    url('assets/rockyTextureDark.png');
+  background-repeat:repeat;background-size:auto,200px 200px;
+}
+/* A chroma backdrop has to be a flat, single value for a keyer to pull, so the texture and its
+   tint come off. Nothing else about the app changes — only the surface being keyed. */
+:root.chroma .content{background-image:none}
 #viewport{position:absolute;inset:0}
 /* Floating toolbar over the render area, matching the Weapon Tree's #bar.
    width:max-content is load-bearing: with left:50% the default shrink-to-fit only
@@ -78,6 +104,15 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 #bar button{white-space:nowrap}
 #bar .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
 #bar .btn.on{border-color:var(--accent-hover);background:#ffffff26}
+/* Toggled off, the toolbar MOVES into the header rather than disappearing, so the
+   controls stay reachable while the render area is left clear. It is the same element,
+   so `#bar .sep` and `#bar .btn.on` keep applying -- which is why the whole bar moves
+   rather than its buttons being reparented one by one. */
+header #bar{position:static;transform:none;width:auto;max-width:none;
+  padding:0;border:none;border-radius:0;background:none;box-shadow:none;flex-wrap:nowrap}
+header #bar .sep{height:16px}
+/* the titlebar adds its own margin to .btn.tiny, which doubles up with #bar's gap */
+header #bar .btn.tiny{margin-right:0}
 #orbitLock{display:inline-flex;align-items:center;gap:6px}
 #orbitLock img{width:14px;height:14px;display:block}
 #viewport canvas{display:block;width:100%;height:100%}
@@ -174,6 +209,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   pointer-events:none;padding:0 12px}
 #legend{font-size:11px;line-height:1.35}
 
+/* In-game pigment palette. Opens per pigment row and writes into that row's hex field,
+   so it is a way to REACH the game's 125 colours through the existing RGB interface
+   rather than a second interface beside it. */
+.palbtn{flex:0 0 auto;width:26px;height:26px;padding:0;line-height:1;font-size:13px;
+  background:transparent;color:var(--text);border:1px solid var(--line);border-radius:6px;
+  cursor:pointer}
+.palbtn:hover{background:#ffffff1a;border-color:var(--accent-hover)}
+#pigModal .modal-card{width:min(420px,92vw)}
+#pigGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0}
+#pigGrid button{aspect-ratio:1;padding:0;border:1px solid var(--line);border-radius:4px;
+  cursor:pointer}
+#pigGrid button:hover{border-color:#fff}
+#pigGrid button.sel{outline:2px solid #fff;outline-offset:1px}
+
 /* Other MHGU apps modal — the block is shared verbatim with the sibling apps. */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;
   align-items:center;justify-content:center;z-index:100;padding:20px}
@@ -185,7 +234,20 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .modal-card p{line-height:1.55;font-size:13px}
 .modal-card a{color:var(--accent-hover)}
 .modal-card .muted{color:var(--text-dim);font-size:13px;opacity:.75}
-/* Theme modal — the family swatch grid, copied verbatim from the other apps. */
+/* Backdrop override, above the swatches so it is seen. Chroma chips sit on the two key buttons so
+   the colour is visible on the control that sets it. */
+.stage-h{margin:0 0 4px;font-size:14px}
+.stage-row{margin-bottom:15px}
+.stage-row .btn{position:relative;padding-left:26px}
+.stage-row .btn::before{content:"";position:absolute;left:8px;top:50%;width:10px;height:10px;
+  margin-top:-5px;border-radius:2px;border:1px solid #0006;background:var(--chip,transparent)}
+#stgTheme::before{display:none}
+#stgGreen{--chip:#00FF00}
+#stgBlue{--chip:#0000FF}
+
+/* Settings modal — Theme and Backdrop live here too, because "Theme" on its own was
+   easy to miss when looking for a setting. The swatch grid is copied verbatim from the
+   other apps; the id stays `themeModal` so the shared theme script needs no change. */
 /* The links modal is wider (560px); the family sizes the THEME card at 460 so a swatch
    comes out the same size here as in every other app. Scoped so the links modal is untouched. */
 #themeModal .modal-card{width:min(460px,90vw)}
@@ -208,12 +270,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <header class="titlebar titlebar-header">
     <img class="title-icon" src="assets/MonsterIcons/MHGU-Question_Mark_Icon.webp" alt="">
     <h1>MHGU Armor Viewer</h1>
+    <button id="barBtn" class="btn tiny on" title="Show or hide the camera controls">Camera controls</button>
     <button id="saveBtn"   class="btn tiny" title="Save the current set">Save</button>
     <button id="saveAsBtn" class="btn tiny" title="Save the current set to a new file">Save As&hellip;</button>
     <button id="openBtn"   class="btn tiny" title="Open a saved set">Open</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
     <button id="aboutBtn" class="icon-btn" title="About" aria-label="About">&#9432;</button>
-    <button id="themeBtn" class="icon-btn" title="Theme" aria-label="Theme">&#9881;</button>
+    <button id="themeBtn" class="icon-btn" title="Settings" aria-label="Settings">&#9881;</button>
     <button id="linksBtn" class="icon-btn" title="Other MHGU apps" aria-label="Other MHGU apps">&#128279;</button>
   </header>
 
@@ -341,9 +404,30 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </main>
 </div>
 
+<div id="pigModal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="pigTitle">Pigment</h2>
+    <button id="pigDefault" class="btn block">Default</button>
+    <div id="pigGrid"></div>
+    <div class="row end gap">
+      <button id="pigClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
 <div id="themeModal" class="modal hidden">
   <div class="modal-card">
-    <h2>Theme</h2>
+    <h2>Settings</h2>
+    <h3 class="stage-h">Display</h3>
+    <label class="chk"><input type="checkbox" id="setNote">Hide rendering notice</label>
+    <h3 class="stage-h">Backdrop</h3>
+    <p class="hint">Overrides the render background so the model can be keyed out.</p>
+    <div class="row gap stage-row">
+      <button id="stgTheme" class="btn accent" style="flex:1">Theme</button>
+      <button id="stgGreen" class="btn accent" style="flex:1">Digital Green</button>
+      <button id="stgBlue"  class="btn accent" style="flex:1">Digital Blue</button>
+    </div>
+    <h3 class="stage-h">Theme</h3>
     <div id="swatches" class="swatches"></div>
     <button id="themeClose" class="btn accent">Done</button>
   </div>
@@ -452,6 +536,39 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     document.getElementById("aboutClose").onclick = function () { am.classList.add("hidden"); };
     am.onclick = function (e) { if (e.target === am) am.classList.add("hidden"); };
 
+    // View preferences live in their own key, like the theme does: they are app chrome,
+    // not part of a saved set, and reading them in this early script means a hidden
+    // notice or bar never flashes before the module finishes loading.
+    var UI_KEY = "mhgu-armor-viewer-ui";
+    var ui = { note: true, bar: true };
+    try { ui = Object.assign(ui, JSON.parse(localStorage.getItem(UI_KEY) || "{}")); } catch (_) {}
+    var noteEl = document.getElementById("renderNote"),
+        barEl = document.getElementById("bar"),
+        barHome = barEl.parentNode,          // the render section it floats over
+        barBtn = document.getElementById("barBtn"),
+        header = barBtn.parentNode,
+        setNote = document.getElementById("setNote");
+    function paintUi() {
+      noteEl.hidden = !ui.note;
+      // Toggled off, the toolbar moves into the header rather than being hidden, so the
+      // controls stay reachable. Moving the element keeps every handler the module binds
+      // to fitBtn/spinBtn/orbitLock/wireBtn intact -- they are looked up by id, and the
+      // nodes themselves never change.
+      //
+      // It lands to the LEFT of the toggle on purpose. The h1 carries flex:1, so every
+      // control after it is right-anchored as one block: inserting BEFORE the toggle lets
+      // the bar grow into the title's slack and leaves the toggle, Save / Save As / Open
+      // and the icon buttons exactly where they were. Inserting after it shoves them all.
+      if (ui.bar) barHome.appendChild(barEl);
+      else header.insertBefore(barEl, barBtn);
+      barBtn.classList.toggle("on", ui.bar);
+      setNote.checked = !ui.note;
+      try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (_) {}
+    }
+    paintUi();
+    barBtn.onclick = function () { ui.bar = !ui.bar; paintUi(); };
+    setNote.onchange = function () { ui.note = !setNote.checked; paintUi(); };
+
     var m = document.getElementById("linksModal");
     document.getElementById("linksBtn").onclick = function () { m.classList.remove("hidden"); };
     document.getElementById("linksClose").onclick = function () { m.classList.add("hidden"); };
@@ -509,6 +626,21 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     ];
     const KEY = "mhgu-armor-viewer-theme";
     const DEFAULT_HEX = "#1E2025";           // Forbidden, the family default
+
+    // Backdrop override for the render area. The stage is normally darken(hex,.18) — the
+    // Weapon Tree's factor — but these two are chroma-key colours, so a screenshot of the
+    // model can be keyed out. They deliberately do NOT follow the theme: the whole point is a
+    // flat, known value the keyer can pull. Everything else (sidebar, titlebar, panels) still
+    // follows the theme, so only the surface being composited is overridden.
+    //
+    // Full-gun primaries, #00FF00 and #0000FF, chosen deliberately over the SMPTE-ish digital
+    // greens and blues. Those key more forgivingly on real footage, where the backdrop is lit
+    // cloth, but here the backdrop is a flat framebuffer value with no lighting on it at all,
+    // so the reason to prefer them does not apply and a full channel is the easier pull.
+    const STAGE_KEY = "mhgu-armor-viewer-stage";
+    const STAGES = { theme: null, green: "#00FF00", blue: "#0000FF" };
+    let stageMode = "theme";
+    try { const v = localStorage.getItem(STAGE_KEY); if (v && v in STAGES) stageMode = v; } catch (e) {}
     const FALLBACK_ICON = "assets/MonsterIcons/MHGU-Question_Mark_Icon.webp";
 
     const byHex = new Map(THEMES.map(t => [t.hex.toUpperCase(), t]));
@@ -570,7 +702,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       r.setProperty("--hover", css(darken(c, .30)));
       r.setProperty("--accent", css(darken(c, .70)));
       r.setProperty("--accent-hover", css(lighten(c, .40)));
-      r.setProperty("--stage", css(darken(c, .18)));   // Weapon Trees' factor, verbatim
+      // Weapon Trees' factor, verbatim — unless a chroma backdrop is overriding it.
+      r.setProperty("--stage", STAGES[stageMode] || css(darken(c, .18)));
       r.setProperty("--text", "#ffffff");
       r.setProperty("--text-dim", "#fffffff5");
       r.setProperty("--line", "rgba(11, 8, 8, 0.12)");
@@ -581,9 +714,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
       document.querySelectorAll(".swatch").forEach(s => s.classList.toggle("sel", s.dataset.hex === hex));
 
-      // The canvas is opaque and paints its own background, so it would cover the CSS one.
-      // The viewer module listens for this and repaints the scene from --stage.
-      window.dispatchEvent(new CustomEvent("mhgu-theme"));
+      // Flat for a chroma key, textured for a theme colour. The canvas is transparent, so
+      // .content is what shows and this is the only switch needed.
+      document.documentElement.classList.toggle("chroma", stageMode !== "theme");
       const icon = document.querySelector(".title-icon");
       if (icon) {
         const t = byHex.get(hex.toUpperCase());
@@ -625,6 +758,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
     const modal = document.getElementById("themeModal");
     document.getElementById("themeBtn").onclick = () => modal.classList.remove("hidden");
+    const STAGE_BTN = { theme: "stgTheme", green: "stgGreen", blue: "stgBlue" };
+    function setStage(mode) {
+      stageMode = mode in STAGES ? mode : "theme";
+      try { localStorage.setItem(STAGE_KEY, stageMode); } catch (e) { /* private mode */ }
+      for (const m in STAGE_BTN) document.getElementById(STAGE_BTN[m]).classList.toggle("on", m === stageMode);
+      applyTheme(current);   // re-derives --stage and repaints the scene
+    }
+    for (const m in STAGE_BTN) document.getElementById(STAGE_BTN[m]).onclick = () => setStage(m);
+    setStage(stageMode);
+
     document.getElementById("themeClose").onclick = () => modal.classList.add("hidden");
     modal.onclick = (e) => { if (e.target === modal) modal.classList.add("hidden"); };
   })();
@@ -657,7 +800,7 @@ if (CLEAN) { document.querySelector('.sidebar').style.display='none';
 const manifest = await (await fetch('manifest.json?v=' + Date.now())).json();
 const SLOTS = manifest.slots;
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const viewport = document.getElementById('viewport');
@@ -670,7 +813,10 @@ function fitRenderer(){
   camera.updateProjectionMatrix();
 }
 
-const scene = new THREE.Scene(); scene.background = new THREE.Color(0x14161c);
+// No scene background: the canvas is transparent and .content paints the backdrop in CSS, so
+// the stage can carry a texture (an opaque clear colour cannot) and a chroma key is exactly
+// the value CSS was given, with no colour-space conversion in between.
+const scene = new THREE.Scene(); scene.background = null;
 const camera = new THREE.PerspectiveCamera(38, 1, 0.001, 5000);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.autoRotate = false; controls.autoRotateSpeed = 1.8;
@@ -717,13 +863,28 @@ function loadState(){
   try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e){ return null; }
 }
 let restoring = true;   // restoring fires the same handlers; don't let them save yet
+// Where the user left the camera. Kept as position + target so it survives a window
+// resize, unlike a raw matrix, and so Fit to View can still override it cleanly.
+function cameraState(){
+  try {
+    return { p: camera.position.toArray().map(n => +n.toFixed(4)),
+             t: controls.target.toArray().map(n => +n.toFixed(4)) };
+  } catch (_) { return null; }
+}
+function applyCameraState(c){
+  if (!c || !Array.isArray(c.p) || !Array.isArray(c.t)) return false;
+  if (!c.p.every(Number.isFinite) || !c.t.every(Number.isFinite)) return false;
+  camera.position.fromArray(c.p); controls.target.fromArray(c.t);
+  camera.lookAt(controls.target); controls.update();
+  return true;
+}
 function saveState(){
   if (restoring) return;
   try {
     const slots = {};
     SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
     localStorage.setItem(LS_KEY, JSON.stringify({
-      gender, slots, hunterType, pigmentIndex,
+      gender, slots, hunterType, pigmentIndex, camera: cameraState(),
       byGender: Object.assign({}, GENDER_STATE, { [gender]: captureGender() }),
       pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
@@ -1271,8 +1432,18 @@ function meshGroupId(o){
   return 0;
 }
 
+// Model 568 arm is Champion's Wraps / Strongman's Wraps, both genders. The wrap is
+// modelled AS a bare hand with wrapping on it, so `_envskin_` here is the armor, not skin
+// underneath -- but the piece ships that hand TWICE, in Group[1] and Group[2], two
+// alternate hand poses the game draws one at a time. Both together give the doubled,
+// intersecting hands. Drop the duplicate hand in Group[2] and keep every `_sym_` wrap
+// mesh, so no armor is lost. Nothing in the game data marks this: .plpartsdisp ships on
+// helms only, so this is an authored entry.
+const HIDE_DUP_HAND = new Set(['568']);
+
 async function loadPiece(id, slot){
   const key = gender + id + '_' + slot;      // gender is part of the cache key
+  const hideDupHand = slot === 'arm' && HIDE_DUP_HAND.has(id);
   const entry = manifest.pieces[key];
   if (!entry) return null;
   let gltf = glbCache.get(key);
@@ -1301,7 +1472,8 @@ async function loadPiece(id, slot){
       // as the proxy hid real armour: Champion's Wraps keeps its forearm and hand meshes in
       // Group[1] and Group[2], so its hands never rendered. Across 2,500 pieces only 7 use
       // a group outside {0,100} at all -- 13 primitives -- so this is a narrow correction.
-      const isBlob = isLod || meshGroupId(o) >= 100 || hideSet.has(srcName + '#' + verts);
+      const isBlob = isLod || meshGroupId(o) >= 100 || hideSet.has(srcName + '#' + verts)
+                  || (hideDupHand && meshGroupId(o) === 2 && /envskin/i.test(srcName));
       const isSkin = !isBlob && /skin/i.test(srcName);
       const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
                                       : textureForMaterial(srcName, entry);
@@ -1334,9 +1506,13 @@ async function loadPiece(id, slot){
       // `_sym_` names the dyeable region; skin and the proxy never qualify
       mat.userData.dyeRegion = !isSkin && !isBlob && /_sym/i.test(srcName);
       mat.userData.slot = slot;
-      // each piece carries the pigment index the game authors for it (scheme -> slot)
-      mat.userData.own = (entry.defaultPigment !== undefined)
-        ? PIGMENTS.find(x => x.i === entry.defaultPigment) : null;
+      // `defaultPig` is the armor's own default pigment -- mSymbolCol from
+      // armorSeriesData (+116 male / +119 female), a direct index into the 125-colour
+      // palette. It replaced `defaultPigment`, which read ArmorColorData's five bytes as
+      // per-slot dye colours; those are per-slot BASE colours and gave Yukumo an orange
+      // hat with blue legs when the real set dyes to one dark red.
+      mat.userData.own = (entry.defaultPig !== undefined)
+        ? PIGMENTS.find(x => x.i === entry.defaultPig) : null;
       mat.wireframe = wireOn;
       // three.js frustum-culls a skinned mesh by its BIND-pose bounding sphere, which is
       // wrong the moment a bone moves -- pieces pop out of existence when the camera gets
@@ -1380,8 +1556,10 @@ async function loadPiece(id, slot){
 // face stays visible under a helm instead of the hair clipping through it.
 function hairHideSet(){
   const sel = document.querySelector('select[data-slot="helm"]');
-  const id = sel ? sel.value : 'none';
-  if (!id || id === 'none') return null;
+  // the select holds a TOKEN now, not a model id -- resolve it, or the lookup misses and
+  // masking silently stops. That regressed when the list moved to Smithy order.
+  const id = sel ? modelOf('helm', sel.value) : null;
+  if (!id) return null;
   const e = pieceOf(id, 'helm');
   if (!e || !e.hairHide) return null;
   const si = Math.max(0, +(document.getElementById('hairStyle').value || 0));
@@ -1400,8 +1578,8 @@ function hairHideSet(){
 // range (a sealed helm, no face at all), 385 clear part of it.
 function faceHideSet(){
   const sel = document.querySelector('select[data-slot="helm"]');
-  const id = sel ? sel.value : 'none';
-  if (!id || id === 'none') return null;
+  const id = sel ? modelOf('helm', sel.value) : null;
+  if (!id) return null;
   const e = pieceOf(id, 'helm');
   if (!e || e.headMask === undefined) return null;
   const hide = new Set();
@@ -1947,7 +2125,7 @@ function rebuildSelects(filter){
 
 for (const slot of SLOTS) {
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
-  sel.onchange = () => setSlot(slot, sel.value).then(() => { frameAll(); saveState(); });
+  sel.onchange = () => setSlot(slot, sel.value).then(saveState);
 }
 document.getElementById('filter').oninput = e => rebuildSelects(e.target.value);
 document.getElementById('htype').onchange = e => {
@@ -2049,7 +2227,6 @@ async function setGender(g){
     ps.value = want.pose;
     await ps.onchange({ target: ps });
   }
-  frameAll();
 }
 document.getElementById('htype').value = hunterType;
 rebuildSelects('');
@@ -2103,7 +2280,6 @@ async function apply(map){
     sel.value = v;
     await setSlot(slot, v);
   }
-  frameAll();
 }
 
 // first-run outfit when there is nothing saved yet
@@ -2121,7 +2297,7 @@ document.getElementById('pose').onchange = async e => {
     currentPose = v;
     repose();       // the animation left the bones where it stopped
   }
-  frameAll(); saveState();
+  saveState();
 };
 for (const [id, part] of CHAR_PARTS){
   const sel = document.getElementById(id), rgb = document.getElementById(id + 'RGB');
@@ -2145,12 +2321,12 @@ for (const [id, part] of CHAR_PARTS){
 }
 document.getElementById('faceStyle').onchange = () => refreshChar().then(saveState);
 document.getElementById('hairStyle').onchange = () => refreshChar().then(saveState);
-document.getElementById('face').onchange = () => refreshChar().then(() => { frameAll(); saveState(); });
-document.getElementById('hair').onchange = () => refreshChar().then(() => { frameAll(); saveState(); });
+document.getElementById('face').onchange = () => refreshChar().then(saveState);
+document.getElementById('hair').onchange = () => refreshChar().then(saveState);
 document.getElementById('body').onchange = e => {
   showBody = e.target.checked;
   scene.traverse(o => { if (o.userData && o.userData.isBody) o.visible = showBody; });
-  frameAll(); saveState();
+  saveState();
 };
 // Off -> ten increasing speeds -> Off. The speed is not written on the button: you can
 // see how fast it is going. Only the top step renames, to Turbo.
@@ -2307,7 +2483,7 @@ weaponPoseSel.onchange = async () => {
   } else {
     stopGamePose(); repose();
   }
-  frameAll(); saveState();
+  saveState();
 };
 
 buildPoseList();
@@ -2319,7 +2495,9 @@ function pigRow(id, label, title){
     '<input type="checkbox" id="pgOn_'+id+'" aria-label="Dye '+label+'">' +
     '<input type="text" class="hexbtn" id="pgHex_'+id+'" maxlength="7" spellcheck="false" ' +
     'autocomplete="off" title="Type or paste a hex value; click to select and copy" value="#c0c0c0">' +
-    '<input type="color" id="pg_'+id+'" class="rgb-input" title="'+title+'"></div></div>';
+    '<input type="color" id="pg_'+id+'" class="rgb-input" title="'+title+'">' +
+    '<button type="button" class="palbtn" id="pgPal_'+id+'" title="In-game pigments" ' +
+    'aria-label="In-game pigments for '+label+'">&#9638;</button></div></div>';
 }
 document.getElementById('slotPig').innerHTML =
   pigRow('all', 'All', 'Pigment for every piece') +
@@ -2371,9 +2549,12 @@ function readSlotPigments(){
   armorMats.forEach(applyTint);
   paintHexLabels();
 }
+// The colour a row shows when it carries no pigment. Undyed is the absence of a tint,
+// not a colour, so this is only what the swatch reads at rest.
+const PIG_NONE = '#c0c0c0';
 for (const sl of SLOTS){
   const cb = document.getElementById('pgOn_'+sl), col = document.getElementById('pg_'+sl);
-  col.value = '#c0c0c0';
+  col.value = PIG_NONE;
   // touching one piece means the set is no longer uniform, so All stops claiming it is
   cb.onchange  = () => { allCb.checked = false; readSlotPigments(); saveState(); };
   col.oninput  = () => { if (!cb.checked) cb.checked = true; allCb.checked = false; readSlotPigments(); };
@@ -2382,7 +2563,7 @@ for (const sl of SLOTS){
 // "All" is a convenience that writes through to the five, rather than a sixth pigment --
 // so the per-piece rows always show the truth and a set stays one colour per slot.
 const allCb = document.getElementById('pgOn_all'), allCol = document.getElementById('pg_all');
-allCol.value = '#c0c0c0';
+allCol.value = PIG_NONE;
 function pushAll(){
   for (const sl of SLOTS){
     document.getElementById('pgOn_'+sl).checked = allCb.checked;
@@ -2394,6 +2575,80 @@ function pushAll(){
 allCb.onchange  = () => { pushAll(); saveState(); };
 allCol.oninput  = () => { if (!allCb.checked) allCb.checked = true; pushAll(); };
 allCol.onchange = saveState;
+
+// ---- the game's own pigments, reachable from each row -----------------------
+// PIGMENTS is equipBaseColorData.ebcd verbatim: 125 RGB triples, in the game's order.
+// This is deliberately NOT a second pigment interface -- picking a swatch writes the hex
+// into that row's hex field and fires its own commit handler, so the RGB swatch, the
+// All write-through, the dye-region shader and persistence all behave exactly as they do
+// for a value typed by hand.
+//
+// The GRID dedupes by hex, keeping the first of each colour; pigments.json stays the raw
+// 125 so the data is untouched and a `defaultPig` index always resolves. White is the only
+// colour that repeats -- 14 entries, indices 0 and 88-100 -- and nothing defaults to the
+// dropped ones, so the picker shows 112 distinct swatches instead of 13 blank tiles.
+const pigModal = document.getElementById('pigModal');
+const pigGrid  = document.getElementById('pigGrid');
+let pigTarget = null;
+const pigSeen = new Set();
+pigGrid.innerHTML = PIGMENTS.filter(p => {
+  const h = p.hex.toLowerCase();
+  if (pigSeen.has(h)) return false;
+  pigSeen.add(h); return true;
+}).map(p =>
+  '<button type="button" data-hex="' + p.hex + '" title="' + p.hex + '" ' +
+  'style="background:' + p.hex + '"></button>').join('');
+function closePig(){ pigModal.classList.add('hidden'); }
+function openPig(id, label){
+  pigTarget = id;
+  document.getElementById('pigTitle').textContent = label;
+  const cur = document.getElementById('pg_' + id).value.toLowerCase();
+  const on  = document.getElementById('pgOn_' + id).checked;
+  for (const b of pigGrid.children)
+    b.classList.toggle('sel', on && b.dataset.hex.toLowerCase() === cur);
+  pigModal.classList.remove('hidden');
+}
+pigGrid.onclick = e => {
+  const b = e.target.closest('button[data-hex]');
+  if (!b) return;
+  const f = document.getElementById('pgHex_' + pigTarget);
+  f.value = b.dataset.hex;
+  f.onchange();            // the one commit path -- validates, ticks the row, pushes All
+  closePig();
+};
+// Every armor in the game has a default pigment, so Default RESTORES it rather than
+// removing the tint: it reads the equipped piece's own `defaultPig` (mSymbolCol) and puts
+// that colour in the row. A piece with no pigment to restore -- an empty slot, one of the
+// 28 undyeable pieces, or one of the 42 that join to no series -- falls back to off.
+function defaultPigHex(slot){
+  const sel = document.querySelector('select[data-slot="' + slot + '"]');
+  const id = sel ? modelOf(slot, sel.value) : null;      // the select holds a token
+  if (!id) return null;
+  const e = manifest.pieces[gender + id + '_' + slot];
+  if (!e || e.undyeable || e.defaultPig === undefined) return null;
+  const p = PIGMENTS.find(x => x.i === e.defaultPig);
+  return p ? p.hex : null;
+}
+// Default on All restores each piece SEPARATELY -- it must not go through pushAll(),
+// which writes one colour into all five and would stamp All's colour over every piece.
+document.getElementById('pigDefault').onclick = () => {
+  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
+    const hex = defaultPigHex(sl);
+    const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
+    cb.checked = !!hex;
+    col.value = hex || PIG_NONE;
+  }
+  // the five are now each on their own default, so All no longer speaks for them
+  allCb.checked = false;
+  if (pigTarget === 'all') allCol.value = PIG_NONE;
+  readSlotPigments(); paintHexLabels(); saveState();
+  closePig();
+};
+document.getElementById('pigClose').onclick = closePig;
+pigModal.onclick = e => { if (e.target === pigModal) closePig(); };
+for (const id of SLOTS.concat(['all']))
+  document.getElementById('pgPal_' + id).onclick =
+    () => openPig(id, id === 'all' ? 'All' : SLOT_LABEL[id]);
 
 // ---- Deviant pigment (hidden for now, kept wired) ---------------------------
 const devOn=document.getElementById('devOn'), devBox=document.getElementById('devBox'),
@@ -2549,7 +2804,19 @@ if (weaponSel.value !== 'none') await setWeapon(weaponSel.value);
 }
 pushMask();
 restoring = false;      // from here on, user changes persist
+// The camera is framed ONCE, here, and after that only Fit to View moves it: every
+// other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
+// view back mid-adjustment. A saved camera wins over the automatic framing.
+if (!applyCameraState(SAVED && SAVED.camera)) frameAll();
 saveState();
+{
+  let camTimer = null;
+  controls.addEventListener('change', () => {
+    if (restoring) return;
+    clearTimeout(camTimer);          // 'change' fires every frame of a drag
+    camTimer = setTimeout(saveState, 400);
+  });
+}
 
 // ---- placement tool (?place=1) ---------------------------------------------
 // Every weapon's bone 0 sits at the origin, so the game mounts them all the same way --
@@ -2625,15 +2892,6 @@ window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
   handBone,
   get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant };
 
-// Stage colour follows the theme. scene.background is opaque, so setting only the CSS on
-// .content would be invisible behind the canvas — both have to move together. The theme
-// script runs before this module, so paint once on load and then on every change.
-function paintStage() {
-  const v = getComputedStyle(document.documentElement).getPropertyValue("--stage").trim();
-  if (v) scene.background = new THREE.Color(v);
-}
-paintStage();
-window.addEventListener("mhgu-theme", paintStage);
 // Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
 // opening one closes the rest, so the sidebar never grows past the viewport.
 // Clicking the open panel still closes it, leaving all of them shut.
@@ -2687,7 +2945,8 @@ function currentSet(){
       hairStyle: +document.getElementById('hairStyle').value,
       skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
     },
-    pose: document.getElementById('pose').value
+    pose: document.getElementById('pose').value,
+    camera: cameraState()
   };
 }
 
@@ -2820,6 +3079,9 @@ async function loadSet(text, btn){
       await refreshChar();
       await apply(map);
       applyCharColors();
+      // Opening a set is a load, not an incidental UI change, so it may frame -- but
+      // only when the file carries no camera of its own.
+      if (!applyCameraState(d.camera)) frameAll();
       saveState();
     } catch (_) {
       const orig = btn.textContent;
