@@ -1724,21 +1724,40 @@ async function refreshChar(){
   applyCharColors();
 }
 
+// Arrowing down a dropdown fires setSlot faster than a piece loads, and the loads finish
+// out of order -- each one removed the CURRENT mount and then added its own, so two
+// armours ended up in the scene at once. Every call takes a ticket; a load that comes back
+// stale drops its result instead of mounting it.
+const slotSeq = { helm:0, body:0, arm:0, wst:0, leg:0 };
+// Belt and braces: clear the slot by sweeping the SCENE, not just the `mounted` entry.
+// If anything ever slips out of that bookkeeping it would otherwise sit there forever,
+// and a stacked armour is not obvious until you rotate the model.
+function clearSlot(slot){
+  for (const o of scene.children.slice())
+    if (o.userData && o.userData.armorSlot === slot) scene.remove(o);
+  delete mounted[slot];
+}
 async function setSlot(slot, token){
-  if (mounted[slot]) { scene.remove(mounted[slot]); delete mounted[slot]; }
+  const seq = ++slotSeq[slot];
+  clearSlot(slot);
   const setId = modelOf(slot, token);
   if (setId) {
     const g = await loadPiece(setId, slot);
+    if (seq !== slotSeq[slot]) return;        // superseded while loading
     if (g) {
+      clearSlot(slot);                        // nothing of this slot survives the swap
+      g.userData.armorSlot = slot;
       scene.add(g); mounted[slot] = g;
       applyCharColors();     // the body skin this piece exposes must match the face
     }
   }
+  if (seq !== slotSeq[slot]) return;
   // a new helm masks the hair differently, so the hair has to be rebuilt -- and a
   // rebuild makes fresh materials, so the chosen colors have to be re-applied
   if (slot === 'helm') {
     await setChar('hair', document.getElementById('hair').checked);
     await setChar('face', document.getElementById('face').checked);
+    if (seq !== slotSeq[slot]) return;
   }
   applyCharColors();
   refresh();
