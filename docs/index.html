@@ -276,6 +276,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <div class="panel-body">
           <label class="chk" style="display:none"><input type="checkbox" id="defpig">Use in-game default</label>
           <p class="hint" id="pigNote"></p>
+          <label class="chk"><input type="checkbox" id="maskdbg">Dye mask</label>
           <div id="slotPig"></div>
           <span id="legacyPig" hidden>
           <div id="pig"></div>
@@ -307,7 +308,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <label class="chk"><input type="checkbox" id="matdbg">Material colors</label>
           <div id="legend"></div>
           <span id="pigmentTuning">
-            <label class="chk"><input type="checkbox" id="maskdbg">Dye mask</label>
             <div class="field"><label for="satboost">Saturate</label>
               <input type="range" id="satboost" min="100" max="600" value="100"></div>
             <div class="field"><label for="keytol">Key tolerance</label>
@@ -784,7 +784,7 @@ const MASK_VER = 2;
 // pushMask() reads sat0/sat1/val0/keytol on load. Flip to true to bring it back.
 // Off again. The material-colour view did its job -- it is what identified the _sym_
 // material as the dye region -- and the mask sliders are only a fallback now.
-const DEBUG_UI = true;    // Material colors view -- for pinning down render artifacts
+const DEBUG_UI = false;
 // The weapon placement is not finished -- the mount joint the engine uses (player bone 13)
 // is in none of the game's data files, so the hand position is still approximate. Panel
 // stays in the DOM so its handlers keep resolving; only the UI is hidden.
@@ -1297,7 +1297,11 @@ async function loadPiece(id, slot){
       // (+4 field). Pieces carry extra layers at higher levels -- Gore's cape is one --
       // and drawing them all is what makes those sets read wrong.
       const isLod = entry.lod0 && entry.lod0.length && entry.lod0.indexOf(verts) < 0;
-      const isBlob = isLod || meshGroupId(o) !== 0 || hideSet.has(srcName + '#' + verts);
+      // The proxy layer is Group[100], not "any group but 0". Treating every non-zero group
+      // as the proxy hid real armour: Champion's Wraps keeps its forearm and hand meshes in
+      // Group[1] and Group[2], so its hands never rendered. Across 2,500 pieces only 7 use
+      // a group outside {0,100} at all -- 13 primitives -- so this is a narrow correction.
+      const isBlob = isLod || meshGroupId(o) >= 100 || hideSet.has(srcName + '#' + verts);
       const isSkin = !isBlob && /skin/i.test(srcName);
       const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
                                       : textureForMaterial(srcName, entry);
@@ -1507,7 +1511,7 @@ async function buildWeaponPart(key, e, isOff){
   root.traverse(o => {
     if (!(o.isMesh || o.isSkinnedMesh)) return;
     const srcName = (o.material && o.material.name) || '';
-    if (meshGroupId(o) !== 0) { o.visible = false; return; }   // same proxy layer as armour
+    if (meshGroupId(o) >= 100) { o.visible = false; return; }   // same proxy layer as armour
     const mat = new THREE.MeshStandardMaterial({
       roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
       transparent:false, alphaTest: /^XfBA/.test(srcName) ? 0.5 : 0 });
