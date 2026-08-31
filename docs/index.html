@@ -1226,9 +1226,17 @@ async function loadPiece(id, slot){
       const isSkin = !isBlob && /skin/i.test(srcName);
       const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
                                       : textureForMaterial(srcName, entry);
+      // The `_bm` alpha means two different things depending on the material variant,
+      // which is why a global alphaTest once culled most of the armour:
+      //   XfB*   the alpha is a smooth GLOSS ramp for the env matcap (Yukumo: 23% of
+      //          texels sit mid-range) -- thresholding it deletes the piece
+      //   XfBA*  the alpha is a binary CUTOUT mask (Gore: 55% near 0, 43% near 255,
+      //          only 1.4% between) -- rendering it opaque leaves solid slabs where
+      //          the armour should be cut away
+      const isAlphaMat = /^XfBA/.test(srcName);
       const mat = new THREE.MeshStandardMaterial({
         roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
-        transparent:false, alphaTest:0 });   // _bm alpha is a spec/gloss mask, NOT opacity
+        transparent:false, alphaTest: isAlphaMat ? 0.5 : 0 });
       // the hunter's flesh is not dyeable by pigment -- it takes the skin-tone selector.
       // `undyeable` is the game's own flag: armorSeriesData byte +113, which is 0 on
       // exactly two armour lines library-wide (Criminal and Hylian), both confirmed
