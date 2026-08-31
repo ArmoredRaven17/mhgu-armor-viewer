@@ -165,6 +165,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
   pointer-events:none;color:var(--text)}
 #err{position:absolute;bottom:12px;left:12px;color:#ff6b6b;white-space:pre;max-width:60ch}
+/* sits over the render area; pointer-events off so it never eats an orbit drag */
+#renderNote{position:absolute;top:10px;left:0;right:0;margin:0;text-align:center;
+  font-size:12px;line-height:1.4;color:var(--text-hint);opacity:.75;
+  pointer-events:none;padding:0 12px}
 #legend{font-size:11px;line-height:1.35}
 
 /* Other MHGU apps modal — the block is shared verbatim with the sibling apps. */
@@ -308,6 +312,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <section class="content">
       <div id="viewport"></div>
           <div id="hud">loading&hellip;</div>
+      <p id="renderNote">Some armors may not render correctly at this time or some oddities may happen</p>
       <div id="err"></div>
       <div id="bar">
         <button id="fitBtn" class="btn tiny" title="Frame the whole figure">Fit to View</button>
