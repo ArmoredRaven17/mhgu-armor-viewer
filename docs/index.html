@@ -135,6 +135,12 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 .row.gap{gap:8px}
 .field{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text-dim)}
 .field .row.gap > select{flex:1;min-width:0}
+.hexbtn{flex:1;min-width:0;background:transparent;border:1px solid transparent;
+  color:var(--text-hint);font-family:inherit;font-size:12px;letter-spacing:.02em;
+  text-align:left;padding:3px 5px;border-radius:5px;cursor:text}
+.hexbtn:hover{border-color:var(--line);color:var(--text)}
+.hexbtn:focus{border-color:var(--accent-hover);color:var(--text);outline:none;
+  background:var(--bg2)}
 .rgb-input{flex:0 0 auto;width:34px;height:30px;padding:0;cursor:pointer;
   background:var(--bg2);border:1px solid var(--line);border-radius:7px}
 .rgb-input::-webkit-color-swatch-wrapper{padding:2px}
@@ -1800,18 +1806,53 @@ if (!SAVED) {
 buildPoseList();
 // ---- one RGB pigment per armour piece --------------------------------------
 const SLOT_LABEL = { helm:'Head', body:'Chest', arm:'Arms', wst:'Waist', leg:'Legs' };
+function pigRow(id, label, title){
+  return '<div class="field"><label for="pg_'+id+'">'+label+'</label>' +
+    '<div class="row gap">' +
+    '<input type="checkbox" id="pgOn_'+id+'" aria-label="Dye '+label+'">' +
+    '<input type="text" class="hexbtn" id="pgHex_'+id+'" maxlength="7" spellcheck="false" ' +
+    'autocomplete="off" title="Type or paste a hex value; click to select and copy" value="#c0c0c0">' +
+    '<input type="color" id="pg_'+id+'" class="rgb-input" title="'+title+'"></div></div>';
+}
 document.getElementById('slotPig').innerHTML =
-  '<div class="field"><label for="pg_all">All</label>' +
-  '<div class="row gap"><label class="chk" style="flex:1;min-width:0">' +
-  '<input type="checkbox" id="pgOn_all">dye</label>' +
-  '<input type="color" id="pg_all" class="rgb-input" title="Pigment for every piece"></div></div>' +
+  pigRow('all', 'All', 'Pigment for every piece') +
   '<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">' +
-  SLOTS.map(sl =>
-  '<div class="field"><label for="pg_'+sl+'">'+SLOT_LABEL[sl]+'</label>' +
-  '<div class="row gap"><label class="chk" style="flex:1;min-width:0">' +
-  '<input type="checkbox" id="pgOn_'+sl+'">dye</label>' +
-  '<input type="color" id="pg_'+sl+'" class="rgb-input" title="Pigment for '+SLOT_LABEL[sl]+'"></div></div>'
-).join('');
+  SLOTS.map(sl => pigRow(sl, SLOT_LABEL[sl], 'Pigment for ' + SLOT_LABEL[sl])).join('');
+
+// the hex label doubles as a copy button
+function paintHexLabels(){
+  for (const id of SLOTS.concat(['all'])){
+    const b = document.getElementById('pgHex_'+id);
+    if (b && b.dataset.busy !== '1' && document.activeElement !== b)
+      b.value = document.getElementById('pg_'+id).value;
+  }
+}
+// The hex field is the only place a value can be TYPED -- it accepts nothing but a hex
+// triple. The swatch beside it still opens the platform picker, which cannot be limited
+// to hex, so this is the hex-only route in and out.
+for (const id of SLOTS.concat(['all'])){
+  const f = document.getElementById('pgHex_'+id);
+  const col = document.getElementById('pg_'+id);
+  // one click selects the whole value, ready to copy
+  f.onfocus = () => f.select();
+  f.onclick = () => { if (f.selectionStart === f.selectionEnd) f.select(); };
+  function commit(){
+    let v = f.value.trim();
+    if (v[0] !== '#') v = '#' + v;
+    if (/^#[0-9a-f]{3}$/i.test(v))                       // #abc -> #aabbcc
+      v = '#' + v.slice(1).split('').map(c => c + c).join('');
+    if (!/^#[0-9a-f]{6}$/i.test(v)) { paintHexLabels(); return; }   // reject, snap back
+    v = v.toLowerCase();
+    col.value = v;
+    const cb = document.getElementById('pgOn_'+id);
+    if (!cb.checked) cb.checked = true;
+    if (id === 'all') pushAll(); else { allCb.checked = false; readSlotPigments(); }
+    paintHexLabels();
+    saveState();
+  }
+  f.onchange = commit;
+  f.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); f.blur(); } };
+}
 function readSlotPigments(){
   for (const sl of SLOTS){
     const on = document.getElementById('pgOn_'+sl).checked;
@@ -1821,6 +1862,7 @@ function readSlotPigments(){
     slotPigment[sl] = [c.r*255, c.g*255, c.b*255];
   }
   armorMats.forEach(applyTint);
+  paintHexLabels();
 }
 for (const sl of SLOTS){
   const cb = document.getElementById('pgOn_'+sl), col = document.getElementById('pg_'+sl);
@@ -1840,6 +1882,7 @@ function pushAll(){
     document.getElementById('pg_'+sl).value = allCol.value;
   }
   readSlotPigments();
+  paintHexLabels();
 }
 allCb.onchange  = () => { pushAll(); saveState(); };
 allCol.oninput  = () => { if (!allCb.checked) allCb.checked = true; pushAll(); };
