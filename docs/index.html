@@ -784,7 +784,7 @@ const MASK_VER = 2;
 // pushMask() reads sat0/sat1/val0/keytol on load. Flip to true to bring it back.
 // Off again. The material-colour view did its job -- it is what identified the _sym_
 // material as the dye region -- and the mask sliders are only a fallback now.
-const DEBUG_UI = false;
+const DEBUG_UI = true;    // Material colors view -- for pinning down render artifacts
 // The weapon placement is not finished -- the mount joint the engine uses (player bone 13)
 // is in none of the game's data files, so the hand position is still approximate. Panel
 // stays in the DOM so its handlers keep resolving; only the UI is hidden.
@@ -1293,7 +1293,11 @@ async function loadPiece(id, slot){
       //           the armor as authored, so it renders, but it needs the SKIN map --
       //           not every set names it "_skin_", and those were getting the armor map.
       const verts = o.geometry.attributes.position.count;
-      const isBlob = meshGroupId(o) !== 0 || hideSet.has(srcName + '#' + verts);
+      // LOD filter: `lod0` is the set of vertex counts at level 0, from the MOD mesh table
+      // (+4 field). Pieces carry extra layers at higher levels -- Gore's cape is one --
+      // and drawing them all is what makes those sets read wrong.
+      const isLod = entry.lod0 && entry.lod0.length && entry.lod0.indexOf(verts) < 0;
+      const isBlob = isLod || meshGroupId(o) !== 0 || hideSet.has(srcName + '#' + verts);
       const isSkin = !isBlob && /skin/i.test(srcName);
       const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
                                       : textureForMaterial(srcName, entry);
@@ -1304,6 +1308,14 @@ async function loadPiece(id, slot){
       //   XfBA*  the alpha is a binary CUTOUT mask (Gore: 55% near 0, 43% near 255,
       //          only 1.4% between) -- rendering it opaque leaves solid slabs where
       //          the armour should be cut away
+      //
+      // But the XfBA prefix alone does NOT mean the alpha is opacity. Lecturer's Footwear
+      // is XfBA with 36% of its texels mid-band -- a gloss ramp -- and a 0.5 cut punched
+      // holes through a third of the boot. Across the 2,360 pieces with an XfBA material
+      // the mid-band fraction is a smooth spread from 0 to 1, so there is no threshold
+      // that separates the two kinds; anything picking one would be a guess.
+      // What IS safe either way: discard only what is essentially transparent. A real
+      // cutout goes to zero in the regions it removes, and a gloss ramp never does.
       const isAlphaMat = /^XfBA/.test(srcName);
       const mat = new THREE.MeshStandardMaterial({
         roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
@@ -1328,9 +1340,16 @@ async function loadPiece(id, slot){
       // the piece count is small, so just never cull.
       o.frustumCulled = false;
       o.material = mat; allMats.push(mat); armorMats.push(mat);
-      // material names carry envNN; NN indexes this piece's ordered env list
+      // Only materials whose NAME carries an env token are env-lit. The prefix also holds
+      // an E<n> on many materials and treating THAT as the marker is wrong: it hands the
+      // matcap to 340 materials that should not have one, and on Gore GX -- black armour
+      // with a 32-45% gloss mask -- it turned the membrane magenta instead of deep red.
       const em = /env(?:a)?(\d*)/i.exec(srcName);
       if (em && entry.env && entry.env.length){
+        // NN indexes this piece's ordered env list where the name carries it. For the
+        // 1,701 pieces binding 2+ maps the selector is NOT reliably known -- `mNN` fits
+        // only 682 of 1,658, and m088 uses env00/env01 suffixes while m048 uses env/enva
+        // -- so anything without an explicit NN takes the first map rather than a guess.
         const ei = Math.min(parseInt(em[1] || '0', 10) || 0, entry.env.length - 1);
         jobs.push(getTexture(entry.env[ei]).then(t => {
           mat.userData.u.uEnv.value = t;
@@ -1925,7 +1944,7 @@ if (SAVED && SAVED.byGender)
 function captureGender(){
   const slots = {};
   SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
-  return { slots,
+  return { slots, hunterType,
     faceStyle: document.getElementById('faceStyle').value,
     hairStyle: document.getElementById('hairStyle').value,
     face: document.getElementById('face').checked,
@@ -1965,6 +1984,12 @@ async function setGender(g){
   // first time on this body there is nothing stored, so carry the current look across --
   // the old behaviour, and a better starting point than an empty hunter
   const want = GENDER_STATE[g] || prev;
+  // the Type choice is part of a body's settings too, and it has to land BEFORE the lists
+  // are rebuilt since optionsFor filters on it
+  if (want.hunterType === 'b' || want.hunterType === 'g' || want.hunterType === 'all'){
+    hunterType = want.hunterType;
+    document.getElementById('htype').value = hunterType;
+  }
   rebuildSelects(document.getElementById('filter').value);   // names can differ per gender
   const fs = document.getElementById('faceStyle'), hs = document.getElementById('hairStyle');
   if (want.faceStyle !== undefined) fs.dataset.want = want.faceStyle;
