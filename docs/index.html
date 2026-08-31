@@ -723,7 +723,9 @@ function saveState(){
     const slots = {};
     SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
     localStorage.setItem(LS_KEY, JSON.stringify({
-      gender, slots, hunterType, pigmentIndex, pose: document.getElementById('pose').value,
+      gender, slots, hunterType, pigmentIndex,
+      byGender: Object.assign({}, GENDER_STATE, { [gender]: captureGender() }),
+      pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
       faceStyle: document.getElementById('faceStyle').value,
       hairStyle: document.getElementById('hairStyle').value,
@@ -1913,23 +1915,91 @@ document.getElementById('htype').onchange = e => {
 };
 
 // ---- gender -------------------------------------------------------------
+// Each gender keeps its own look. The face and hair lists are per-gender to begin with,
+// and plenty of armour ships for one body and not the other, so carrying one set of
+// choices across the switch loses work every time. Held here rather than in the slots
+// themselves so the ACTIVE gender is still the single source of truth for rendering.
+const GENDER_STATE = { m: null, f: null };
+if (SAVED && SAVED.byGender)
+  for (const g of ['m', 'f']) if (SAVED.byGender[g]) GENDER_STATE[g] = SAVED.byGender[g];
+function captureGender(){
+  const slots = {};
+  SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
+  return { slots,
+    faceStyle: document.getElementById('faceStyle').value,
+    hairStyle: document.getElementById('hairStyle').value,
+    face: document.getElementById('face').checked,
+    hair: document.getElementById('hair').checked,
+    body: document.getElementById('body').checked,
+    pose: document.getElementById('pose').value,
+    charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
+    slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
+                              document.getElementById('pg_'+sl).value]),
+    allPig: [document.getElementById('pgOn_all').checked,
+             document.getElementById('pg_all').value] };
+}
+function applyCharColorState(cc){
+  if (!cc) return;
+  for (const [id, part] of CHAR_PARTS){
+    const v = cc[part];
+    const sel = document.getElementById(id), rgb = document.getElementById(id + 'RGB');
+    if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)){
+      charColor[part] = v; sel.value = 'rgb'; rgb.value = v;
+    } else if (typeof v === 'number' && CHAR_COLORS[v]){
+      charColor[part] = v; sel.value = String(v);
+    } else {
+      charColor[part] = null; sel.value = 'none';
+    }
+  }
+  CHAR_SYNC.forEach(f => f());
+}
+
 async function setGender(g){
   if (g === gender) return;
+  GENDER_STATE[gender] = captureGender();       // remember what this body was wearing
+  const prev = captureGender();
   gender = g;
   for (const k of Object.keys(OPT_CACHE)) delete OPT_CACHE[k];
   document.getElementById('gM').classList.toggle('on', g === 'm');
   document.getElementById('gF').classList.toggle('on', g === 'f');
-  const keep = {};
-  for (const slot of SLOTS)
-    keep[slot] = document.querySelector('select[data-slot="' + slot + '"]').value;
+  // first time on this body there is nothing stored, so carry the current look across --
+  // the old behaviour, and a better starting point than an empty hunter
+  const want = GENDER_STATE[g] || prev;
   rebuildSelects(document.getElementById('filter').value);   // names can differ per gender
+  const fs = document.getElementById('faceStyle'), hs = document.getElementById('hairStyle');
+  if (want.faceStyle !== undefined) fs.dataset.want = want.faceStyle;
+  if (want.hairStyle !== undefined) hs.dataset.want = want.hairStyle;
+  // the toggles have to land BEFORE refreshChar -- that is what reads them
+  for (const k of ['face', 'hair', 'body'])
+    if (typeof want[k] === 'boolean') document.getElementById(k).checked = want[k];
+  if (typeof want.body === 'boolean') showBody = want.body;
+  applyCharColorState(want.charColor);
   await refreshChar();
   for (const slot of SLOTS){
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
-    const id = keep[slot];
-    const has = id !== 'none' && pieceOf(id, slot);
-    sel.value = has ? id : 'none';
-    await setSlot(slot, sel.value);
+    const id = tokenFor(slot, want.slots ? want.slots[slot] : 'none');
+    sel.value = id;
+    await setSlot(slot, id);
+  }
+  applyCharColors();
+  if (Array.isArray(want.slotPig)){
+    SLOTS.forEach((sl, i) => {
+      const v = want.slotPig[i];
+      if (!v) return;
+      document.getElementById('pgOn_'+sl).checked = !!v[0];
+      if (typeof v[1] === 'string') document.getElementById('pg_'+sl).value = v[1];
+    });
+    if (Array.isArray(want.allPig)){
+      document.getElementById('pgOn_all').checked = !!want.allPig[0];
+      if (typeof want.allPig[1] === 'string')
+        document.getElementById('pg_all').value = want.allPig[1];
+    }
+    readSlotPigments();     // repaints the materials and the hex labels
+  }
+  if (want.pose && want.pose !== document.getElementById('pose').value){
+    const ps = document.getElementById('pose');
+    ps.value = want.pose;
+    await ps.onchange({ target: ps });
   }
   frameAll();
 }
