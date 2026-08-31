@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MHGU Armor Viewer</title>
+<link rel="icon" href="assets/MH4G-Binoculars_Icon_White.png?v=1">
 <style>
 /* MHFU game font, as the sibling MHGU apps use */
 @font-face{ font-family:'MHFU'; src:url('fonts/mhfu_font.ttf') format('truetype'); font-display:swap; }
@@ -15,11 +16,13 @@
   --stage:#0e1013;
   --line:#ffffff1f; --card:#ffffff0d;
 }
-*{box-sizing:border-box;scrollbar-color:var(--accent) var(--bg2);scrollbar-width:thin}
-::-webkit-scrollbar{width:6px;height:6px}
+*{box-sizing:border-box;scrollbar-color:var(--accent) var(--bg2);scrollbar-width:auto}
+::-webkit-scrollbar{width:14px;height:14px}
 ::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--accent-hover)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:7px;
+  border:3px solid var(--bg2);background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-hover);background-clip:padding-box;
+  border:3px solid var(--bg2)}
 input,select,button,textarea{font-family:inherit}
 html,body{margin:0;height:100%;overflow:hidden}
 body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);
@@ -226,6 +229,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <button class="panel-head">Equipment <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <p class="hint">Mix pieces from any sets</p>
+          <div class="field"><label for="htype">Type</label><select id="htype">
+            <option value="all">Both</option>
+            <option value="b">Blademaster</option>
+            <option value="g">Gunner</option></select></div>
           <div class="field"><input type="text" id="filter" placeholder="filter by name&hellip;"></div>
           <div class="field"><label for="s_helm">Head</label><select id="s_helm" data-slot="helm"></select></div>
           <div class="field"><label for="s_body">Chest</label><select id="s_body" data-slot="body"></select></div>
@@ -252,6 +259,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
               <option value="t-pose">T-pose</option>
             </select>
           </div>
+        </div>
+      </section>
+
+      <section class="panel" id="weaponPanel" data-open="false">
+        <button class="panel-head">Weapon <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div class="field"><label for="weapon">Weapon</label><select id="weapon"></select></div>
+          <div class="field"><label for="weaponPose">Stance</label><select id="weaponPose"></select></div>
         </div>
       </section>
 
@@ -708,7 +723,7 @@ function saveState(){
     const slots = {};
     SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
     localStorage.setItem(LS_KEY, JSON.stringify({
-      gender, slots, pigmentIndex, pose: document.getElementById('pose').value,
+      gender, slots, hunterType, pigmentIndex, pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
       faceStyle: document.getElementById('faceStyle').value,
       hairStyle: document.getElementById('hairStyle').value,
@@ -719,6 +734,7 @@ function saveState(){
       hair: document.getElementById('hair').checked,
       charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
       orbitLocked, spinStep, wireOn,
+      weapon: weaponSel.value, weaponPose: weaponPoseSel.value,
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
       slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
@@ -767,6 +783,10 @@ const MASK_VER = 2;
 // Off again. The material-colour view did its job -- it is what identified the _sym_
 // material as the dye region -- and the mask sliders are only a fallback now.
 const DEBUG_UI = false;
+// The weapon placement is not finished -- the mount joint the engine uses (player bone 13)
+// is in none of the game's data files, so the hand position is still approximate. Panel
+// stays in the DOM so its handlers keep resolving; only the UI is hidden.
+const WEAPON_UI = false;
 let pigment = null;          // null = the armor's own colors, untinted
 
 // The 18 Deviant pigments, named from Color_Special_1..18 in ResultMsg_eng.gmd.
@@ -1047,6 +1067,8 @@ function bonesByGid(root, joints){
 // by global id -- the same addressing the static poses use.
 const poseCache = new Map();
 let poseMixer = null, poseProxyBones = null, poseAction = null, poseAnchor = null;
+const POSE_PAUSE = 1.2;      // seconds held on the last frame before the pose repeats
+let poseLoopTimer = null;
 let poseGround = null;   // the Y the feet rest at, so a pose cannot sink or float
 let poseBounds = null;   // the union of the WHOLE loop, so the camera is set once
 let poseCenter = null;   // the body's own centre, averaged over the loop
@@ -1056,6 +1078,10 @@ const _v = new THREE.Vector3();
 async function playGamePose(idx){
   const entry = (manifest.poses || [])[idx];
   if (!entry) return;
+  return playPoseEntry(entry);
+}
+// a pose is just a (file, clip) pair -- lobby poses and weapon stances share this
+async function playPoseEntry(entry){
   let gltf = poseCache.get(entry.file);
   if (!gltf) {
     gltf = await loader.loadAsync(entry.file);
@@ -1099,7 +1125,25 @@ async function playGamePose(idx){
   });
 
   poseAction = poseMixer.clipAction(clip);
-  poseAction.setLoop(THREE.LoopRepeat).reset().play();
+  if (poseLoopTimer) { clearTimeout(poseLoopTimer); poseLoopTimer = null; }
+  // Weapon stances play once, HOLD on the last frame, then restart. Looping them straight
+  // through reads as a twitch -- most are under a second -- and now that every clip ships
+  // rather than only the _loop ones, the one-shots snapping back mid-swing is worse. The
+  // lobby poses are authored as held loops and keep looping cleanly.
+  if (/poses\/weapons\//.test(entry.file || '')) {
+    poseAction.setLoop(THREE.LoopOnce);
+    poseAction.clampWhenFinished = true;
+    poseMixer.addEventListener('finished', () => {
+      const mine = poseMixer;                     // a pose change swaps the mixer out
+      poseLoopTimer = setTimeout(() => {
+        poseLoopTimer = null;
+        if (poseMixer === mine && poseAction) poseAction.reset().play();
+      }, POSE_PAUSE * 1000);
+    });
+  } else {
+    poseAction.setLoop(THREE.LoopRepeat);
+  }
+  poseAction.reset().play();
 
   // Frame the ENTIRE loop, not the frame that happens to be showing. Framing at t=0 set
   // the camera from one instant of a moving animation, so anything the pose reached later
@@ -1155,6 +1199,7 @@ function anchorProxy(){
   scn.updateMatrixWorld(true);
 }
 function stopGamePose(){
+  if (poseLoopTimer) { clearTimeout(poseLoopTimer); poseLoopTimer = null; }
   if (poseAction) poseAction.stop();
   poseMixer = null; poseProxyBones = null; poseAction = null; poseAnchor = null;
   poseBounds = null; poseCenter = null; poseGround = null;
@@ -1339,6 +1384,218 @@ function faceHideSet(){
   return hide.size ? hide : null;
 }
 
+// A weapon carries its OWN 5-bone skeleton in weapon space, not player bone ids, so it
+// cannot share the player skeleton the way armour does. Instead it is parented to the
+// hunter's right hand (global bone 8) by copying that bone's world matrix each frame --
+// the same trick the pose proxy uses, and it works whatever piece supplies the arm.
+// The LEFT hand. Derived, not assumed: the greatsword's hand-tuned placement was inverted
+// and asked which player bone its origin had landed on -- gid 12 across stances 0/1/3 at
+// 0.101 / 0.097 / 0.073 m. The half-metre offset that tuning needed was simply the gap
+// between the two hands, i.e. the mount had been on the wrong one.
+// gid 12 is the hunter's RIGHT hand and gid 8 is the LEFT -- the opposite of what the
+// bone numbering suggests, and worth stating because it is easy to get backwards.
+// Established from the geometry, not the names: the eye mesh sits 0.121 m in +Z of the
+// head bone, so the hunter faces +Z; with +Y up, their right is therefore -X; and in
+// T-pose gid 12 is at x -0.700 while gid 8 is at x +0.693.
+const HAND_GID = 12;         // right hand: sword, greatsword, most weapons
+const HAND_GID_R = 8;        // left hand: shields, the second dagger, the bow
+// Correction between the weapon's own axes and the hand bone's. The motion lists animate
+// only the 19 player bones, so the engine attaches by a fixed convention and this is a
+// constant, not per-weapon.
+//
+// Derived from the rig, not by eye. In any two-handed stance the hunter's LEFT hand
+// (gid 12) sits further down the same grip as the right (gid 8), so the right-to-left
+// vector IS the grip axis -- and it lands on the hand bone's own local +Z at dot 0.994.
+// In weapon space the grip runs along -Z from the model origin (the greatsword's grip
+// spans z -0.689..+0.014 m while the blade runs out to +1.895), and the left hand falls
+// 0.461 m along it, comfortably inside that 0.70 m grip. Two independent facts agreeing:
+// the model ORIGIN is the right-hand mount, and weapon -Z must map to hand +Z.
+// What the rig CANNOT pin is the roll about that axis, or which end points where -- the
+// joint the engine really attaches to is player bone 13, and bone 13 is placed by nothing:
+// no model binds it across all 5,416, no motion animates it. So four orientations fit the
+// data equally and only the game settles it. Raven picked this one from the render.
+// No correction. The game parents the weapon's bone 0 straight to the joint, and bone 0
+// is at (0,0,0) in all 21 mods with an identity node in all 19 glbs -- so anything added
+// here is a fudge covering a mistake elsewhere, not part of how the game does it.
+let WEAPON_FIX = new THREE.Matrix4();
+// Slide along the weapon's own axes so the GRIP, not the model origin, lands in the hand.
+// +Z is the blade direction, so a positive shift moves the weapon UP along the handle.
+// Per weapon, because each class grips differently. pos is metres along the weapon's own
+// axes (+Z up the handle, -X away from the hunter); rot is degrees, Z being the roll about
+// the handle. A weapon with no entry falls back to the greatsword's, which is only ever a
+// starting point -- every class needs its own pass.
+// `hand` is the BONE ID, not a word -- gid 12 is the hunter's right hand, gid 8 the left,
+// and writing that as 'l'/'r' is precisely the naming that got inverted earlier.
+// Deliberately empty: which hand each class uses is game knowledge, and scoring it against
+// an invented objective (how close the weapon lands to the other hand) only looks like
+// measurement. Fill these in from the game, not from a heuristic.
+const WEAPON_PLACE = {
+};
+const WEAPON_PLACE_FALLBACK = { pos: [0, 0, 0], rot: [0, 0, 0] };
+function placementFor(key){ return WEAPON_PLACE[key] || WEAPON_PLACE_FALLBACK; }
+function mountGid(key){ const h = placementFor(key).hand; return h === 8 || h === 12 ? h : HAND_GID; }
+function placementMatrix(key){
+  const p = placementFor(key);
+  const e = new THREE.Euler(THREE.MathUtils.degToRad(p.rot[0]),
+                            THREE.MathUtils.degToRad(p.rot[1]),
+                            THREE.MathUtils.degToRad(p.rot[2]), 'XYZ');
+  return new THREE.Matrix4().makeTranslation(p.pos[0], p.pos[1], p.pos[2])
+           .multiply(new THREE.Matrix4().makeRotationFromEuler(e));
+}
+let WEAPON_GRIP = placementMatrix('w00');
+
+// Sheathed on the back, used whenever no weapon stance is picked.
+//
+// Be clear about the provenance: unlike the hand mount, this one is AUTHORED. Player-rig
+// bone 13 is the single id that nothing binds and nothing animates -- swept across all
+// 5,416 armour and character models' bone remap tables, and against w00.lmt's own track
+// table, which drives 0-12, 14-19 and the reference root and never touches it. That gap is
+// the shape of an attach point the engine drives in code, but with no model placing bone
+// 13 its transform is nowhere in romfs. (20-27 are per-piece chain bones -- 828 pieces use
+// 20, only 3 use 27 -- not a fixed mount, which also corrects an old note calling 20-22 the
+// sheathed-weapon bones.) So the numbers below are chosen to look right, not extracted.
+const SHEATH_GID = 2;                                   // chest; the mount rides the torso
+let WEAPON_SHEATH = (() => {
+  const f = new THREE.Vector3(1, -1, 0).normalize();           // 135 deg axis, flipped 180 about the weapon's X
+  const n = new THREE.Vector3(0, 0, 1);
+  const x = new THREE.Vector3().crossVectors(n, f);
+  return new THREE.Matrix4().makeBasis(x, n, f)
+           .setPosition(new THREE.Vector3(0.02, -0.02, -0.20));
+})();
+// no stance picked -> the weapon is stowed rather than held
+let weaponStowed = true;
+let weaponRoot = null, weaponOff = null, weaponKey = 'none';
+function weaponEntry(key){ return (manifest.weapons || []).find(w => w.key === key); }
+
+async function setWeapon(key){
+  if (weaponRoot) { scene.remove(weaponRoot); weaponRoot = null; }
+  if (weaponOff)  { scene.remove(weaponOff);  weaponOff  = null; }
+  weaponKey = key;
+  const e = weaponEntry(key);
+  if (!e) return;
+  await buildWeaponPart(key, e, false);
+  if (e.off) await buildWeaponPart(key, e.off, true);   // shield: SnS and Charge Blade
+}
+// one weapon piece -- the weapon itself, or the shield that rides the other hand
+async function buildWeaponPart(key, e, isOff){
+  const cacheKey = 'W' + key + (isOff ? '_off' : '');
+  let gltf = glbCache.get(cacheKey);
+  if (!gltf) { gltf = await loader.loadAsync(e.glb); glbCache.set(cacheKey, gltf); }
+  const root = skeletonClone(gltf.scene);
+  const jobs = [];
+  root.traverse(o => {
+    if (!(o.isMesh || o.isSkinnedMesh)) return;
+    const srcName = (o.material && o.material.name) || '';
+    if (meshGroupId(o) !== 0) { o.visible = false; return; }   // same proxy layer as armour
+    const mat = new THREE.MeshStandardMaterial({
+      roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
+      transparent:false, alphaTest: /^XfBA/.test(srcName) ? 0.5 : 0 });
+    mat.wireframe = wireOn;
+    mat.userData.noTint = true;          // weapons are not dyed
+    o.frustumCulled = false;
+    o.material = mat; allMats.push(mat);
+    applyTint(mat);
+    if (e.tex) jobs.push(getTexture(e.tex).then(t => { mat.map = t; mat.needsUpdate = true; }));
+    if (e.env && /env/i.test(srcName))
+      jobs.push(getTexture(e.env).then(t => {
+        mat.userData.u.uEnv.value = t;
+        mat.userData.u.uEnvAmt.value = envAmount;
+        mat.needsUpdate = true;
+      }));
+  });
+  await Promise.all(jobs);
+  // Keep the model's OWN root transform: MT Framework meshes are quantised, and the
+  // dequantisation scale lives in this node. Overwriting it with the hand matrix made the
+  // greatsword render at raw units -- taller than the hunter.
+  // The weapon rides the hunter's right hand. Measured from the models rather than
+  // guessed: gids 20-22 are NOT a weapon mount -- they sit at head height BEHIND the head
+  // (z -0.158 against the head's -0.058) in a descending chain, i.e. hair bones, which is
+  // why they appear on helm and hair pieces.
+  // So the weapon's own root bone is driven from the hand bone's world matrix, SCALE
+  // INCLUDED: that scale is the model's dequantisation, and dropping it in the decompose
+  // collapses the weapon to a sliver.
+  // "reference" is not an attachment marker either -- every armour model has one too.
+  // Drive the weapon's OWN root BONE, never the group that holds it. glTF says a skinned
+  // mesh node's transform is ignored, but three.js still multiplies it in and cancels it
+  // with bindMatrixInverse -- so moving a parent that contains BOTH the mesh nodes and the
+  // joint nodes applies the hand matrix TWICE. That double transform is what threw the
+  // weapon off the hand while every offline measurement said it was seated correctly.
+  let wskel = null;
+  root.traverse(o => { if (!wskel && o.isSkinnedMesh) wskel = o.skeleton; });
+  root.userData.bone = wskel ? weaponMountNode(wskel, root) : null;
+  root.userData.bind = new THREE.Matrix4();
+  root.userData.recenter = weaponRecenter(root);
+  scene.add(root);
+  if (isOff) weaponOff = root; else { WEAPON_GRIP = placementMatrix(key); weaponRoot = root; }
+  stepWeapon();
+}
+// The node every joint hangs from. Folding weapons -- bow, both bowguns, gunlance, switch
+// axe, hunting horn, insect glaive -- carry 2-4 bones for their moving parts, and those
+// bones are SIBLINGS under one shared parent, not a chain off bone 0. Driving bones[0]
+// therefore flew the main body to the hand and left every folding part stranded at bind,
+// which is what made the bow render as scattered pieces.
+function weaponMountNode(skel, stop){
+  const coversAll = n => skel.bones.every(b => { for (let p = b; p; p = p.parent) if (p === n) return true; return false; });
+  let node = skel.bones[0];
+  while (node.parent && node.parent !== stop && !coversAll(node)) node = node.parent;
+  return node;
+}
+
+// Bone-space bbox centre of the drawn geometry, as a matrix that moves it to the origin.
+// The stowed mount hangs the weapon off this, so every class centres on the back by itself.
+function weaponRecenter(root){
+  const mn = new THREE.Vector3( Infinity,  Infinity,  Infinity);
+  const mx = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  const v = new THREE.Vector3();
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !o.visible) return;
+    const pos = o.geometry.attributes.position, si = o.geometry.attributes.skinIndex;
+    const inv = o.skeleton.boneInverses;
+    for (let i = 0; i < pos.count; i++){
+      v.fromBufferAttribute(pos, i).applyMatrix4(inv[si ? si.getX(i) : 0]);
+      mn.min(v); mx.max(v);
+    }
+  });
+  if (!isFinite(mn.x)) return new THREE.Matrix4();
+  return new THREE.Matrix4().makeTranslation(
+    -(mn.x + mx.x) / 2, -(mn.y + mx.y) / 2, -(mn.z + mx.z) / 2);
+}
+
+// which player bone the weapon rides -- the hand when held, the chest when stowed
+function playerBone(gid){
+  for (const root of Object.values(mounted))
+    for (const b of gidBonesOf(root)) if (b.gid === gid) return b.node;
+  return null;
+}
+function handBone(){ return playerBone(mountGid(weaponKey)); }
+
+// place the weapon on the hand, every frame, so it follows any pose
+const _wm = new THREE.Matrix4(), _wq = new THREE.Quaternion(), _ws = new THREE.Vector3();
+function stepWeapon(){
+  if (weaponOff) stepWeaponPart(weaponOff, true);
+  if (weaponRoot) stepWeaponPart(weaponRoot, false);
+}
+function stepWeaponPart(part, isOff){
+  const b = part.userData.bone;
+  if (!b) return;
+  // the shield rides the hand the weapon does NOT
+  const gid = mountGid(weaponKey), other = gid === HAND_GID ? HAND_GID_R : HAND_GID;
+  const mount = playerBone(weaponStowed ? SHEATH_GID : (isOff ? other : gid));
+  if (!mount) return;
+  mount.updateWorldMatrix(true, false);
+  // the holding group stays at identity so the mesh nodes contribute nothing
+  b.matrixAutoUpdate = false; b.matrixWorldAutoUpdate = false;
+  if (weaponStowed)
+    // stowed, the weapon is centred on the back -- so a 1.06 m sword and a 3.94 m gunlance
+    // both sit sensibly off one mount, with no per-class numbers to author
+    b.matrix.multiplyMatrices(mount.matrixWorld, WEAPON_SHEATH)
+            .multiply(part.userData.recenter);
+  else
+    b.matrix.copy(mount.matrixWorld);      // bone 0 sits on the joint, nothing added
+  b.matrixWorld.copy(b.matrix);
+  b.children.forEach(c => c.updateMatrixWorld(true));
+}
+
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
 // it ships inside every armor body.arc, which is the mesh normally hidden. Showing
 // head + hair + body together is what makes an unarmored region look like a person
@@ -1442,9 +1699,10 @@ async function refreshChar(){
   applyCharColors();
 }
 
-async function setSlot(slot, setId){
+async function setSlot(slot, token){
   if (mounted[slot]) { scene.remove(mounted[slot]); delete mounted[slot]; }
-  if (setId !== 'none') {
+  const setId = modelOf(slot, token);
+  if (setId) {
     const g = await loadPiece(setId, slot);
     if (g) {
       scene.add(g); mounted[slot] = g;
@@ -1508,7 +1766,7 @@ function refresh(){
     'distinct sets : ' + distinct.size + '  (' + [...distinct].join(', ') + ')\n' +
     'combined bbox : ' + s.x.toFixed(3) + ' x ' + s.y.toFixed(3) + ' x ' + s.z.toFixed(3) + '\n' +
     SLOTS.map(sl => '  ' + sl.padEnd(5) + ' ' +
-      (sel[sl] === 'none' ? '—' : labelFor(sel[sl], sl))).join(String.fromCharCode(10));
+      (sel[sl] === 'none' ? '—' : labelOf(sl, sel[sl]))).join(String.fromCharCode(10));
   window.__loaded = objs.length;
 }
 
@@ -1522,17 +1780,86 @@ function labelFor(id, slot){
   return (e && e.name) ? e.name : id;
 }
 
+// The list is the SMITHY's, 1:1 -- `armorCreateA00..A04.acrd`, one file per slot, whose
+// row order is the order the game shows. So Jaggi Helm and Jaggi Helm S are two entries
+// even though both render model 003, because that is what a player sees in the forge.
+// (The old list was one row per MODEL with the ranks collapsed into "(Base/S/X)" -- fewer
+// rows, but nothing a player could match against the game.)
+// Non-forgeable armour -- event, collab, Criminal, Hylian -- is in no forge list at all,
+// so it follows in its own group rather than becoming unreachable.
+const SMITHY = manifest.smithy || {};
 function optionsFor(slot){
-  return (manifest.ids || [])
-    .filter(id => pieceOf(id, slot))
-    .map(id => {
-      const e = pieceOf(id, slot);
-      return { value: id, label: labelFor(id, slot),
-               rarity: e.rarity || 0, rarityMax: e.rarityMax || e.rarity || 0 };
-    })
-    // rarity 0 means no series carries one (62 pieces); sort those to the END
-    .sort((a, b) => (a.rarity || 99) - (b.rarity || 99) ||
-                    a.label.localeCompare(b.label, undefined, {numeric:true}));
+  const out = [], seen = new Set();
+  const forge = [];
+  for (const r of (SMITHY[slot] || [])){
+    if (!r.g.includes(gender) || !pieceOf(r.model, slot)) continue;
+    // "Uncraftable" means absent from the FORGE, not absent from the current view -- so
+    // seen is filled before the type filter, or picking Gunner would dump every
+    // Blademaster-only model into the uncraftable pile
+    seen.add(r.model);
+    // hunter_type 2 is Blademaster/Gunner -- the shared sets and the mask-type head
+    // pieces -- and those stay in the list whichever type is picked
+    if (hunterType !== 'all' && r.t !== 2 && r.t !== (hunterType === 'b' ? 0 : 1)) continue;
+    forge.push({ value: 's' + r.series, label: r.name, model: r.model,
+                 group: r.r ? 'Rarity ' + r.r : 'Unranked', rank: r.r || 99 });
+  }
+  // Pure forge order -- NOT sorted by rarity. The Smithy is rarity-ascending for the first
+  // ~1000 rows and then appends a block of collab and special gear (Varia Suit, Hero's,
+  // Lodestar, Rage, Hiryu, Criminal, Garo, Hylian) at lower rarities. Sorting by rarity
+  // scatters that block through the middle, where the game keeps it together at the end.
+  // The rarity labels still appear -- groups break wherever the rarity changes, giving 11
+  // clean runs plus the small tail ones, so a repeated "Rarity 7" late in the list is the
+  // special block and not a mistake.
+  out.push(...forge);
+  for (const id of (manifest.ids || [])){
+    if (seen.has(id) || !pieceOf(id, slot)) continue;
+    out.push({ value: 'u' + id, label: labelFor(id, slot), model: id, group: 'Uncraftable' });
+  }
+  return out;
+}
+// select values are tokens now (s<series> / u<model>) because two Smithy rows can share a
+// model -- a bare id could not tell Jaggi Helm from Jaggi Helm S on reload
+// restored before the lists are first built, so a saved choice is reflected from the start
+let hunterType = (SAVED && (SAVED.hunterType === 'b' || SAVED.hunterType === 'g'))
+               ? SAVED.hunterType : 'all';
+const OPT_CACHE = {};
+function optionsCached(slot){
+  const k = gender + hunterType + slot;
+  return OPT_CACHE[k] || (OPT_CACHE[k] = optionsFor(slot));
+}
+// the type filter is a VIEW, so resolution always runs against the unfiltered list --
+// otherwise picking Gunner would unequip the Blademaster armour already being worn
+function optionsAll(slot){
+  const save = hunterType; hunterType = 'all';
+  const o = optionsCached(slot); hunterType = save; return o;
+}
+function modelOf(slot, v){
+  if (!v || v === 'none') return null;
+  const o = optionsAll(slot).find(x => x.value === v);
+  if (o) return o.model;
+  return pieceOf(v, slot) ? v : null;        // legacy saves held a bare model id
+}
+// Resolve whatever a save happens to hold to a token in the CURRENT list. Three shapes
+// have existed: a bare model id (pre-Smithy), a 'u<model>' from a build where that model
+// was not yet in the forge list, and a live 's<series>'. Falling back to the model keeps
+// an old save from silently emptying a slot, which is what happened when the Gunner rows
+// moved 200-odd models out of Uncraftable.
+function tokenFor(slot, v){
+  if (!v || v === 'none') return 'none';
+  const opts = optionsAll(slot);
+  if (opts.some(o => o.value === v)) return v;
+  let model = /^[su]/.test(v) ? null : v;
+  if (v[0] === 'u') model = v.slice(1);
+  if (v[0] === 's'){
+    const row = (SMITHY[slot] || []).find(r => 's' + r.series === v);
+    if (row) model = row.model;
+  }
+  const m = model && opts.find(o => o.model === model);
+  return m ? m.value : 'none';
+}
+function labelOf(slot, v){
+  const o = optionsAll(slot).find(x => x.value === v);
+  return o ? o.label : v;
 }
 
 function rebuildSelects(filter){
@@ -1540,7 +1867,18 @@ function rebuildSelects(filter){
   for (const slot of SLOTS){
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
     const cur = sel.value;
-    let opts = optionsFor(slot);
+    let opts = optionsCached(slot);
+    // whatever is equipped stays listed even when the type filter would hide it
+    if (cur !== 'none' && !opts.some(o => o.value === cur)){
+      const all = optionsAll(slot), keep = all.find(o => o.value === cur);
+      // put it back where the forge list has it, so the order still reads as the game's
+      if (keep){
+        const at = all.indexOf(keep);
+        let i = 0;
+        while (i < opts.length && all.indexOf(opts[i]) < at) i++;
+        opts = opts.slice(0, i).concat([keep], opts.slice(i));
+      }
+    }
     if (f) opts = opts.filter(o => o.label.toLowerCase().includes(f) || o.value === cur);
     // Grouped by rarity. A model is shared by its rank variants and those have DIFFERENT
     // rarities (Leather R1 / Leather S R4 / Leather X R8) -- the same reason the labels
@@ -1550,12 +1888,11 @@ function rebuildSelects(filter){
     // suffix is the first thing cut -- it would show on short names and vanish on long.
     let html = '<option value="none">— none —</option>', group = null;
     for (const o of opts){
-      const r = o.rarity || 0;
-      if (r !== group){
+      if (o.group !== group){
         if (group !== null) html += '</optgroup>';
-        group = r;
-        html += '<optgroup label="' + (r ? 'Rarity ' + r : 'Unranked') + '">';
-      }
+        group = o.group;
+        html += '<optgroup label="' + group + '">';
+      }   // breaks on every rarity CHANGE, so the run structure survives
       html += '<option value="' + o.value + '">' + o.label + '</option>';
     }
     if (group !== null) html += '</optgroup>';
@@ -1569,11 +1906,17 @@ for (const slot of SLOTS) {
   sel.onchange = () => setSlot(slot, sel.value).then(() => { frameAll(); saveState(); });
 }
 document.getElementById('filter').oninput = e => rebuildSelects(e.target.value);
+document.getElementById('htype').onchange = e => {
+  hunterType = e.target.value;
+  rebuildSelects(document.getElementById('filter').value);
+  saveState();
+};
 
 // ---- gender -------------------------------------------------------------
 async function setGender(g){
   if (g === gender) return;
   gender = g;
+  for (const k of Object.keys(OPT_CACHE)) delete OPT_CACHE[k];
   document.getElementById('gM').classList.toggle('on', g === 'm');
   document.getElementById('gF').classList.toggle('on', g === 'f');
   const keep = {};
@@ -1590,6 +1933,7 @@ async function setGender(g){
   }
   frameAll();
 }
+document.getElementById('htype').value = hunterType;
 rebuildSelects('');
 document.getElementById(gender === 'f' ? 'gF' : 'gM').classList.add('on');
 document.getElementById('gM').onclick = () => setGender('m').then(saveState);
@@ -1623,6 +1967,7 @@ function choosePigment(rgb, el, idx){
   saveState();
 }
 if (!DEBUG_UI) document.getElementById('debugPanel').style.display = 'none';
+if (!WEAPON_UI) document.getElementById('weaponPanel').style.display = 'none';
 
 if (PIGMENT_ENABLED) {
   paintPigments();
@@ -1635,8 +1980,10 @@ if (PIGMENT_ENABLED) {
 async function apply(map){
   for (const slot of SLOTS) {
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
-    sel.value = map[slot];
-    await setSlot(slot, map[slot]);
+    // tokenFor migrates a bare model id -- the first-run outfit and any pre-Smithy save
+    const v = tokenFor(slot, map[slot]);
+    sel.value = v;
+    await setSlot(slot, v);
   }
   frameAll();
 }
@@ -1646,6 +1993,9 @@ const MIX = DEFAULT_SET.pieces;
 
 document.getElementById('pose').onchange = async e => {
   const v = e.target.value;
+  // picking a normal pose drops any stance, so the weapon returns to the back
+  const wps = document.getElementById('weaponPose');
+  if (wps) { wps.value = ''; weaponStowed = true; }
   if (v.startsWith('g:')) {
     await playGamePose(+v.slice(2));
   } else {
@@ -1784,6 +2134,7 @@ addEventListener('resize', fitRenderer);
 fitRenderer();
 renderer.setAnimationLoop(() => {
   stepGamePose();
+  stepWeapon();
   stepDeviant(performance.now()/1000);
   if (rainbowOn) applyCharColors(performance.now()/1000);
   controls.update();
@@ -1808,6 +2159,39 @@ if (!SAVED) {
   const fs = document.getElementById('faceStyle');
   if (fs) fs.dataset.want = String(DEFAULT_SET.faceStyle);
 }
+// ---- weapon + stance selectors --------------------------------------------
+const weaponSel = document.getElementById('weapon'), weaponPoseSel = document.getElementById('weaponPose');
+weaponSel.innerHTML = '<option value="none">— none —</option>' +
+  (manifest.weapons || []).map(w =>
+    '<option value="'+w.key+'">'+w.class+' — '+w.name+'</option>').join('');
+function buildStanceList(){
+  const e = weaponEntry(weaponSel.value);
+  const list = (e && e.poses) || [];
+  weaponPoseSel.innerHTML = '<option value="">— none —</option>' +
+    list.map((p,i) => '<option value="'+i+'" title="'+p.clip+'">'+p.label+'</option>').join('');
+  weaponPoseSel.disabled = !list.length;
+}
+weaponSel.onchange = async () => {
+  await setWeapon(weaponSel.value);
+  buildStanceList();
+  weaponPoseSel.value = '';
+  weaponStowed = true;
+  stepWeapon();
+  saveState();
+};
+weaponPoseSel.onchange = async () => {
+  const e = weaponEntry(weaponSel.value);
+  const p = e && e.poses && e.poses[+weaponPoseSel.value];
+  weaponStowed = !p;                    // no stance -> the weapon goes on the back
+  if (p) {
+    document.getElementById('pose').value = 'relaxed';   // a stance replaces the lobby pose
+    await playPoseEntry(p);
+  } else {
+    stopGamePose(); repose();
+  }
+  frameAll(); saveState();
+};
+
 buildPoseList();
 // ---- one RGB pigment per armour piece --------------------------------------
 const SLOT_LABEL = { helm:'Head', body:'Chest', arm:'Arms', wst:'Waist', leg:'Legs' };
@@ -1952,6 +2336,9 @@ if (SAVED && SAVED.deviant && PIGMENT_ENABLED) {
 }
 paintDeviant();
 buildColorLists();   // options must exist before a saved value can be assigned
+if (SAVED && SAVED.weapon && weaponEntry(SAVED.weapon)) weaponSel.value = SAVED.weapon;
+buildStanceList();
+if (SAVED && SAVED.weaponPose) weaponPoseSel.value = SAVED.weaponPose;
 if (!SAVED && DEFAULT_SET.hairColor) {
   charColor.hair = DEFAULT_SET.hairColor;
   const sel = document.getElementById('hairColor'), rgb = document.getElementById('hairColorRGB');
@@ -2028,18 +2415,96 @@ if (SAVED && SAVED.slots) {
   startMap = {};
   for (const slot of SLOTS) {
     const id = SAVED.slots[slot];
-    startMap[slot] = (id && id !== 'none' && pieceOf(id, slot)) ? id : 'none';
+    startMap[slot] = tokenFor(slot, id);
   }
 }
 await apply(startMap);
+if (weaponSel.value !== 'none') await setWeapon(weaponSel.value);
 {
+  const e = weaponEntry(weaponSel.value);
+  const wp = e && e.poses && e.poses[+weaponPoseSel.value];
   const pv = document.getElementById('pose').value;
-  if (pv.startsWith('g:')) await playGamePose(+pv.slice(2));
+  weaponStowed = !wp;
+  if (wp) await playPoseEntry(wp);
+  else if (pv.startsWith('g:')) await playGamePose(+pv.slice(2));
+  stepWeapon();
 }
 pushMask();
 restoring = false;      // from here on, user changes persist
 saveState();
+
+// ---- placement tool (?place=1) ---------------------------------------------
+// Every weapon's bone 0 sits at the origin, so the game mounts them all the same way --
+// but our hand bone is the gid-8 wrist, not the attach joint the engine really uses, and
+// the gap between them does not come out the same per class. So the six numbers below are
+// tuned by hand per weapon and baked into WEAPON_PLACE. Dev only; never shown to users.
+if (new URLSearchParams(location.search).has('place')) {
+  const AX = [['px','pos',0,'X',-1,1,0.005], ['py','pos',1,'Y',-1,1,0.005], ['pz','pos',2,'Z',-1,1,0.005],
+              ['rx','rot',0,'rot X',-180,180,0.5], ['ry','rot',1,'rot Y',-180,180,0.5], ['rz','rot',2,'rot Z',-180,180,0.5]];
+  const box = document.createElement('div');
+  box.style.cssText = 'position:absolute;right:10px;bottom:56px;z-index:9;width:230px;padding:10px;' +
+    'background:var(--bg2);border:1px solid var(--line);border-radius:6px;font-size:11px';
+  box.innerHTML = '<div style="margin-bottom:6px;color:var(--text-hint)">Placement — <b id="plName"></b></div>' +
+    AX.map(a => '<div class="row gap" style="align-items:center;margin:2px 0">' +
+      '<label style="width:38px">' + a[3] + '</label>' +
+      '<input type="range" id="pl_' + a[0] + '" min="' + a[4] + '" max="' + a[5] + '" step="' + a[6] + '" style="flex:1;min-width:0">' +
+      '<span id="plv_' + a[0] + '" style="width:44px;text-align:right"></span></div>').join('') +
+    '<div class="row gap" style="margin-top:8px"><button class="btn tiny" id="plCopy">Copy</button>' +
+    '<button class="btn tiny" id="plZero">Zero</button>' +
+    '<button class="btn tiny" id="plHand">Hand: L</button></div>' +
+    '<textarea id="plOut" readonly rows="2" style="width:100%;margin-top:6px;font-size:10px;' +
+    'background:var(--bg1);color:var(--text);border:1px solid var(--line);border-radius:4px"></textarea>';
+  viewport.appendChild(box);
+
+  const cur = () => {
+    const k = weaponSel.value;
+    if (!WEAPON_PLACE[k]) WEAPON_PLACE[k] = { pos: WEAPON_PLACE_FALLBACK.pos.slice(),
+                                              rot: WEAPON_PLACE_FALLBACK.rot.slice() };
+    return WEAPON_PLACE[k];
+  };
+  function line(){
+    const p = cur();
+    return '  ' + weaponSel.value + ': { pos: [' + p.pos.map(n => +n.toFixed(3)).join(', ') +
+           '], rot: [' + p.rot.map(n => +n.toFixed(1)).join(', ') +
+           '], hand: ' + mountGid(weaponSel.value) + ' },';
+  }
+  function paint(){
+    const p = cur();
+    document.getElementById('plName').textContent = weaponSel.value;
+    for (const a of AX){
+      document.getElementById('pl_' + a[0]).value = p[a[1]][a[2]];
+      document.getElementById('plv_' + a[0]).textContent = (+p[a[1]][a[2]]).toFixed(a[1] === 'pos' ? 3 : 1);
+    }
+    document.getElementById('plHand').textContent =
+      'Hand: ' + (mountGid(weaponSel.value) === 12 ? 'R (12)' : 'L (8)');
+    document.getElementById('plOut').value = line();
+  }
+  function push(){ WEAPON_GRIP = placementMatrix(weaponSel.value); stepWeapon(); paint(); }
+  for (const a of AX)
+    document.getElementById('pl_' + a[0]).oninput = e => { cur()[a[1]][a[2]] = +e.target.value; push(); };
+  document.getElementById('plZero').onclick = () => {
+    const h = cur().hand; WEAPON_PLACE[weaponSel.value] = { pos: [0,0,0], rot: [0,0,0], hand: h }; push();
+  };
+  document.getElementById('plHand').onclick = () => {
+    const p = cur(); p.hand = mountGid(weaponSel.value) === 12 ? 8 : 12; push();
+  };
+  document.getElementById('plCopy').onclick = async e => {
+    const t = line();
+    try { await navigator.clipboard.writeText(t); e.target.textContent = 'Copied'; }
+    catch { document.getElementById('plOut').select(); e.target.textContent = 'Select+copy'; }
+    setTimeout(() => { e.target.textContent = 'Copy'; }, 1400);
+  };
+  weaponSel.addEventListener('change', () => setTimeout(paint, 300));
+  paint();
+}
+
 window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
+  setWeaponFix: m => { WEAPON_FIX = m; stepWeapon(); },
+  setWeaponGrip: m => { WEAPON_GRIP = m; stepWeapon(); },
+  setWeaponSheath: m => { WEAPON_SHEATH = m; stepWeapon(); },
+  weaponRoot: () => weaponRoot,
+  weaponOff: () => weaponOff,
+  handBone,
   get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant };
 
 // Stage colour follows the theme. scene.background is opaque, so setting only the CSS on
@@ -2075,7 +2540,7 @@ function currentSet(){
   const pieces = {};
   for (const slot of SLOTS){
     const id = document.querySelector('select[data-slot="' + slot + '"]').value;
-    pieces[slot] = id === 'none' ? null : { id, name: labelFor(id, slot) };
+    pieces[slot] = id === 'none' ? null : { id, name: labelOf(slot, id) };
   }
   const styleLabel = k => {
     const sel = document.getElementById(k);
@@ -2232,7 +2697,7 @@ async function loadSet(text, btn){
       for (const slot of SLOTS){
         const p = d.pieces[slot];
         const id = p && (typeof p === 'string' ? p : p.id);
-        map[slot] = (id && pieceOf(id, slot)) ? id : 'none';
+        map[slot] = tokenFor(slot, id);
       }
       await refreshChar();
       await apply(map);
