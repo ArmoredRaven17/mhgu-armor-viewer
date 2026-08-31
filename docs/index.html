@@ -709,12 +709,23 @@ function saveState(){
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
       slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
-                               document.getElementById('pg_'+sl).value])
+                               document.getElementById('pg_'+sl).value]),
+      allPig: [document.getElementById('pgOn_all').checked,
+               document.getElementById('pg_all').value]
     }));
   } catch(e){ /* private window, blocked storage - not worth failing over */ }
 }
 const SAVED = loadState();
-let gender = (SAVED && SAVED.gender === 'f') ? 'f' : 'm';
+// The set shown on a first visit -- Raven's pick, a fashion set rather than a
+// mix of test pieces. Mirrors Default.json exactly.
+const DEFAULT_SET = {
+  gender: "f",
+  pieces: {"helm": "197", "body": "293", "arm": "663", "wst": "226", "leg": "644"},
+  hairStyle: 24, faceStyle: 0, hairColor: "#707156",
+  pose: "g:53"
+};
+let gender = SAVED && (SAVED.gender === 'f' || SAVED.gender === 'm')
+             ? SAVED.gender : DEFAULT_SET.gender;
 let pigmentIndex = null;
 let showBody = true;     // the hunter's body, textured with the skin map
 let useDefaults = false; // apply each piece's OWN authored pigment instead of one global color
@@ -1618,7 +1629,7 @@ async function apply(map){
 }
 
 // first-run outfit when there is nothing saved yet
-const MIX = { helm:'702', body:'400', arm:'550', wst:'100', leg:'001' };
+const MIX = DEFAULT_SET.pieces;
 
 document.getElementById('pose').onchange = async e => {
   const v = e.target.value;
@@ -1777,10 +1788,23 @@ function buildPoseList(){
     list.map((p, i) => '<option value="g:' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('') +
     '</optgroup>');
 }
+// first visit: seed the hunter options from DEFAULT_SET before anything is restored
+if (!SAVED) {
+  const hs = document.getElementById('hairStyle');
+  if (hs) hs.dataset.want = String(DEFAULT_SET.hairStyle);
+  const fs = document.getElementById('faceStyle');
+  if (fs) fs.dataset.want = String(DEFAULT_SET.faceStyle);
+}
 buildPoseList();
 // ---- one RGB pigment per armour piece --------------------------------------
 const SLOT_LABEL = { helm:'Head', body:'Chest', arm:'Arms', wst:'Waist', leg:'Legs' };
-document.getElementById('slotPig').innerHTML = SLOTS.map(sl =>
+document.getElementById('slotPig').innerHTML =
+  '<div class="field"><label for="pg_all">All</label>' +
+  '<div class="row gap"><label class="chk" style="flex:1;min-width:0">' +
+  '<input type="checkbox" id="pgOn_all">dye</label>' +
+  '<input type="color" id="pg_all" class="rgb-input" title="Pigment for every piece"></div></div>' +
+  '<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">' +
+  SLOTS.map(sl =>
   '<div class="field"><label for="pg_'+sl+'">'+SLOT_LABEL[sl]+'</label>' +
   '<div class="row gap"><label class="chk" style="flex:1;min-width:0">' +
   '<input type="checkbox" id="pgOn_'+sl+'">dye</label>' +
@@ -1799,10 +1823,25 @@ function readSlotPigments(){
 for (const sl of SLOTS){
   const cb = document.getElementById('pgOn_'+sl), col = document.getElementById('pg_'+sl);
   col.value = '#c0c0c0';
-  cb.onchange  = () => { readSlotPigments(); saveState(); };
-  col.oninput  = () => { if (!cb.checked) cb.checked = true; readSlotPigments(); };
+  // touching one piece means the set is no longer uniform, so All stops claiming it is
+  cb.onchange  = () => { allCb.checked = false; readSlotPigments(); saveState(); };
+  col.oninput  = () => { if (!cb.checked) cb.checked = true; allCb.checked = false; readSlotPigments(); };
   col.onchange = saveState;
 }
+// "All" is a convenience that writes through to the five, rather than a sixth pigment --
+// so the per-piece rows always show the truth and a set stays one colour per slot.
+const allCb = document.getElementById('pgOn_all'), allCol = document.getElementById('pg_all');
+allCol.value = '#c0c0c0';
+function pushAll(){
+  for (const sl of SLOTS){
+    document.getElementById('pgOn_'+sl).checked = allCb.checked;
+    document.getElementById('pg_'+sl).value = allCol.value;
+  }
+  readSlotPigments();
+}
+allCb.onchange  = () => { pushAll(); saveState(); };
+allCol.oninput  = () => { if (!allCb.checked) allCb.checked = true; pushAll(); };
+allCol.onchange = saveState;
 
 // ---- Deviant pigment (hidden for now, kept wired) ---------------------------
 const devOn=document.getElementById('devOn'), devBox=document.getElementById('devBox'),
@@ -1848,6 +1887,10 @@ if (SAVED && Array.isArray(SAVED.slotPig)) {
     if (typeof v[1] === 'string') document.getElementById('pg_'+sl).value = v[1];
   });
 }
+if (SAVED && Array.isArray(SAVED.allPig)) {
+  document.getElementById('pgOn_all').checked = !!SAVED.allPig[0];
+  if (typeof SAVED.allPig[1] === 'string') document.getElementById('pg_all').value = SAVED.allPig[1];
+}
 readSlotPigments();
 if (SAVED && SAVED.deviant && PIGMENT_ENABLED) {
   const d=SAVED.deviant;
@@ -1859,6 +1902,16 @@ if (SAVED && SAVED.deviant && PIGMENT_ENABLED) {
 }
 paintDeviant();
 buildColorLists();   // options must exist before a saved value can be assigned
+if (!SAVED && DEFAULT_SET.hairColor) {
+  charColor.hair = DEFAULT_SET.hairColor;
+  const sel = document.getElementById('hairColor'), rgb = document.getElementById('hairColorRGB');
+  sel.value = 'rgb'; rgb.value = DEFAULT_SET.hairColor;
+  CHAR_SYNC.forEach(f => f());
+}
+if (!SAVED && DEFAULT_SET.pose) {
+  const ps = document.getElementById('pose');
+  if ([...ps.options].some(o => o.value === DEFAULT_SET.pose)) ps.value = DEFAULT_SET.pose;
+}
 if (SAVED && typeof SAVED.orbitLocked === 'boolean') orbitLocked = SAVED.orbitLocked;
 paintOrbitLock();
 if (SAVED && SAVED.spinStep > 0 && SAVED.spinStep < SPIN_STEPS.length) { spinStep = SAVED.spinStep; paintSpin(); }
