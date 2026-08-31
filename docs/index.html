@@ -114,8 +114,10 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
   background-size:auto 100%;background-position:left center;background-repeat:repeat;
 }
 .panel-head:hover{background-color:#ffffff0d}
-.chev{transition:transform .15s;font-size:14px;font-weight:700;color:var(--accent)}
-.panel[data-open="true"] .chev{transform:rotate(180deg)}
+/* The panel chevrons are hidden -- the accordion only ever has one panel open, so the
+   open one is obvious from the panel body and the arrows were just noise. The spans stay
+   in the markup so the heads keep their layout. */
+.chev{display:none}
 .panel-body{display:none;padding:8px 12px 12px;flex-direction:column;gap:6px;
   background-image:
     linear-gradient(color-mix(in srgb,var(--bg1) 60%,transparent),color-mix(in srgb,var(--bg1) 60%,transparent)),
@@ -2036,9 +2038,16 @@ function currentSet(){
     if (v === null || v === undefined) return null;
     return typeof v === 'string' ? v : CHAR_COLORS[v][0];   // '#rrggbb' or the game's name
   };
+  // Only the five per-slot pigments are written -- "All" is a write-through control, so
+  // the slots already carry its effect and storing it too could contradict them.
+  const pigment = {};
+  for (const slot of SLOTS){
+    pigment[slot] = document.getElementById('pgOn_' + slot).checked
+      ? document.getElementById('pg_' + slot).value : null;
+  }
   return {
-    app: 'MHGU Armor Viewer', version: 1,
-    gender, pieces,
+    app: 'MHGU Armor Viewer', version: 2,
+    gender, pieces, pigment,
     hunter: {
       face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
       hair: document.getElementById('hair').checked ? styleLabel('hairStyle') : null,
@@ -2154,6 +2163,22 @@ async function loadSet(text, btn){
       } else if (typeof d.pose === 'string' && d.pose.startsWith('g:') &&
                  [...psel.options].some(o => o.value === d.pose)) {
         psel.value = d.pose; await playGamePose(+d.pose.slice(2));
+      }
+      // pigment is absent from version 1 files -- leave the current colours alone then
+      if (d.pigment){
+        for (const slot of SLOTS){
+          const hex = d.pigment[slot];
+          const on = typeof hex === 'string' && /^#[0-9a-f]{6}$/i.test(hex);
+          document.getElementById('pgOn_' + slot).checked = on;
+          if (on) document.getElementById('pg_' + slot).value = hex;
+        }
+        // re-check "All" only when the set really is one colour throughout
+        const vals = SLOTS.map(sl => d.pigment[sl]);
+        const uniform = vals.every(v => typeof v === 'string' && v === vals[0]);
+        const allCbEl = document.getElementById('pgOn_all');
+        allCbEl.checked = uniform;
+        if (uniform) document.getElementById('pg_all').value = vals[0];
+        readSlotPigments();
       }
       const map = {};
       for (const slot of SLOTS){
