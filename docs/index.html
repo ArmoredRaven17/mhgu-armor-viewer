@@ -316,6 +316,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="hairColor">Hair Color</label><div class="row gap"><select id="hairColor"></select><input type="color" id="hairColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
           <label class="chk"><input type="checkbox" id="body" checked>Body</label>
           <div class="field"><label for="skinColor">Skin Tone</label><div class="row gap"><select id="skinColor"></select><input type="color" id="skinColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="clothing">Clothing</label><select id="clothing"></select></div>
+          <div id="clothPig"></div>
           <div class="field"><label for="pose">Pose</label>
             <select id="pose">
               <option value="relaxed" selected>Relaxed</option>
@@ -888,6 +890,7 @@ function saveState(){
       byGender: Object.assign({}, GENDER_STATE, { [gender]: captureGender() }),
       pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
+      clothing: document.getElementById('clothing').value,
       faceStyle: document.getElementById('faceStyle').value,
       hairStyle: document.getElementById('hairStyle').value,
       mask: ['sat0','sat1','val0'].map(i=>document.getElementById(i).value),
@@ -1140,6 +1143,9 @@ const loader = new GLTFLoader(), texLoader = new THREE.TextureLoader();
 const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 const texCache = new Map(), glbCache = new Map();
 const mounted = {}, allMats = [];
+// clothing is mounted separately from armor: it fills only the slots armor leaves empty,
+// so it cannot live in `mounted` without the two fighting over the same keys
+const clothMounted = {};
 // pigment applies to ARMOUR only -- never the hunter's face or hair
 const armorMats = [];
 
@@ -1384,7 +1390,9 @@ function stepGamePose(){
   // local copies those pieces keep their missing ancestors at bind, so the helm hangs
   // where the head would be in T-pose while the body bends away underneath -- which is
   // the "flying off, arms in wrong places" symptom.
-  for (const root of Object.values(mounted).concat(Object.values(charMounted))){
+  for (const root of Object.values(mounted)
+                      .concat(Object.values(charMounted))
+                      .concat(Object.values(clothMounted))){
     for (const { gid, node } of gidBonesOf(root)){
       const src = poseProxyBones.get(gid);
       if (!src || !node.parent) continue;
@@ -1417,6 +1425,7 @@ function poseObject(root, joints){
 function repose(){
   for (const g of Object.values(mounted)) poseObject(g, g.userData.joints);
   for (const g of Object.values(charMounted)) poseObject(g, g.userData.joints);
+  for (const g of Object.values(clothMounted)) poseObject(g, g.userData.joints);
 }
 
 // MHGU splits a model into mesh GROUPS. three.js strips the brackets, so glTF
@@ -1766,7 +1775,7 @@ function weaponRecenter(root){
 
 // which player bone the weapon rides -- the hand when held, the chest when stowed
 function playerBone(gid){
-  for (const root of Object.values(mounted))
+  for (const root of Object.values(mounted).concat(Object.values(clothMounted)))
     for (const b of gidBonesOf(root)) if (b.gid === gid) return b.node;
   return null;
 }
@@ -1937,9 +1946,67 @@ async function setSlot(slot, token){
     await setChar('face', document.getElementById('face').checked);
     if (seq !== slotSeq[slot]) return;
   }
+  await setClothingSlot(slot);   // clothing shows only where this slot has no armor
   applyCharColors();
   refresh();
 }
+
+// ---- default clothing -------------------------------------------------------
+// What the hunter wears with nothing equipped. Seven models, both genders, and they are
+// identifiable from the data rather than by eye: each ships ONLY body.arc / arm.arc /
+// leg.arc where every one of the 565 real armor sets ships all five, none appears in the
+// Smithy forge tables, and none carries a name in the game's series name table. Torso,
+// arms and legs is exactly what undergarments cover and exactly the geometry that still
+// has to render when no armor is on. The game's own "Clothing Color" option in
+// CharMakeMsg sits beside Skin Tone / Eye Color / Hair Color, which is what these are for.
+//
+// Labelled "Type N" in file order -- the same convention the face and hair lists use, and
+// the game's own `Type %d` string. They have no real names to use.
+const CLOTHING = ['060', '061', '062', '063', '070', '071', '689'];
+const CLOTH_SLOTS = ['body', 'arm', 'leg'];
+const clothSel = document.getElementById('clothing');
+clothSel.innerHTML = '<option value="">&mdash; none &mdash;</option>' +
+  CLOTHING.map((id, i) => '<option value="' + id + '">Type ' + (i + 1) + '</option>').join('');
+const clothSeq = { body:0, arm:0, leg:0 };
+function clearCloth(slot){
+  for (const o of scene.children.slice())
+    if (o.userData && o.userData.clothSlot === slot) scene.remove(o);
+  delete clothMounted[slot];
+}
+// Clothing is loaded through loadPiece like any armor piece, which is what makes it
+// pigmentable AND posable for free: it picks up the `_sym_` dye region and its joint table
+// from the same path armor uses. Two changes on top.
+//
+// The pigment KEY is rewritten. loadPiece stamps each material with its armor slot, and
+// the clothing is retagged to a single 'cloth' key -- in game the outfit takes ONE colour
+// across every part it covers, so body, arms and legs must not read three pigment rows.
+//
+// And it goes in `clothMounted`, which repose() and the game-pose driver walk alongside
+// `mounted` and `charMounted`, so the outfit follows a pose like everything else.
+async function setClothingSlot(slot){
+  if (CLOTH_SLOTS.indexOf(slot) < 0) return;
+  const seq = ++clothSeq[slot];
+  clearCloth(slot);
+  const id = clothSel.value;
+  // The clothing is what Chakra renders, so it appears on a Chakra slot and nowhere else.
+  // `— none —` genuinely means nothing, which is what keeps the two choices distinct.
+  if (!id || !isChakra(slot)) return;
+  const g = await loadPiece(id, slot);
+  if (seq !== clothSeq[slot] || !g) return;
+  clearCloth(slot);
+  g.userData.clothSlot = slot;
+  g.traverse(o => { if (o.isMesh && o.material) o.material.userData.slot = 'cloth'; });
+  scene.add(g);
+  clothMounted[slot] = g;
+  poseObject(g, g.userData.joints);      // land in the current pose, not bind
+  applyCharColors();
+}
+async function setClothing(){
+  for (const slot of CLOTH_SLOTS) await setClothingSlot(slot);
+  readSlotPigments();      // the new materials need the current pigments applied
+  refresh();
+}
+clothSel.onchange = () => setClothing().then(saveState);
 
 function frameAll(){
   const objs = Object.values(mounted);
@@ -2035,6 +2102,9 @@ function optionsFor(slot){
   out.push(...forge);
   for (const id of (manifest.ids || [])){
     if (seen.has(id) || !pieceOf(id, slot)) continue;
+    // the default clothing is not armor -- it has its own control in the Hunter panel,
+    // and it is unnamed, so leaving it here would list bare model ids under Uncraftable
+    if (CLOTHING.indexOf(id) >= 0) continue;
     out.push({ value: 'u' + id, label: labelFor(id, slot), model: id, group: 'Uncraftable' });
   }
   return out;
@@ -2055,8 +2125,20 @@ function optionsAll(slot){
   const save = hunterType; hunterType = 'all';
   const o = optionsCached(slot); hunterType = save; return o;
 }
+// Chakra is series 512 with MODEL ID 0 -- it has no armor geometry at all, which is why
+// the game falls through to the default clothing when you wear it. So it is offered as a
+// real choice in every slot, and picking it mounts the clothing for that slot. Its five
+// names come from the game's own series table, in slot order.
+// `— none —` stays, and means exactly that: nothing on this slot.
+const CHAKRA = 'chakra';
+const CHAKRA_LABEL = { helm:'Chakra Earring', body:'Chakra Necklace', arm:'Chakra Bracelet',
+                       wst:'Chakra Waistlet', leg:'Chakra Anklet' };
+function isChakra(slot){
+  const sel = document.querySelector('select[data-slot="' + slot + '"]');
+  return !!sel && sel.value === CHAKRA;
+}
 function modelOf(slot, v){
-  if (!v || v === 'none') return null;
+  if (!v || v === 'none' || v === CHAKRA) return null;   // Chakra has no mesh of its own
   const o = optionsAll(slot).find(x => x.value === v);
   if (o) return o.model;
   return pieceOf(v, slot) ? v : null;        // legacy saves held a bare model id
@@ -2068,6 +2150,7 @@ function modelOf(slot, v){
 // moved 200-odd models out of Uncraftable.
 function tokenFor(slot, v){
   if (!v || v === 'none') return 'none';
+  if (v === CHAKRA) return CHAKRA;
   const opts = optionsAll(slot);
   if (opts.some(o => o.value === v)) return v;
   let model = /^[su]/.test(v) ? null : v;
@@ -2080,6 +2163,7 @@ function tokenFor(slot, v){
   return m ? m.value : 'none';
 }
 function labelOf(slot, v){
+  if (v === CHAKRA) return CHAKRA_LABEL[slot];
   const o = optionsAll(slot).find(x => x.value === v);
   return o ? o.label : v;
 }
@@ -2108,7 +2192,8 @@ function rebuildSelects(filter){
     // The span is in the manifest as rarityMax but is deliberately NOT appended to the
     // option: these names run past 60 chars and the select ellipsises at 165px, so a
     // suffix is the first thing cut -- it would show on short names and vanish on long.
-    let html = '<option value="none">— none —</option>', group = null;
+    let html = '<option value="none">— none —</option>' +
+               '<option value="' + CHAKRA + '">' + CHAKRA_LABEL[slot] + '</option>', group = null;
     for (const o of opts){
       if (o.group !== group){
         if (group !== null) html += '</optgroup>';
@@ -2151,6 +2236,7 @@ function captureGender(){
     face: document.getElementById('face').checked,
     hair: document.getElementById('hair').checked,
     body: document.getElementById('body').checked,
+    clothing: document.getElementById('clothing').value,
     pose: document.getElementById('pose').value,
     charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
     slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
@@ -2199,6 +2285,9 @@ async function setGender(g){
   for (const k of ['face', 'hair', 'body'])
     if (typeof want[k] === 'boolean') document.getElementById(k).checked = want[k];
   if (typeof want.body === 'boolean') showBody = want.body;
+  // must land before the slot loop: setSlot mounts or drops the clothing for its slot,
+  // and it reads this select to know which outfit
+  if (want.clothing !== undefined) document.getElementById('clothing').value = want.clothing;
   applyCharColorState(want.charColor);
   await refreshChar();
   for (const slot of SLOTS){
@@ -2503,10 +2592,18 @@ document.getElementById('slotPig').innerHTML =
   pigRow('all', 'All', 'Pigment for every piece') +
   '<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">' +
   SLOTS.map(sl => pigRow(sl, SLOT_LABEL[sl], 'Pigment for ' + SLOT_LABEL[sl])).join('');
+// The clothing takes ONE colour across every part it covers, so it gets a single row of
+// its own rather than being driven by the five armor slots. It lives beside the Clothing
+// select in the Hunter panel because that is where the game puts it -- "Clothing Color"
+// sits with Skin Tone / Eye Color / Hair Color in CharMakeMsg.
+document.getElementById('clothPig').innerHTML =
+  pigRow('cloth', 'Clothing Color', 'Pigment for the clothing');
+// every pigment row, including the ones outside the Pigment panel
+const PIG_ROWS = SLOTS.concat(['all', 'cloth']);
 
 // the hex label doubles as a copy button
 function paintHexLabels(){
-  for (const id of SLOTS.concat(['all'])){
+  for (const id of PIG_ROWS){
     const b = document.getElementById('pgHex_'+id);
     if (b && b.dataset.busy !== '1' && document.activeElement !== b)
       b.value = document.getElementById('pg_'+id).value;
@@ -2515,7 +2612,7 @@ function paintHexLabels(){
 // The hex field is the only place a value can be TYPED -- it accepts nothing but a hex
 // triple. The swatch beside it still opens the platform picker, which cannot be limited
 // to hex, so this is the hex-only route in and out.
-for (const id of SLOTS.concat(['all'])){
+for (const id of PIG_ROWS){
   const f = document.getElementById('pgHex_'+id);
   const col = document.getElementById('pg_'+id);
   // one click selects the whole value, ready to copy
@@ -2531,7 +2628,9 @@ for (const id of SLOTS.concat(['all'])){
     col.value = v;
     const cb = document.getElementById('pgOn_'+id);
     if (!cb.checked) cb.checked = true;
-    if (id === 'all') pushAll(); else { allCb.checked = false; readSlotPigments(); }
+    if (id === 'all') pushAll();
+    else if (id === 'cloth') readSlotPigments();      // its own thing; All does not speak for it
+    else { allCb.checked = false; readSlotPigments(); }
     paintHexLabels();
     saveState();
   }
@@ -2539,7 +2638,7 @@ for (const id of SLOTS.concat(['all'])){
   f.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); f.blur(); } };
 }
 function readSlotPigments(){
-  for (const sl of SLOTS){
+  for (const sl of SLOTS.concat(['cloth'])){
     const on = document.getElementById('pgOn_'+sl).checked;
     const hex = document.getElementById('pg_'+sl).value;
     if (!on) { slotPigment[sl] = null; continue; }
@@ -2558,6 +2657,13 @@ for (const sl of SLOTS){
   // touching one piece means the set is no longer uniform, so All stops claiming it is
   cb.onchange  = () => { allCb.checked = false; readSlotPigments(); saveState(); };
   col.oninput  = () => { if (!cb.checked) cb.checked = true; allCb.checked = false; readSlotPigments(); };
+  col.onchange = saveState;
+}
+{
+  const cb = document.getElementById('pgOn_cloth'), col = document.getElementById('pg_cloth');
+  col.value = PIG_NONE;
+  cb.onchange  = () => { readSlotPigments(); saveState(); };
+  col.oninput  = () => { if (!cb.checked) cb.checked = true; readSlotPigments(); };
   col.onchange = saveState;
 }
 // "All" is a convenience that writes through to the five, rather than a sixth pigment --
@@ -2633,22 +2739,23 @@ function defaultPigHex(slot){
 // which writes one colour into all five and would stamp All's colour over every piece.
 document.getElementById('pigDefault').onclick = () => {
   for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
-    const hex = defaultPigHex(sl);
+    // the clothing belongs to no armor series, so it has no mSymbolCol to restore
+    const hex = sl === 'cloth' ? null : defaultPigHex(sl);
     const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
     cb.checked = !!hex;
     col.value = hex || PIG_NONE;
   }
   // the five are now each on their own default, so All no longer speaks for them
-  allCb.checked = false;
+  if (pigTarget !== 'cloth') allCb.checked = false;
   if (pigTarget === 'all') allCol.value = PIG_NONE;
   readSlotPigments(); paintHexLabels(); saveState();
   closePig();
 };
 document.getElementById('pigClose').onclick = closePig;
 pigModal.onclick = e => { if (e.target === pigModal) closePig(); };
-for (const id of SLOTS.concat(['all']))
-  document.getElementById('pgPal_' + id).onclick =
-    () => openPig(id, id === 'all' ? 'All' : SLOT_LABEL[id]);
+const PIG_ROW_LABEL = Object.assign({ all: 'All', cloth: 'Clothing Color' }, SLOT_LABEL);
+for (const id of PIG_ROWS)
+  document.getElementById('pgPal_' + id).onclick = () => openPig(id, PIG_ROW_LABEL[id]);
 
 // ---- Deviant pigment (hidden for now, kept wired) ---------------------------
 const devOn=document.getElementById('devOn'), devBox=document.getElementById('devBox'),
@@ -2775,6 +2882,8 @@ if (SAVED) {
     document.getElementById('body').checked = SAVED.body;
     showBody = SAVED.body;
   }
+  // set before the initial apply(), whose setSlot calls mount the clothing per slot
+  if (typeof SAVED.clothing === 'string') document.getElementById('clothing').value = SAVED.clothing;
   if (PIGMENT_ENABLED && SAVED.pigmentIndex !== null && SAVED.pigmentIndex !== undefined) {
     const hit = PIGMENTS.find(x => x.i === SAVED.pigmentIndex);
     if (hit) choosePigment(hit.rgb, pigBox.children[SAVED.pigmentIndex + 1], hit.i);
@@ -2943,6 +3052,9 @@ function currentSet(){
       body: document.getElementById('body').checked,
       faceStyle: +document.getElementById('faceStyle').value,
       hairStyle: +document.getElementById('hairStyle').value,
+      // the label, like the styles above, so the file stays readable and a reordered
+      // CLOTHING list cannot silently shift which outfit a shared set means
+      clothing: clothSel.value ? clothSel.selectedOptions[0].textContent : null,
       skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
     },
     pose: document.getElementById('pose').value,
@@ -3035,6 +3147,12 @@ async function loadSet(text, btn){
       document.getElementById('face').checked = h.face !== null && h.face !== undefined ? true : !!h.face;
       document.getElementById('hair').checked = h.hair !== null && h.hair !== undefined ? true : !!h.hair;
       if (typeof h.body === 'boolean') { document.getElementById('body').checked = h.body; showBody = h.body; }
+      // matched by LABEL, so the file does not depend on CLOTHING's ordering
+      clothSel.value = '';
+      if (h.clothing){
+        const hit = [...clothSel.options].find(o => o.textContent === h.clothing);
+        if (hit) clothSel.value = hit.value;
+      }
       for (const [selId, part] of CHAR_PARTS){
         const v = h[selId];
         const sel = document.getElementById(selId), rgb = document.getElementById(selId + 'RGB');
