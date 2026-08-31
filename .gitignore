@@ -1,0 +1,5 @@
+# scratch / build leftovers
+*_probe.png
+*.tmp
+Thumbs.db
+.DS_Store

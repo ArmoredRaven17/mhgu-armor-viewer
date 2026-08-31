@@ -1,0 +1,2120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MHGU Armor Viewer</title>
+<style>
+/* MHFU game font, as the sibling MHGU apps use */
+@font-face{ font-family:'MHFU'; src:url('fonts/mhfu_font.ttf') format('truetype'); font-display:swap; }
+
+:root{
+  --bg:#3e3e3e; --bg1:#000000; --bg2:#333; --hover:#2f2f2f;
+  --accent:#7a7a7a; --accent-hover:#9a9a9a;
+  --text:#f3f3f3; --text-dim:#ffffff; --text-hint:#b9b9b9;
+  --stage:#0e1013;
+  --line:#ffffff1f; --card:#ffffff0d;
+}
+*{box-sizing:border-box;scrollbar-color:var(--accent) var(--bg2);scrollbar-width:thin}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-hover)}
+input,select,button,textarea{font-family:inherit}
+html,body{margin:0;height:100%;overflow:hidden}
+body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);
+     font-size:14px;user-select:none;-webkit-user-select:none}
+#app{display:flex;flex-direction:column;height:100vh}
+.hidden{display:none !important}
+
+/* Title bar */
+.titlebar{display:flex;align-items:center;gap:10px;padding:8px 14px}
+.titlebar-header{
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--accent) 90%,transparent),color-mix(in srgb,var(--accent) 90%,transparent)),
+    url('assets/titlebar-background.png');
+  background-size:auto 100%;background-position:left center;background-repeat:repeat;
+}
+.titlebar h1{font-size:15px;font-weight:600;margin:0;flex:1}
+.titlebar .btn.tiny{margin-right:6px;white-space:nowrap}
+.title-icon{width:32px;height:32px;object-fit:contain}
+.icon-btn{background:transparent;border:none;color:var(--text);font-size:18px;
+  cursor:pointer;padding:6px 9px;border-radius:6px;line-height:1}
+.icon-btn:hover{background:#ffffff1a}
+
+/* Layout */
+.layout{display:flex;flex:1;min-height:0}
+.sidebar{
+  width:300px;flex-shrink:0;padding:12px;overflow-y:scroll;scrollbar-gutter:stable;
+  display:flex;flex-direction:column;gap:8px;
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--accent) 90%,transparent),color-mix(in srgb,var(--accent) 90%,transparent)),
+    url('assets/sidebar-background-texture1.png');
+  background-size:auto 100%;background-position:left center;background-repeat:repeat;
+}
+/* The render area is the Weapon Tree's stage: --stage, the darkest shade in the set. It is
+   the one surface with no backing of its own — the model sits directly on it. */
+.content{flex:1;min-width:0;position:relative;background:var(--stage)}
+#viewport{position:absolute;inset:0}
+/* Floating toolbar over the render area, matching the Weapon Tree's #bar.
+   width:max-content is load-bearing: with left:50% the default shrink-to-fit only
+   counts the space from the centre to the right edge, so the bar would cap at half
+   the viewport and wrap into a stack while the left half sat empty. */
+#bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
+  width:max-content;max-width:calc(100% - 32px);
+  padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+  background-color:var(--bg2);
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--bg2) 84%,transparent),
+                    color-mix(in srgb,var(--bg2) 84%,transparent)),
+    url('assets/rockyTextureDark2.png');
+  background-repeat:repeat;background-size:auto,200px 200px;
+  box-shadow:0 10px 40px rgba(0,0,0,.5)}
+#bar > *{flex:0 0 auto}
+#bar button{white-space:nowrap}
+#bar .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+#bar .btn.on{border-color:var(--accent-hover);background:#ffffff26}
+#orbitLock{display:inline-flex;align-items:center;gap:6px}
+#orbitLock img{width:14px;height:14px;display:block}
+#viewport canvas{display:block;width:100%;height:100%}
+
+/* Buttons */
+.btn{background:#ffffff14;color:var(--text);border:1px solid var(--line);
+  border-radius:7px;padding:8px 14px;cursor:pointer;font-size:14px}
+.btn:hover{background:#ffffff24}
+.btn.block{width:100%}
+.btn.tiny{padding:3px 10px;font-size:12px}
+.btn.block,.btn.tiny{
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--bg2) 80%,transparent),color-mix(in srgb,var(--bg2) 80%,transparent)),
+    url('assets/banner-background.png');
+  background-position:right;
+}
+.btn.accent{background:var(--bg1);border-color:#000;color:#fff;font-weight:600}
+/* Selected gender. Was a fixed green (#3d6b45) that ignored the theme entirely; this is the
+   theme's own colour instead — var(--hover) is darken(hex,.30), the family's deep shade.
+
+   The white border does the selecting, not the fill. A lighter fill was the obvious try (the
+   family's .btn.on white wash) and it reads well but costs legibility: white label text drops
+   to 3.67:1 on the pale themes, against 6.5:1 on the green it replaced, so it made the button
+   worse to read in order to look righter. --hover goes the other way and holds white text at
+   14.7:1 everywhere. The fill difference alone is slight, which is why the border is white and
+   the label bold — that pair is unambiguous without asking the fill to carry it. */
+.btn.accent.on{background:var(--hover);border-color:#fff;color:#fff;font-weight:600}
+
+/* Collapsible panels */
+.panel{border:1px solid var(--line);border-radius:8px;overflow:clip;background:var(--bg2)}
+.panel-head{width:100%;text-align:left;background:transparent;border:none;color:var(--text);
+  padding:8px 14px;font-size:16px;font-weight:600;cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--bg2) 80%,transparent),color-mix(in srgb,var(--bg2) 80%,transparent)),
+    url('assets/banner-background.png');
+  background-size:auto 100%;background-position:left center;background-repeat:repeat;
+}
+.panel-head:hover{background-color:#ffffff0d}
+.chev{transition:transform .15s;font-size:14px;font-weight:700;color:var(--accent)}
+.panel[data-open="true"] .chev{transform:rotate(180deg)}
+.panel-body{display:none;padding:8px 12px 12px;flex-direction:column;gap:6px;
+  background-image:
+    linear-gradient(color-mix(in srgb,var(--bg1) 60%,transparent),color-mix(in srgb,var(--bg1) 60%,transparent)),
+    url('assets/panel-body-bg.png');
+  background-size:contain 100%;background-position:left center;background-repeat:repeat;
+}
+.panel[data-open="true"] .panel-body{display:flex}
+
+/* Controls */
+.chk{display:flex;align-items:center;gap:8px;padding:3px 0;cursor:pointer;line-height:1.3}
+.chk input{accent-color:var(--accent);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.chk:hover{color:var(--accent-hover)}
+.hint{color:var(--text-hint);font-size:12px;margin:2px 0}
+.row{display:flex;align-items:center}
+.row.gap{gap:8px}
+.field{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text-dim)}
+.field .row.gap > select{flex:1;min-width:0}
+.rgb-input{flex:0 0 auto;width:34px;height:30px;padding:0;cursor:pointer;
+  background:var(--bg2);border:1px solid var(--line);border-radius:7px}
+.rgb-input::-webkit-color-swatch-wrapper{padding:2px}
+.rgb-input::-webkit-color-swatch{border:none;border-radius:5px}
+.field select,.field input[type=text]{
+  background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:7px;
+  padding:6px 8px;font-size:13px;line-height:1.4;
+  /* option names run past 60 chars; without min-width:0 a flex select forces the
+     sidebar far wider than its declared width */
+  width:100%;min-width:0;max-width:100%;text-overflow:ellipsis;
+}
+.field input[type=text]::placeholder{color:var(--text-hint);opacity:1}
+input[type=range]{width:100%;accent-color:var(--accent)}
+
+/* Pigment swatches */
+#pig{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;max-height:170px;overflow-y:auto}
+#pig i{display:block;aspect-ratio:1;border-radius:3px;cursor:pointer;border:1px solid #0006}
+#pig i.on{outline:2px solid var(--accent-hover);outline-offset:1px}
+
+/* Viewport overlays */
+#hud{display:none;position:absolute;top:12px;left:12px;white-space:pre;font-size:12px;line-height:1.5;
+  background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+  pointer-events:none;color:var(--text)}
+#err{position:absolute;bottom:12px;left:12px;color:#ff6b6b;white-space:pre;max-width:60ch}
+#legend{font-size:11px;line-height:1.35}
+
+/* Other MHGU apps modal — the block is shared verbatim with the sibling apps. */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;
+  align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;
+  padding:20px;max-width:560px;width:100%;max-height:82vh;overflow-y:auto}
+.modal-card h2{margin:0 0 12px;font-size:22px}
+.modal-card h3{margin:16px 0 6px;font-size:14px;color:var(--text-dim)}
+.modal-card code{font-size:12px;opacity:.85}
+.modal-card p{line-height:1.55;font-size:13px}
+.modal-card a{color:var(--accent-hover)}
+.modal-card .muted{color:var(--text-dim);font-size:13px;opacity:.75}
+/* Theme modal — the family swatch grid, copied verbatim from the other apps. */
+/* The links modal is wider (560px); the family sizes the THEME card at 460 so a swatch
+   comes out the same size here as in every other app. Scoped so the links modal is untouched. */
+#themeModal .modal-card{width:min(460px,90vw)}
+.swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:15px}
+.swatch{aspect-ratio:1;border-radius:8px;border:2px solid transparent;cursor:pointer;position:relative;overflow:hidden;padding:0}
+.swatch.sel{border-color:#fff}
+.swatch-icon{position:absolute;top:7%;left:50%;transform:translateX(-50%);width:60%;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.swatch span{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:10px;line-height:1.5;color:#fff;background:rgba(0,0,0,.45)}
+.row.end{justify-content:flex-end}
+.app-links{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:10px}
+.app-links li{border:1px solid var(--line);border-radius:8px;padding:9px 12px;background:#ffffff08}
+.app-links li.current{opacity:.72}
+.app-links a,.app-name{font-weight:600;font-size:14px}
+.app-here{font-weight:400;font-size:11px;opacity:.7;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin-left:7px}
+.app-desc{display:block;margin-top:3px;font-size:12px;opacity:.8;line-height:1.4}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="titlebar titlebar-header">
+    <img class="title-icon" src="assets/MonsterIcons/MHGU-Question_Mark_Icon.webp" alt="">
+    <h1>MHGU Armor Viewer</h1>
+    <button id="saveBtn"   class="btn tiny" title="Save the current set">Save</button>
+    <button id="saveAsBtn" class="btn tiny" title="Save the current set to a new file">Save As&hellip;</button>
+    <button id="openBtn"   class="btn tiny" title="Open a saved set">Open</button>
+    <input type="file" id="importFile" accept=".json" style="display:none">
+    <button id="aboutBtn" class="icon-btn" title="About" aria-label="About">&#9432;</button>
+    <button id="themeBtn" class="icon-btn" title="Theme" aria-label="Theme">&#9881;</button>
+    <button id="linksBtn" class="icon-btn" title="Other MHGU apps" aria-label="Other MHGU apps">&#128279;</button>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+
+      <div class="row gap">
+        <button id="gM" class="btn accent" style="flex:1">Male</button>
+        <button id="gF" class="btn accent" style="flex:1">Female</button>
+      </div>
+
+      <section class="panel" data-open="true">
+        <button class="panel-head">Equipment <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <p class="hint">Mix pieces from any sets</p>
+          <div class="field"><input type="text" id="filter" placeholder="filter by name&hellip;"></div>
+          <div class="field"><label for="s_helm">Head</label><select id="s_helm" data-slot="helm"></select></div>
+          <div class="field"><label for="s_body">Chest</label><select id="s_body" data-slot="body"></select></div>
+          <div class="field"><label for="s_arm">Arms</label><select id="s_arm" data-slot="arm"></select></div>
+          <div class="field"><label for="s_wst">Waist</label><select id="s_wst" data-slot="wst"></select></div>
+          <div class="field"><label for="s_leg">Legs</label><select id="s_leg" data-slot="leg"></select></div>
+        </div>
+      </section>
+
+      <section class="panel" data-open="true">
+        <button class="panel-head">Hunter <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <label class="chk"><input type="checkbox" id="face" checked>Face</label>
+          <div class="field"><select id="faceStyle"></select></div>
+          <div class="field"><label for="eyeColor">Eye Color</label><div class="row gap"><select id="eyeColor"></select><input type="color" id="eyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <label class="chk"><input type="checkbox" id="hair" checked>Hair</label>
+          <div class="field"><select id="hairStyle"></select></div>
+          <div class="field"><label for="hairColor">Hair Color</label><div class="row gap"><select id="hairColor"></select><input type="color" id="hairColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <label class="chk"><input type="checkbox" id="body" checked>Body</label>
+          <div class="field"><label for="skinColor">Skin Tone</label><div class="row gap"><select id="skinColor"></select><input type="color" id="skinColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="pose">Pose</label>
+            <select id="pose">
+              <option value="relaxed" selected>Relaxed</option>
+              <option value="t-pose">T-pose</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <span id="pigmentPanel">
+      <section class="panel" data-open="false">
+        <button class="panel-head">Pigment <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <label class="chk" style="display:none"><input type="checkbox" id="defpig">Use in-game default</label>
+          <p class="hint" id="pigNote"></p>
+          <div id="slotPig"></div>
+          <span id="legacyPig" hidden>
+          <div id="pig"></div>
+          <label class="chk" style="margin-top:10px"><input type="checkbox" id="devOn">Deviant pigment</label>
+          <span id="devBox" hidden>
+            <div class="field"><label for="devPreset">Preset</label><select id="devPreset"></select></div>
+            <div class="field"><label>Colors</label>
+              <div class="row gap">
+                <input type="color" id="devA" class="rgb-input" title="Colour A">
+                <input type="color" id="devB" class="rgb-input" title="Colour B">
+                <select id="devAnim" style="flex:1;min-width:0">
+                  <option value="fade">Fade A &harr; B</option>
+                  <option value="pulse">Pulse to B</option>
+                </select>
+              </div>
+            </div>
+          </span>
+          </span>
+        </div>
+      </section>
+      </span>
+
+
+      <span id="debugPanel">
+      <section class="panel" data-open="false">
+        <button class="panel-head">Debug <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <label class="chk"><input type="checkbox" id="statusdbg">Status overlay</label>
+          <label class="chk"><input type="checkbox" id="matdbg">Material colors</label>
+          <div id="legend"></div>
+          <span id="pigmentTuning">
+            <label class="chk"><input type="checkbox" id="maskdbg">Dye mask</label>
+            <div class="field"><label for="satboost">Saturate</label>
+              <input type="range" id="satboost" min="100" max="600" value="100"></div>
+            <div class="field"><label for="keytol">Key tolerance</label>
+              <input type="range" id="keytol" min="1" max="40" value="15"></div>
+            <div class="field"><label for="sat0">Saturation window</label>
+              <input type="range" id="sat0" min="0" max="60" value="20">
+              <input type="range" id="sat1" min="1" max="99" value="45"></div>
+            <div class="field"><label for="val0">Brightness gate</label>
+              <input type="range" id="val0" min="0" max="90" value="15"></div>
+          </span>
+        </div>
+      </section>
+      </span>
+
+    </aside>
+
+    <section class="content">
+      <div id="viewport"></div>
+          <div id="hud">loading&hellip;</div>
+      <div id="err"></div>
+      <div id="bar">
+        <button id="fitBtn" class="btn tiny" title="Frame the whole figure">Fit to View</button>
+        <div class="sep"></div>
+        <button id="spinBtn" class="btn tiny" title="Cycle the turntable speed">Rotate</button>
+        <button id="orbitLock" class="btn tiny" title="Lock the orbit so dragging pans the view instead of rotating it"><img id="orbitLockIcon" alt="">Orbit</button>
+        <div class="sep"></div>
+        <button id="wireBtn" class="btn tiny" title="Draw the meshes as wireframe">Wireframe</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="themeModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Theme</h2>
+    <div id="swatches" class="swatches"></div>
+    <button id="themeClose" class="btn accent">Done</button>
+  </div>
+</div>
+
+<div id="aboutModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>About</h2>
+    <p class="muted">A fan-made viewer for mixing and matching Monster Hunter Generations Ultimate armor. Not affiliated with, endorsed by, or supported by Capcom.</p>
+
+    <h3>Game content</h3>
+    <p>Monster Hunter Generations Ultimate and all of its models, textures, animations, armor names and data tables are &copy; CAPCOM CO., LTD. All rights reserved. Every asset here was extracted from a personally owned copy of the game and is shown for reference only.</p>
+
+    <h3>Tools used to build this</h3>
+    <ul class="app-links">
+      <li><span class="app-name">RevilLib / RevilToolset</span> &mdash; by PredatorCZ (Lukas Cone)
+        <span class="app-desc">Unpacked the <code>.arc</code> archives and converted MT Framework <code>.mod</code> meshes to glTF, <code>.tex</code> textures to DDS, <code>.lmt</code> motion lists to animation, and <code>.plpartsdisp</code> to XML.</span></li>
+      <li><span class="app-name">hactool</span>
+        <span class="app-desc">Unpacked the game's romfs and executable from the cartridge image.</span></li>
+      <li><span class="app-name">three.js</span>
+        <span class="app-desc">Renders the scene, with GLTFLoader, OrbitControls and SkeletonUtils.</span></li>
+      <li><span class="app-name">Pillow</span>
+        <span class="app-desc">Converted the extracted textures to PNG during the build.</span></li>
+      <li><span class="app-name">MHGU-Modding wiki</span> &mdash; by RTHKKona and contributors
+        <span class="app-desc">Documented the model and texture extraction route this project followed.</span></li>
+    </ul>
+
+    <h3>Assets</h3>
+    <p>Monster icons, UI textures and the MHFU font are shared with the sibling MHGU fan apps listed under <em>Other MHGU Apps</em>. Armor names, rarities and color data are read from the game's own tables.</p>
+
+    <div class="row end gap">
+      <button id="aboutClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="linksModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Other MHGU Apps</h2>
+    <p class="muted">Companion fan tools by the same author. Each opens in a new tab.</p>
+    <ul class="app-links">
+      <li>
+        <a href="https://armoredraven17.github.io/MHGU-Quest-Randomizer/" target="_blank" rel="noopener">Quest Randomizer</a>
+        <span class="app-desc">Rolls random quests when you can't decide what to hunt.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-collection-tracker/" target="_blank" rel="noopener">Collection Tracker</a>
+        <span class="app-desc">Tracks which weapons, armor and Palico gear you own, and what it costs to finish them.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-equipment-box/" target="_blank" rel="noopener">Equipment Box</a>
+        <span class="app-desc">Mirrors the in-game box — 2000 hunter slots and 1000 Palico — so you can plan where things sit.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/MHGU-Bingo/" target="_blank" rel="noopener">Bingo</a>
+        <span class="app-desc">Builds a bingo card of hunting goals, with a shareable seed so a group can race the same board.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/MHGU-Hunting-Log/" target="_blank" rel="noopener">Hunting Log</a>
+        <span class="app-desc">Keeps a running record of your hunts — what you were after, what you wore, who came along.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/MHGU-Zenny-Gauntlet/" target="_blank" rel="noopener">Zenny Gauntlet</a>
+        <span class="app-desc">A scored challenge run — fail a hunt or get carted and you lose that weapon/style combo for the rest of the run.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-set-builder/" target="_blank" rel="noopener">Set Builder</a>
+        <span class="app-desc">Assemble a full set by hand and see exactly which skills it activates.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-weapon-trees/" target="_blank" rel="noopener">Weapon Trees</a>
+        <span class="app-desc">Browse every weapon upgrade tree, with full stats on any node you click.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/MHGU-Challenge-Run/" target="_blank" rel="noopener">Challenge Run</a>
+        <span class="app-desc">A permadeath challenge run — start from a root weapon, lose it on any quest failure, clear every Key Quest.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-charm-farm/" target="_blank" rel="noopener">Charm Farm</a>
+        <span class="app-desc">A Clicker/Idle game about beating up various Brachydios until you finally get the desired God Charms you always wanted.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-talisman-bingo/" target="_blank" rel="noopener">Talisman Bingo</a>
+        <span class="app-desc">A bingo card of talisman conditions — keep drawing charms until one finally fills the line you needed.</span>
+      </li>
+      <li>
+        <a href="https://armoredraven17.github.io/mhgu-fishing/" target="_blank" rel="noopener">Fishing</a>
+        <span class="app-desc">A fishing sim on the game's own tables — prepare at camp, travel to a locale, come home with the catch.</span>
+      </li>
+      <li class="current">
+        <span class="app-name">Armor Viewer <span class="app-here">you are here</span></span>
+        <span class="app-desc">Renders a hunter in 3D with every armor piece swappable, so you can mix and match a set.</span>
+      </li>
+    </ul>
+    <div class="row end gap">
+      <button id="linksClose" class="btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Plain script, not the module below: the modal is independent of the viewer.
+  (function () {
+    var am = document.getElementById("aboutModal");
+    document.getElementById("aboutBtn").onclick = function () { am.classList.remove("hidden"); };
+    document.getElementById("aboutClose").onclick = function () { am.classList.add("hidden"); };
+    am.onclick = function (e) { if (e.target === am) am.classList.add("hidden"); };
+
+    var m = document.getElementById("linksModal");
+    document.getElementById("linksBtn").onclick = function () { m.classList.remove("hidden"); };
+    document.getElementById("linksClose").onclick = function () { m.classList.add("hidden"); };
+    m.onclick = function (e) { if (e.target === m) m.classList.add("hidden"); };
+  })();
+</script>
+
+<script>
+  // Theme system — the MHGU family's, installed from mhgu-fishing/docs/theme.js. Every shade
+  // is derived from ONE chosen colour by moving only its lightness in HSL, so hue and
+  // saturation are preserved and every derived surface stays "in family". That is why the
+  // palette can be a list of bare hexes rather than a set of hand-built themes.
+  //
+  // THE PALETTE HAS ONE INVARIANT: every swatch holds white text and a white checkbox tick.
+  // Both come off one number — the browser picks a checkbox tick itself, white below relative
+  // luminance .1791 and black above, and white body text needs its ground at .1833 or below to
+  // clear 4.5:1 — so the checkbox line is the stricter of the two. Every theme clears it, which
+  // is why this app paints white text unconditionally and has no light-theme branch.
+  //
+  // A NEW COLOUR HAS TO CLEAR THAT. Do not add one without checking it, and keep this list
+  // byte-identical to the other apps: it is hand-copied with no shared source.
+  (function () {
+    const THEMES = [
+    { name: "Teostra", hex: "#570B0B" },
+    { name: "Rathalos", hex: "#b51717" },
+    { name: "Tetsucabra", hex: "#783E0F" },
+    { name: "Agnaktor", hex: "#C7620E" },
+    { name: "Tigrex", hex: "#74631D" },
+    { name: "Rajang", hex: "#9C8328" },
+    { name: "Najarala", hex: "#436713" },
+    { name: "Gendrome", hex: "#67922E" },
+    { name: "Deviljho", hex: "#0B570F" },
+    { name: "Rathian", hex: "#39993E" },
+    { name: "Astalos", hex: "#14503d" },
+    { name: "Zinogre", hex: "#279773" },
+    { name: "Zamtrios", hex: "#0C5D68" },
+    { name: "Kirin", hex: "#118898" },
+    { name: "S. Ceanataur", hex: "#005984", icon: "Shogun Ceanataur" },
+    { name: "Plesioth", hex: "#0080c1" },
+    { name: "Brachydios", hex: "#0B2757" },
+    { name: "Lagiacrus", hex: "#0b3f97" },
+    { name: "G. Magala", hex: "#1F0B57", icon: "Gore Magala" },
+    { name: "Nerscylla", hex: "#4e2fa2" },
+    { name: "Y. Garuga", hex: "#62008f", icon: "Yian Garuga" },
+    { name: "Chameleos", hex: "#8e50ab" },
+    { name: "Mizutsune", hex: "#D4358C" },
+    { name: "Congalala", hex: "#C8679D" },
+    { name: "Duramboros", hex: "#5a411f" },
+    { name: "Diablos", hex: "#997c54" },
+    { name: "Barroth", hex: "#835A32" },
+    { name: "Bulldrome", hex: "#B17A47" },
+    { name: "K. Daora", hex: "#505358", icon: "Kushala Daora" },
+    { name: "Valstrax", hex: "#7C879B" },
+    { name: "Forbidden", hex: "#1E2025", icon: "Question Mark" },
+    ];
+    const KEY = "mhgu-armor-viewer-theme";
+    const DEFAULT_HEX = "#1E2025";           // Forbidden, the family default
+    const FALLBACK_ICON = "assets/MonsterIcons/MHGU-Question_Mark_Icon.webp";
+
+    const byHex = new Map(THEMES.map(t => [t.hex.toUpperCase(), t]));
+    const monsterIcon = name => `assets/MonsterIcons/MHGU-${name.replace(/ /g, "_")}_Icon.webp`;
+
+    // A saved theme is a bare hex, so anyone sitting on a retired one keeps a colour that is no
+    // longer in the list: it never picks up the change, and anything keyed off the hex stops
+    // matching. Remap on read, not on write. Kept identical to the other apps rather than
+    // trimmed to this app's own history, because a per-app map is one more thing to drift.
+    const LEGACY_HEX = {
+      '#C8A319': '#74631D', '#57470B': '#74631D', '#5E4D0C': '#74631D',           // Tigrex
+      '#574916': '#74631D', '#68581A': '#74631D',
+      '#F1D364': '#9C8328', '#B59417': '#9C8328', '#C39F19': '#9C8328',           // Rajang
+      '#BEA031': '#9C8328',
+      '#C65900': '#783E0F', '#FC933E': '#C7620E',                                 // Tetsucabra, Agnaktor
+      '#68360D': '#783E0F', '#B5590D': '#C7620E',
+      '#3A9B3F': '#39993E', '#2DAE85': '#279773',                                 // Rathian, Zinogre
+      '#D84696': '#D4358C', '#CE79A8': '#C8679D',                                 // Mizutsune, Congalala
+      '#B57C45': '#835A32', '#CFAA87': '#B17A47',                                 // Barroth, Bulldrome
+      '#AEB5C1': '#7C879B',                                                       // Valstrax
+
+    };
+    const migrateHex = (h) => (h && LEGACY_HEX[h.toUpperCase()]) || h;
+
+    const hexRgb = h => { h = h.replace("#", ""); return [0, 2, 4].map(i => parseInt(h.substr(i, 2), 16)); };
+    const clamp = n => Math.max(0, Math.min(255, Math.round(n)));
+    const clamp01 = n => Math.max(0, Math.min(1, n));
+    const rgbToHsl = ([r, g, b]) => {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+      const l = (max + min) / 2;
+      if (d === 0) return [0, 0, l];
+      const s = d / (1 - Math.abs(2 * l - 1));
+      const h = max === r ? ((g - b) / d + (g < b ? 6 : 0)) / 6
+        : max === g ? ((b - r) / d + 2) / 6
+          : ((r - g) / d + 4) / 6;
+      return [h, s, l];
+    };
+    const hslToRgb = ([h, s, l]) => {
+      const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h * 6) % 2 - 1)), m = l - c / 2;
+      const hi = Math.floor(h * 6) % 6;
+      const [r, g, b] = hi === 0 ? [c, x, 0] : hi === 1 ? [x, c, 0] : hi === 2 ? [0, c, x]
+        : hi === 3 ? [0, x, c] : hi === 4 ? [x, 0, c] : [c, 0, x];
+      return [r + m, g + m, b + m].map(v => clamp(v * 255));
+    };
+    // darken/lighten only nudge lightness, so every derived shade keeps the chosen
+    // colour's hue and saturation.
+    const darken = (rgb, f) => { const [h, s, l] = rgbToHsl(rgb); return hslToRgb([h, s, clamp01(l * f)]); };
+    const lighten = (rgb, t) => { const [h, s, l] = rgbToHsl(rgb); return hslToRgb([h, s, clamp01(l + (1 - l) * t)]); };
+    const css = rgb => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+
+    let current = DEFAULT_HEX;
+
+    function applyTheme(hex) {
+      const c = hexRgb(hex), r = document.documentElement.style;
+      r.setProperty("--bg", css(darken(c, .70)));
+      r.setProperty("--bg1", css(darken(c, .80)));
+      r.setProperty("--bg2", css(darken(c, .95)));
+      r.setProperty("--hover", css(darken(c, .30)));
+      r.setProperty("--accent", css(darken(c, .70)));
+      r.setProperty("--accent-hover", css(lighten(c, .40)));
+      r.setProperty("--stage", css(darken(c, .18)));   // Weapon Trees' factor, verbatim
+      r.setProperty("--text", "#ffffff");
+      r.setProperty("--text-dim", "#fffffff5");
+      r.setProperty("--line", "rgba(11, 8, 8, 0.12)");
+      r.setProperty("--card", "rgba(255,255,255,0.05)");
+
+      current = hex;
+      try { localStorage.setItem(KEY, hex); } catch (e) { /* private mode */ }
+
+      document.querySelectorAll(".swatch").forEach(s => s.classList.toggle("sel", s.dataset.hex === hex));
+
+      // The canvas is opaque and paints its own background, so it would cover the CSS one.
+      // The viewer module listens for this and repaints the scene from --stage.
+      window.dispatchEvent(new CustomEvent("mhgu-theme"));
+      const icon = document.querySelector(".title-icon");
+      if (icon) {
+        const t = byHex.get(hex.toUpperCase());
+        icon.src = t ? monsterIcon(t.icon || t.name) : FALLBACK_ICON;
+        icon.alt = t ? t.name : "";
+      }
+    }
+
+    function renderSwatches() {
+      const grid = document.getElementById("swatches");
+      if (!grid) return;
+      grid.textContent = "";
+      for (const t of THEMES) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "swatch" + (t.hex === current ? " sel" : "");
+        b.dataset.hex = t.hex;
+        b.style.background = t.hex;      // the tile IS the colour, as in every other app
+        b.title = t.name;
+        const img = document.createElement("img");
+        img.className = "swatch-icon";
+        img.alt = "";
+        img.src = monsterIcon(t.icon || t.name);
+        img.onerror = () => { img.onerror = null; img.src = FALLBACK_ICON; };
+        const span = document.createElement("span");
+        span.textContent = t.name;
+        b.append(img, span);
+        b.addEventListener("click", () => applyTheme(t.hex));
+        grid.appendChild(b);
+      }
+    }
+
+    let saved = DEFAULT_HEX;
+    try { saved = migrateHex(localStorage.getItem(KEY)) || DEFAULT_HEX; } catch (e) { /* private mode */ }
+    if (!byHex.has(saved.toUpperCase())) saved = DEFAULT_HEX;
+    applyTheme(saved);
+    renderSwatches();
+    applyTheme(saved);   // re-run so the freshly drawn swatches get the `sel` marker
+
+    const modal = document.getElementById("themeModal");
+    document.getElementById("themeBtn").onclick = () => modal.classList.remove("hidden");
+    document.getElementById("themeClose").onclick = () => modal.classList.add("hidden");
+    modal.onclick = (e) => { if (e.target === modal) modal.classList.add("hidden"); };
+  })();
+</script>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+}}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { clone as skeletonClone } from 'three/addons/utils/SkeletonUtils.js';
+
+const hud = document.getElementById('hud'), errEl = document.getElementById('err');
+addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
+
+const CLEAN = new URLSearchParams(location.search).has('clean');
+const MARGIN = CLEAN ? 1.02 : 1.35;   // leave room for the side panels when they are shown
+if (CLEAN) { document.querySelector('.sidebar').style.display='none';
+             document.querySelector('.titlebar').style.display='none';
+           }
+
+// cache-bust: the dev server sends no no-cache headers and a stale manifest
+// silently strips the joint table, which makes posing a no-op
+const manifest = await (await fetch('manifest.json?v=' + Date.now())).json();
+const SLOTS = manifest.slots;
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const viewport = document.getElementById('viewport');
+viewport.appendChild(renderer.domElement);
+// size to the CONTENT area, not the window -- there is a 300px sidebar now
+function fitRenderer(){
+  const w = viewport.clientWidth || 1, h = viewport.clientHeight || 1;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x14161c);
+const camera = new THREE.PerspectiveCamera(38, 1, 0.001, 5000);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.autoRotate = false; controls.autoRotateSpeed = 1.8;
+
+// Orbit / pan lock, same control the Weapon Tree carries: unlocked (the default,
+// button lit) drags to orbit; locked drags to pan instead. OrbitControls already does
+// both, so this just reassigns which one the LEFT button and a one-finger drag mean.
+const BOOK_ICON = { locked: "data:image/webp;base64,UklGRs4AAABXRUJQVlA4TMIAAAAvMUAMEAZIjSRJkgbWkCtCQ2cYHZtRmV779yIQhHDN0C65hCAQNDfGOimscP8VuW2kpDOHZYY3COmRDIrltX30bL1tHcBdSHBAYOEA2bUf2HAdxT/qBspp09K0jwm1ESgteCe6ttJbFQUrfCiLGjrQCpRDCoNsoYWFidwOxKUJi7VJWv7kuhcgIAJEFqIiYucQu5M4AcQpI04ycVsQNxJx6xE3K39733uPYzEimoUzL/YB+P7bYvh/0TpTEcP8rwuCkQ==", unlocked: "data:image/webp;base64,UklGRs4AAABXRUJQVlA4TMEAAAAvMUAMEAZGkSRJQRC2MIMUZF5z1fLvJsi2mc7cjjKVOxJk20xnbFeZyh37r8htIyWdOSwzvEGQNhgUy1mSdtVZbS2Ajs0ECwTscXxrOOCXRvFHMwE79E8n+jjDdWyFlngnOrbQWxUlFvhIlpclHWgFwiElg2xhB5ZMZDmQLk2yWGXszOKe1AIERIDIQlRE7BxidxIngDhlxEkmbgviRiJuPeJm5W9vScvhEdHYMy/2Auj622L4X7Q0UxHD/K8LgpEAAA==" };
+let orbitLocked = false;
+const orbitLockBtn = document.getElementById('orbitLock');
+const orbitLockIcon = document.getElementById('orbitLockIcon');
+function paintOrbitLock(){
+  orbitLockIcon.src = BOOK_ICON[orbitLocked ? 'locked' : 'unlocked'];
+  orbitLockBtn.classList.toggle('on', !orbitLocked);
+  controls.mouseButtons.LEFT = orbitLocked ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+  controls.touches.ONE = orbitLocked ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+}
+function toggleOrbitLock(){ orbitLocked = !orbitLocked; paintOrbitLock(); saveState(); }
+orbitLockBtn.onclick = toggleOrbitLock;
+
+// middle-click toggles it too, as in the Weapon Tree -- but only on a CLICK, since
+// OrbitControls still uses a middle DRAG to dolly and that must keep working
+let midAt = null;
+viewport.addEventListener('pointerdown', e => { if (e.button === 1) midAt = [e.clientX, e.clientY]; });
+viewport.addEventListener('auxclick', e => {
+  if (e.button !== 1 || !midAt) return;
+  const moved = Math.abs(e.clientX - midAt[0]) + Math.abs(e.clientY - midAt[1]);
+  midAt = null;
+  if (moved < 5) { e.preventDefault(); toggleOrbitLock(); }
+});
+
+
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x30281f, 1.4));
+const key = new THREE.DirectionalLight(0xffffff, 2.3); key.position.set(3,5,4); scene.add(key);
+const rim = new THREE.DirectionalLight(0x88aaff, 1.1); rim.position.set(-4,2,-5); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffffff, 0.55); fill.position.set(0,-3,2); scene.add(fill);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+// headlight: follows the camera so whatever you orbit to stays readable
+const head = new THREE.DirectionalLight(0xffffff, 0.9); scene.add(head);
+
+const PIGMENTS = await (await fetch('pigments.json?v=' + Date.now())).json();
+const LS_KEY = 'mhgu-armor-viewer';
+function loadState(){
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e){ return null; }
+}
+let restoring = true;   // restoring fires the same handlers; don't let them save yet
+function saveState(){
+  if (restoring) return;
+  try {
+    const slots = {};
+    SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      gender, slots, pigmentIndex, pose: document.getElementById('pose').value,
+      body: document.getElementById('body').checked,
+      faceStyle: document.getElementById('faceStyle').value,
+      hairStyle: document.getElementById('hairStyle').value,
+      mask: ['sat0','sat1','val0'].map(i=>document.getElementById(i).value),
+      maskVer: MASK_VER,
+      defpig: document.getElementById('defpig').checked,
+      face: document.getElementById('face').checked,
+      hair: document.getElementById('hair').checked,
+      charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
+      orbitLocked, spinStep, wireOn,
+      deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
+                 preset:devPreset.value },
+      slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
+                               document.getElementById('pg_'+sl).value])
+    }));
+  } catch(e){ /* private window, blocked storage - not worth failing over */ }
+}
+const SAVED = loadState();
+let gender = (SAVED && SAVED.gender === 'f') ? 'f' : 'm';
+let pigmentIndex = null;
+let showBody = true;     // the hunter's body, textured with the skin map
+let useDefaults = false; // apply each piece's OWN authored pigment instead of one global color
+
+// Pigment is shelved. The dyeable REGION is not derivable from anything we can read:
+// every texture-based test has been falsified against the game (alpha, thresholded alpha,
+// per-texel desaturation, per-material desaturation, matching the armor's authored
+// color). The decisive one: dyeable sections are themselves SATURATED in the texture, so
+// "dyeable = neutral" is simply false and no color test can find the region.
+// What IS solved and stays wired: the 125-color palette, the per-armor default color
+// (scheme -> slot), and scheme 0 as an authoritative "not dyeable" flag.
+// Flip this to true to bring the picker, defaults and tuning UI back.
+// Back on as an APPROXIMATION, which is the most the data supports. Raven: the dyeable
+// area reads as the grey/white region of the texture and is obvious to a human who knows
+// the in-game armour -- but it is authored per region, not derivable (he confirmed some
+// dark-red areas do NOT move when the pigment changes), and every attempt to find that
+// authoring in the data has failed. So: desaturation mask, gated on the piece being
+// dyeable at all, with the window exposed for tuning.
+const PIGMENT_ENABLED = true;
+// bump when the mask defaults change, so old saves do not restore stale slider values
+const MASK_VER = 2;
+
+// The debug panel (status overlay, material colors, dye-mask + tuning sliders) is hidden.
+// It is HIDDEN rather than removed so every handler and slider it owns still resolves --
+// pushMask() reads sat0/sat1/val0/keytol on load. Flip to true to bring it back.
+// Off again. The material-colour view did its job -- it is what identified the _sym_
+// material as the dye region -- and the mask sliders are only a fallback now.
+const DEBUG_UI = false;
+let pigment = null;          // null = the armor's own colors, untinted
+
+// The 18 Deviant pigments, named from Color_Special_1..18 in ResultMsg_eng.gmd.
+// The NAMES are the game's. The colour PAIRS are approximations from each Deviant's
+// own palette -- the real values are hardcoded in the executable, not shipped in romfs --
+// so they are a starting point for Raven to correct, not authority.
+const DEVIANTS = [
+  ['Redhelm',      '#8c2b22', '#e8d9c0'], ['Snowbaron',   '#dfe9f2', '#5a7fa8'],
+  ['Stonefist',    '#6f6256', '#c9a227'], ['Dreadqueen',  '#5d2a6b', '#c8a13a'],
+  ['Drilltusk',    '#6b4a2a', '#d9822b'], ['Silverwind',  '#e6e9ec', '#2f3a45'],
+  ['Crystalbeard', '#c9b27a', '#7fd8e8'], ['Deadeye',     '#3b2f2a', '#d94f3a'],
+  ['Dreadking',    '#1e1c1f', '#c0392b'], ['Thunderlord', '#d4af37', '#2b6fa8'],
+  ['Grimclaw',     '#3d2b23', '#d98b2b'], ['Hellblade',   '#1c1a1a', '#e8452a'],
+  ['Nightcloak',   '#2a2440', '#8fd6e8'], ['Rustrazor',   '#8a5a2b', '#c0c5c9'],
+  ['Soulseer',     '#e3c9d8', '#7b3fa0'], ['Boltreaver',  '#2f5f4a', '#f2e14c'],
+  ['Elderfrost',   '#e9f2f5', '#6fa8bf'], ['Bloodbath',   '#7a1f1f', '#e0d6c2']
+];
+// Raven, on the two in-game animations: one slowly goes A <-> B; the other rests on A,
+// pulses briefly to B, and returns.
+const deviant = { on:false, a:'#8c2b22', b:'#e8d9c0', anim:'fade' };
+// One pigment per equipment slot, which is how the game itself stores it:
+// cArmorColorBase is mHeadColorIndex / mTorsoColorIndex / mArmColorIndex /
+// mWaistColorIndex / mLegColorIndex -- five indices, one per piece.
+const slotPigment = { helm:null, body:null, arm:null, wst:null, leg:null };
+function deviantMix(t){
+  if (deviant.anim === 'pulse'){
+    // mostly A, with a short excursion to B once per cycle
+    const P = 2.6, u = (t % P) / P;
+    const d = u - 0.72;
+    return Math.exp(-(d * d) / 0.0045);
+  }
+  const P = 5.0;                      // slow, symmetric A <-> B
+  return 0.5 - 0.5 * Math.cos((t / P) * Math.PI * 2);
+}
+
+// MHGU dyes armor with a pigment. The _bm alpha channel is the mask: bright on the
+// metal/cloth trim, dark on monster-part scales -- which matches what the game lets you
+// dye. So tint by alpha rather than washing the whole piece.
+// matcap strength: the slider is gone, the env contribution stays at this level
+const envAmount = 0.55;
+
+// The game's own color names, read from nativeNX/eng/table/CharMakeMsg_eng.gmd
+// (89 labels / 89 strings, an exact fit to EOF -- an earlier pass called this file
+// encrypted only because it missed the 1024-byte bucket table between the info table
+// and the labels). The NAMES are the game's; the hex values are ours, because the
+// palette RGB lives in the executable, not in romfs.
+const CHAR_COLORS = [
+  ['Red','#c8322d'], ['Orange','#e8792a'], ['Yellow','#efc93b'],
+  ['Yellow-Green','#a8c23c'], ['Matcha','#8ca04a'], ['Pine Green','#2f5d3a'],
+  ['Green','#3e8c4e'], ['Blue-Green','#2e8c86'], ['Water','#7fc5d8'],
+  ['Blue','#2e6fbf'], ['Ultramarine','#2b3f8c'], ['Wisteria','#8e8fc8'],
+  ['Light Purple','#a98cc8'], ['Purple','#6b3f8f'], ['Dark Purple','#43305c'],
+  ['Cherry','#e58aa8'], ['Peach','#f2b8a0'], ['Ocher','#b98a3c'],
+  ['Gold','#c9a13b'], ['Brown','#6b4426'], ['Gray','#8c8c90'],
+  ['White','#f2f0ea'], ['Black','#232326'], ['Rainbow', null]
+];
+const CHAR_PARTS = [
+  ['skinColor','skin'], ['eyeColor','eye'], ['hairColor','hair']
+];
+// null = the authored color; a NUMBER indexes CHAR_COLORS; a '#rrggbb' STRING is a
+// custom RGB pick. Keeping the game's palette and a free colour in one field means every
+// path -- render, save, export -- handles both without a second flag.
+const charColor = { skin:null, eye:null, hair:null };
+
+function applyTint(mat){
+  // Own the uniform OBJECTS up front and hand the same ones to onBeforeCompile, so
+  // changing pigment or sheen is just a .value write -- no recompile.
+  if (!mat.userData.u){
+    mat.userData.u = {
+      uTint: { value: new THREE.Color(1,1,1) },
+      uAmt:  { value: 0 },
+      uEnv:  { value: null },
+      uEnvAmt: { value: 0 },
+      uDbg: { value: 0 },
+      uKey: { value: new THREE.Color(1,1,1) },          // the armor's AUTHORED color
+      uHasKey: { value: 0 },
+      uKeyTol: { value: 0.15 },
+      uSatBoost: { value: 1.0 },   // debug: exaggerate color so neutral areas stand out
+      // Cut at the VALLEY between the two populations, not inside one of them.
+      // An armour texture is bimodal in saturation: the neutral (dyeable) lobe runs
+      // 0..~0.45 and the coloured armour sits at 0.5+, with a clear trough between.
+      // The old 0.06-0.30 window ended mid-lobe, so it selected the whitest part of a
+      // dyeable band and dropped the rest -- "correct area, but not the full area".
+      uSat: { value: new THREE.Vector2(0.20, 0.45) },   // saturation window
+      uVal: { value: new THREE.Vector2(0.15, 0.35) },   // brightness gate
+      uChar: { value: new THREE.Color(1,1,1) },  // hair / eye / skin color
+      uCharAmt: { value: 0 },
+      uRegion: { value: 0 }   // 1 on the material that IS the dyeable region
+    };
+    mat.onBeforeCompile = (sh) => {
+      Object.assign(sh.uniforms, mat.userData.u);
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {',
+                 'uniform vec3 uTint; uniform float uAmt;' +
+                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform float uDbg;' +
+                 ' uniform vec2 uSat; uniform vec2 uVal;' +
+                 ' uniform vec3 uKey; uniform float uHasKey; uniform float uKeyTol;' +
+                 ' uniform float uSatBoost;' +
+                 ' uniform vec3 uChar; uniform float uCharAmt; uniform float uRegion;' +
+                 ' float gGloss = 0.0; void main() {')
+        .replace('#include <map_fragment>',
+          `#ifdef USE_MAP
+             vec4 texel = texture2D( map, vMapUv );
+             gGloss = texel.a;                       // alpha is the GLOSS mask (for env)
+             // MHGU authors the dyeable part of a texture as DESATURATED white/grey so a
+             // pigment can be multiplied into it -- undyed, those areas read as the white
+             // sashes and boots you see. So the mask is low saturation, not the alpha:
+             // colorful areas (monster hide, painted trim) keep their own color, and
+             // near-black is skipped so shadowed cloth does not light up.
+             float mxC = max( texel.r, max( texel.g, texel.b ) );
+             float mnC = min( texel.r, min( texel.g, texel.b ) );
+             float sat = mxC > 0.0 ? ( mxC - mnC ) / mxC : 0.0;
+             // THE REGION IS THE MATERIAL. Rendering the Yukumo kasa with one hue per
+             // material shows the _sym_ material is exactly the band that dyes -- the
+             // texel heuristics were approximating a shape the model already states
+             // outright, which is why they always caught "the right area but not all of
+             // it". uRegion is 1 only on that material.
+             //
+             // The saturation window is kept as a fallback for the handful of pieces
+             // whose dye area is not a separate material.
+             float dye = uRegion > 0.5 ? 1.0
+                       : ( 1.0 - smoothstep( uSat.x, uSat.y, sat ) )
+                         * smoothstep( uVal.x, uVal.y, mxC ) * 0.0;
+             float luma = dot( texel.rgb, vec3(0.299, 0.587, 0.114) );
+             if ( uDbg > 0.5 ) {
+               // magenta = what the mask selects, greyscale = left alone
+               diffuseColor.rgb *= mix( vec3(luma * 0.55), vec3(1.0, 0.0, 0.85), dye );
+             } else {
+               // A plain multiply can only DARKEN, so a dark piece barely moves when
+               // dyed -- Astalos reads as unchanged -- while in game it visibly takes the
+               // colour. Recolour by luminance instead, the same treatment the hair and
+               // skin tints use, so the pigment's hue survives on dark armour while the
+               // weave and shading still come through the luma term.
+               vec3 dyed = uTint * ( 0.30 + luma * 1.35 );
+               vec3 base = mix( texel.rgb, dyed, uAmt * dye );
+               // Debug: push saturation so COLOURED areas go vivid and the neutral
+               // (dyeable) ones stay grey -- greying the rest out, as the mask view does,
+               // makes those two indistinguishable.
+               base = clamp( vec3(luma) + ( base - vec3(luma) ) * uSatBoost, 0.0, 1.0 );
+             // Hair / eye / skin color. Recolor by LUMINANCE rather than multiplying:
+             // a multiply can only ever darken, so a dark brown hair texture could never
+             // reach blonde. Scaling the chosen color by luma (x2, so mid-grey lands on
+             // the color itself) keeps the strand and shading detail while actually
+             // changing the hue.
+             if ( uCharAmt > 0.0 ) {
+               base = mix( base, uChar * luma * 2.0, uCharAmt );
+             }
+               diffuseColor.rgb *= base;
+             }
+           #endif`)
+        // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
+        // Sample it with the view-space normal and add it on top of the lit color.
+        .replace('#include <dithering_fragment>',
+          `#include <dithering_fragment>
+           if ( uEnvAmt > 0.0 ) {
+             vec3 vn = normalize( normal );
+             vec2 muv = vn.xy * 0.5 + 0.5;
+             vec3 env = texture2D( uEnv, muv ).rgb;
+             // gloss^2 biases the sheen toward genuinely reflective texels: ~400 pieces
+             // have a near-solid gloss mask and a linear term washes them out.
+             float g = gGloss * gGloss;
+             // SCREEN blend, not additive -- a + b*(1-a) cannot exceed 1, so bright
+             // armor keeps its detail instead of clipping to white.
+             gl_FragColor.rgb += env * g * uEnvAmt * ( 1.0 - gl_FragColor.rgb );
+           }`);
+    };
+    mat.needsUpdate = true;
+  }
+  const u = mat.userData.u;
+  u.uRegion.value = mat.userData.dyeRegion ? 1 : 0;
+  const own = useDefaults && mat.userData.own ? mat.userData.own.rgb : null;
+  const slotCol = slotPigment[mat.userData.slot] || null;
+  const use = own || slotCol || (useDefaults ? null : pigment);
+  const key = mat.userData.own;                 // authored color = the region key
+  u.uHasKey.value = key ? 1 : 0;
+  if (key) u.uKey.value.setRGB(key.rgb[0]/255, key.rgb[1]/255, key.rgb[2]/255);
+  if (use && !mat.userData.noTint){
+    u.uTint.value.setRGB(use[0]/255, use[1]/255, use[2]/255);
+    u.uAmt.value = 1;
+  } else {
+    u.uAmt.value = 0;
+  }
+  u.uEnvAmt.value = (u.uEnv.value && /env/i.test(mat.name || '')) ? envAmount : 0;
+}
+
+const loader = new GLTFLoader(), texLoader = new THREE.TextureLoader();
+// tiled maps viewed at a glancing angle (skirts, capes) alias badly without this
+const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
+const texCache = new Map(), glbCache = new Map();
+const mounted = {}, allMats = [];
+// pigment applies to ARMOUR only -- never the hunter's face or hair
+const armorMats = [];
+
+async function getTexture(file){
+  if (texCache.has(file)) return texCache.get(file);
+  const t = await texLoader.loadAsync(file);
+  t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;
+  // MT Framework tiles its maps: 14% of primitives have UVs outside 0..1, up to 6x on
+  // capes, long hair and skirts. three.js defaults to ClampToEdge, which smears the edge
+  // texel across everything past the first tile -- it reads as the texture being
+  // magnified rather than repeated.
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = maxAnisotropy;
+  texCache.set(file, t); return t;
+}
+
+// A harvested piece IS one slot of one set, so its texture is known from the key --
+// no need to parse material names. That matters because the game's own naming is
+// inconsistent: "m_heml004_env_" (a typo for helm), "wst045_sym_" (no m_ prefix),
+// "f_helm_sym_" (no set number). Guessing from those pulled a DIFFERENT slot's texture
+// on 383 materials and fell back on 54% of them.
+function textureForMaterial(name, entry){
+  if (/skin/i.test(name) && entry.skin) return entry.skin;
+  if (entry.tex) return entry.tex;          // armor: one piece, one texture
+
+  // Character parts are the exception -- a face legitimately ships several maps
+  // (face, eye, and the makeup variants), so those do match on the material name.
+  const T = entry.textures || {};
+  const keys = Object.keys(T).filter(k => !k.endsWith('+a'));
+  const pick = re => { const k = keys.find(k => re.test(k)); return k ? T[k] : null; };
+  if (/eye/i.test(name))  return pick(/eye/i);
+  if (/hair/i.test(name)) return pick(/hair/i);
+  if (/face/i.test(name)) return pick(/face\d*_bm$/i) || pick(/face/i);
+  return pick(/_bm$/i);
+}
+
+// ---- posing -------------------------------------------------------------
+// Every piece is skinned to the SAME shared skeleton, addressed by global bone id
+// (node names are "<localIdx>:<globalId>", with a "<...>_s" leaf duplicate used as the
+// skin joint). three.js STRIPS the colon, so bones are addressed by index parity with
+// skins[0].joints instead -- that mapping is baked into the manifest as `joints`.
+//   0/1/2 pelvis,spine,chest   3/4 neck,head
+//   5-8   R clavicle>hand      9-12 L clavicle>hand
+//   14-16 R hip>foot           17-19 L hip>foot     20-22 back attachment
+const POSES = {
+  't-pose': {},
+  'relaxed': {
+    // +Z is FORWARD (the sheathed-weapon bones 20-22 sit at -Z, on the back).
+    // Elbow y must swing the forearm toward +Z: NEGATIVE on the right (forearm
+    // extends +X), POSITIVE on the left. Getting these backwards bends both arms
+    // the wrong way at the elbow.
+    6:{z:-1.18, y:-0.06}, 7:{z:-0.10, y:-0.34},        // R shoulder drops, elbow forward
+    10:{z: 1.18, y: 0.06}, 11:{z: 0.10, y: 0.34},      // L mirror
+    5:{z:-0.05}, 9:{z: 0.05},                          // clavicles settle
+    2:{x: 0.045}, 3:{x:-0.035},                        // chest forward, neck counters
+    14:{z: 0.045}, 17:{z:-0.045},                      // stance opens slightly
+    15:{x: 0.06}, 18:{x: 0.06}                         // knees soften
+  }
+};
+let currentPose = 'relaxed';
+
+// Bone lookup by GLOBAL id, using the same rule poseObject does: vertices bind to the
+// "<n>:<gid>_s" LEAF and the posable node is its parent. Node NAMES cannot be used --
+// three.js strips the colon, so "11:5" and "1:15" both become "115".
+function bonesByGid(root, joints){
+  const map = new Map();
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !o.skeleton) return;
+    o.skeleton.bones.forEach((bone, i) => {
+      const info = joints && joints[i];
+      if (!info || info.gid === null) return;
+      const node = info.leaf ? bone.parent : bone;
+      if (node && !map.has(info.gid)) map.set(info.gid, node);
+    });
+  });
+  // Sorted PARENT-FIRST. Poses are applied as world matrices expressed in each node's
+  // parent space, so an ancestor must already hold its final transform before a
+  // descendant is computed against it.
+  const depth = n => { let d = 0; for (let p = n; p; p = p.parent) d++; return d; };
+  return [...map.entries()]
+    .map(([gid, node]) => ({ gid, node, d: depth(node) }))
+    .sort((a, b) => a.d - b.d);
+}
+
+// The game's own held poses, from the lobby motion lists. Rather than retarget clips onto
+// every piece (each piece binds a DIFFERENT subset of the 19 joints, so node names differ
+// per piece), play the clip once on an off-screen proxy and copy its bone transforms out
+// by global id -- the same addressing the static poses use.
+const poseCache = new Map();
+let poseMixer = null, poseProxyBones = null, poseAction = null, poseAnchor = null;
+let poseGround = null;   // the Y the feet rest at, so a pose cannot sink or float
+let poseBounds = null;   // the union of the WHOLE loop, so the camera is set once
+let poseCenter = null;   // the body's own centre, averaged over the loop
+const poseClock = new THREE.Clock();
+const _v = new THREE.Vector3();
+
+async function playGamePose(idx){
+  const entry = (manifest.poses || [])[idx];
+  if (!entry) return;
+  let gltf = poseCache.get(entry.file);
+  if (!gltf) {
+    gltf = await loader.loadAsync(entry.file);
+    // Snapshot the REST pose. The proxy is cached and reused across poses, so by the
+    // second pose its bones still hold wherever the previous clip left them -- measuring
+    // the rest hip and ground height off that gave a correction of ~0 and every pose
+    // stayed sunk through the floor.
+    gltf.userData.bind = [];
+    gltf.scene.traverse(o => {
+      if (o.isBone || o.isObject3D)
+        gltf.userData.bind.push([o, o.position.clone(), o.quaternion.clone()]);
+    });
+    poseCache.set(entry.file, gltf);
+  }
+  for (const [node, pos, quat] of gltf.userData.bind){ node.position.copy(pos); node.quaternion.copy(quat); }
+  const clip = THREE.AnimationClip.findByName(gltf.animations, entry.clip);
+  if (!clip) { err.textContent = 'pose clip missing: ' + entry.clip; return; }
+  // the proxy is never added to the scene; it exists only to be sampled
+  gltf.scene.updateMatrixWorld(true);
+  poseProxyBones = new Map(bonesByGid(gltf.scene, manifest.poseJoints || [])
+                             .map(e => [e.gid, e.node]));
+  poseMixer = new THREE.AnimationMixer(gltf.scene);
+  // Where the pelvis sits at REST. Many of these motions carry root translation -- they
+  // are lobby animations, so the character walks, steps and turns -- and left alone the
+  // figure drifts out of frame. Anchoring gid 0 back to this each frame keeps the pose
+  // and drops the travel.
+  gltf.scene.position.set(0, 0, 0);
+  gltf.scene.updateMatrixWorld(true);
+  const hip = poseProxyBones.get(0);
+  poseAnchor = hip ? _v.setFromMatrixPosition(hip.matrixWorld).clone() : null;
+  // and the height the feet rest at. These clips carry root translation in Y as well as
+  // X/Z -- Motion[1] drops the hunter a full metre through the floor -- so pinning only
+  // the horizontal left poses sinking below the ground with the camera aimed at where
+  // they should have been. Matching the LOWEST bone rather than the pelvis keeps a crouch
+  // a crouch: the hips come down, the feet stay put.
+  poseGround = null;
+  poseProxyBones.forEach(n => {
+    n.updateWorldMatrix(true, false);
+    const y = _v.setFromMatrixPosition(n.matrixWorld).y;
+    if (poseGround === null || y < poseGround) poseGround = y;
+  });
+
+  poseAction = poseMixer.clipAction(clip);
+  poseAction.setLoop(THREE.LoopRepeat).reset().play();
+
+  // Frame the ENTIRE loop, not the frame that happens to be showing. Framing at t=0 set
+  // the camera from one instant of a moving animation, so anything the pose reached later
+  // -- an arm thrown out, a lean, a kneel -- fell outside the shot. Walk the clip once and
+  // union every bone position, with the same pelvis anchoring the live playback uses.
+  poseBounds = new THREE.Box3();
+  // ...and aim at the BODY, not at the centre of that union: an arm thrown overhead
+  // stretches the box upward, and centring on it drops the resting figure low in frame.
+  // The centre is the average, over the loop, of each FRAME's own bone-box centre --
+  // feet to head. (Pelvis-to-head was the first attempt and it aims at the chest, which
+  // put the body a quarter of a screen-height below centre.)
+  const frameBox = new THREE.Box3(), acc = new THREE.Vector3(), fc = new THREE.Vector3();
+  const STEPS = 24;
+  let nMid = 0;
+  for (let i = 0; i < STEPS; i++){
+    poseMixer.setTime((i / STEPS) * clip.duration);
+    anchorProxy();
+    frameBox.makeEmpty();
+    poseProxyBones.forEach(n => {
+      n.updateWorldMatrix(true, false);
+      _v.setFromMatrixPosition(n.matrixWorld);
+      poseBounds.expandByPoint(_v);
+      frameBox.expandByPoint(_v);
+    });
+    if (!frameBox.isEmpty()){ acc.add(frameBox.getCenter(fc)); nMid++; }
+  }
+  poseBounds.expandByScalar(0.12);     // bones are joints, not the silhouette
+  poseCenter = nMid ? acc.multiplyScalar(1 / nMid) : null;
+  poseMixer.setTime(0);
+  poseClock.getDelta();          // drop the idle time since the clock last ran
+}
+// pin the pelvis back to its rest spot in X/Z -- these are lobby motions and many of them
+// travel, which would otherwise walk the figure out of frame
+function anchorProxy(){
+  const scn = poseMixer.getRoot();
+  scn.position.set(0, 0, 0);
+  scn.updateMatrixWorld(true);
+  const hip = poseProxyBones.get(0);
+  let lowest = null;
+  poseProxyBones.forEach(n => {
+    n.updateWorldMatrix(true, false);
+    const y = _v.setFromMatrixPosition(n.matrixWorld).y;
+    if (lowest === null || y < lowest) lowest = y;
+  });
+  let dx = 0, dz = 0;
+  if (hip && poseAnchor){
+    _v.setFromMatrixPosition(hip.matrixWorld);
+    dx = poseAnchor.x - _v.x;
+    dz = poseAnchor.z - _v.z;
+  }
+  const dy = (poseGround !== null && lowest !== null) ? poseGround - lowest : 0;
+  scn.position.set(dx, dy, dz);
+  scn.updateMatrixWorld(true);
+}
+function stopGamePose(){
+  if (poseAction) poseAction.stop();
+  poseMixer = null; poseProxyBones = null; poseAction = null; poseAnchor = null;
+  poseBounds = null; poseCenter = null; poseGround = null;
+}
+const _m = new THREE.Matrix4(), _s3 = new THREE.Vector3();
+function gidBonesOf(root){
+  return root.userData.gidBones ||
+    (root.userData.gidBones = bonesByGid(root, root.userData.joints || []));
+}
+// called every frame while a game pose is playing
+function stepGamePose(){
+  if (!poseMixer || !poseProxyBones) return;
+  poseMixer.update(poseClock.getDelta());
+  anchorProxy();
+
+  // WORLD matrices, for every piece -- armour included. Copying LOCAL transforms only
+  // works when a piece carries the whole bone chain, and ONLY the body does: the helm
+  // binds 2,3,4,20,21 and the arms 2,5..12, with no pelvis or spine above them. Given
+  // local copies those pieces keep their missing ancestors at bind, so the helm hangs
+  // where the head would be in T-pose while the body bends away underneath -- which is
+  // the "flying off, arms in wrong places" symptom.
+  for (const root of Object.values(mounted).concat(Object.values(charMounted))){
+    for (const { gid, node } of gidBonesOf(root)){
+      const src = poseProxyBones.get(gid);
+      if (!src || !node.parent) continue;
+      node.parent.updateWorldMatrix(true, false);
+      _m.copy(node.parent.matrixWorld).invert().multiply(src.matrixWorld);
+      _m.decompose(node.position, node.quaternion, _s3);
+    }
+  }
+}
+
+function poseObject(root, joints){
+  const p = POSES[currentPose] || {};
+  const done = new Set();
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !o.skeleton) return;
+    o.skeleton.bones.forEach((bone, i) => {
+      const info = joints && joints[i];
+      if (!info || info.gid === null) return;
+      // vertices bind to the "<n>:<gid>_s" LEAF; the posable node is its parent.
+      // terminal joints (no _s twin) are themselves the node.
+      const node = info.leaf ? bone.parent : bone;
+      if (!node || done.has(node.uuid)) return;
+      done.add(node.uuid);
+      const r = p[info.gid];
+      node.rotation.set((r&&r.x)||0, (r&&r.y)||0, (r&&r.z)||0);
+    });
+  });
+}
+
+function repose(){
+  for (const g of Object.values(mounted)) poseObject(g, g.userData.joints);
+  for (const g of Object.values(charMounted)) poseObject(g, g.userData.joints);
+}
+
+// MHGU splits a model into mesh GROUPS. three.js strips the brackets, so glTF
+// "Group[0]" becomes objects named Group0 / Group0_1 / Group0_2..., and the separate
+// full-figure proxy layer "Group[100]" becomes Group100. Only group 0 is real content;
+// every other group is the blocky stand-in and is never drawn. Read structurally at
+// runtime so it holds for both genders and cannot drift from the manifest.
+function meshGroupId(o){
+  for (let p = o; p; p = p.parent){
+    const m = /^Group(\d+)(?:_\d+)?$/.exec(p.name || '');
+    if (m) return parseInt(m[1], 10);
+  }
+  return 0;
+}
+
+async function loadPiece(id, slot){
+  const key = gender + id + '_' + slot;      // gender is part of the cache key
+  const entry = manifest.pieces[key];
+  if (!entry) return null;
+  let gltf = glbCache.get(key);
+  if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(key, gltf); }
+  // Object3D.clone() does NOT rebind skeletons: every clone keeps pointing at the
+  // ORIGINAL glb's bones, which live outside the scene graph and never get their world
+  // matrices updated - so posing one piece silently desyncs it from the others.
+  const root = skeletonClone(gltf.scene);
+  const hideSet = new Set((entry.hide || []).map(h => h[0] + '#' + h[1]));
+  const jobs = [];
+  root.traverse(o => {
+    if (o.isMesh || o.isSkinnedMesh) {
+      const srcName = (o.material && o.material.name) || '';
+      // Two different things, previously conflated:
+      //   BLOB  - the Group[100] layer: a ~191-vert full-figure proxy that renders as a
+      //           blocky slab over everything. Never drawn.
+      //   SKIN  - real exposed flesh inside Group[0] (hands, midriff, thighs). Part of
+      //           the armor as authored, so it renders, but it needs the SKIN map --
+      //           not every set names it "_skin_", and those were getting the armor map.
+      const verts = o.geometry.attributes.position.count;
+      const isBlob = meshGroupId(o) !== 0 || hideSet.has(srcName + '#' + verts);
+      const isSkin = !isBlob && /skin/i.test(srcName);
+      const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
+                                      : textureForMaterial(srcName, entry);
+      const mat = new THREE.MeshStandardMaterial({
+        roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
+        transparent:false, alphaTest:0 });   // _bm alpha is a spec/gloss mask, NOT opacity
+      // the hunter's flesh is not dyeable by pigment -- it takes the skin-tone selector.
+      // `undyeable` is the game's own flag: armorSeriesData byte +113, which is 0 on
+      // exactly two armour lines library-wide (Criminal and Hylian), both confirmed
+      // undyeable in game, and 1 on every set confirmed dyeable -- Garo included, which
+      // is what separates it from the three earlier guesses that a positive broke.
+      mat.userData.noTint = isSkin || isBlob || !!entry.undyeable;
+      if (isSkin) mat.userData.tintClass = 'skin';
+      // `_sym_` names the dyeable region; skin and the proxy never qualify
+      mat.userData.dyeRegion = !isSkin && !isBlob && /_sym/i.test(srcName);
+      mat.userData.slot = slot;
+      // each piece carries the pigment index the game authors for it (scheme -> slot)
+      mat.userData.own = (entry.defaultPigment !== undefined)
+        ? PIGMENTS.find(x => x.i === entry.defaultPigment) : null;
+      mat.wireframe = wireOn;
+      // three.js frustum-culls a skinned mesh by its BIND-pose bounding sphere, which is
+      // wrong the moment a bone moves -- pieces pop out of existence when the camera gets
+      // close or a pose swings them outside the T-pose bounds. Skinning here is cheap and
+      // the piece count is small, so just never cull.
+      o.frustumCulled = false;
+      o.material = mat; allMats.push(mat); armorMats.push(mat);
+      // material names carry envNN; NN indexes this piece's ordered env list
+      const em = /env(?:a)?(\d*)/i.exec(srcName);
+      if (em && entry.env && entry.env.length){
+        const ei = Math.min(parseInt(em[1] || '0', 10) || 0, entry.env.length - 1);
+        jobs.push(getTexture(entry.env[ei]).then(t => {
+          mat.userData.u.uEnv.value = t;
+          mat.userData.u.uEnvAmt.value = envAmount;
+          mat.needsUpdate = true;
+        }));
+      }
+      applyTint(mat);
+      if (isBlob) { o.visible = false; }
+      else if (isSkin) { o.userData.isBody = true; o.visible = showBody; }
+      if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
+    }
+  });
+  await Promise.all(jobs);
+  root.userData.joints = entry.joints || [];
+  poseObject(root, root.userData.joints);
+  return root;
+}
+
+// The worn HELM decides which parts of the hair to remove, and it decides it PER
+// HAIRSTYLE -- that is the game's own `.plpartsdisp` table (only helms ship one).
+// `hairHide` is 32 x 4 hex chars, indexed by hairstyle; a CLEARED bit N means hide hair
+// mesh Group[N]. So a wide hat takes the crown off and leaves the rest, which is how the
+// face stays visible under a helm instead of the hair clipping through it.
+function hairHideSet(){
+  const sel = document.querySelector('select[data-slot="helm"]');
+  const id = sel ? sel.value : 'none';
+  if (!id || id === 'none') return null;
+  const e = pieceOf(id, 'helm');
+  if (!e || !e.hairHide) return null;
+  const si = Math.max(0, +(document.getElementById('hairStyle').value || 0));
+  const mask = parseInt(e.hairHide.substr(si * 4, 4), 16);
+  if (!isFinite(mask)) return null;
+  const hide = new Set();
+  for (let k = 0; k < 16; k++) if (!((mask >> k) & 1)) hide.add(k);
+  return hide.size ? hide : null;
+}
+
+// The other half of the same table: `mDispFlag1` is constant across all 32 entries, so
+// it is a per-HELM property. It uses bits 9..15, and the face's real mesh groups are 0..4
+// (Group[4] is the eye), all skinned to the head bone -- so bit 9+N hides face Group[N].
+// Bits 14 and 15 have no group to match and are left alone.
+// This is what stops the head poking through a closed helmet: 152 helms clear the whole
+// range (a sealed helm, no face at all), 385 clear part of it.
+function faceHideSet(){
+  const sel = document.querySelector('select[data-slot="helm"]');
+  const id = sel ? sel.value : 'none';
+  if (!id || id === 'none') return null;
+  const e = pieceOf(id, 'helm');
+  if (!e || e.headMask === undefined) return null;
+  const hide = new Set();
+  for (let n = 0; n <= 4; n++) if (!((e.headMask >> (9 + n)) & 1)) hide.add(n);
+  return hide.size ? hide : null;
+}
+
+// The player character: face000 + hair000 are standalone assets; the BODY is not --
+// it ships inside every armor body.arc, which is the mesh normally hidden. Showing
+// head + hair + body together is what makes an unarmored region look like a person
+// rather than a hole.
+const charMounted = {};
+async function setChar(part, on){
+  if (charMounted[part]) { scene.remove(charMounted[part]); delete charMounted[part]; }
+  if (!on) return;
+  const list = (manifest.chars && manifest.chars[gender] || {})[part] || [];
+  if (!list.length) return;
+  const sel = document.getElementById(part + 'Style');
+  const entry = list[Math.min(Math.max(+(sel && sel.value || 0), 0), list.length - 1)];
+  if (!entry) return;
+  const ck = gender + '_' + part + entry.id;
+  let gltf = glbCache.get(ck);
+  if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(ck, gltf); }
+  const root = skeletonClone(gltf.scene);
+  const hideSet = new Set((entry.hide || []).map(h => h[0] + '#' + h[1]));
+  // NB: for armor, a non-zero mesh group means the proxy blob and is hidden outright.
+  // Character parts are the opposite -- their groups are REAL geometry, and which ones
+  // to drop is decided by the helm, not by the group number.
+  const hideGroups = part === 'hair' ? hairHideSet() : faceHideSet();
+  const jobs = [];
+  root.traverse(o => {
+    if (!(o.isMesh || o.isSkinnedMesh)) return;
+    const srcName = (o.material && o.material.name) || '';
+    const verts = o.geometry.attributes.position.count;
+    if (hideSet.has(srcName + '#' + verts)) { o.visible = false; return; }
+    if (hideGroups && hideGroups.has(meshGroupId(o))) { o.visible = false; return; }
+    const file = textureForMaterial(srcName, entry);
+    const mat = new THREE.MeshStandardMaterial({
+      roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
+      transparent:false, alphaTest:0 });
+    // never dyed by armor pigment, but it does take the hair/eye/skin selectors
+    mat.userData.noTint = true;
+    mat.userData.tintClass = part === 'hair' ? 'hair'
+                           : /eye/i.test(srcName) ? 'eye' : 'skin';
+    mat.wireframe = wireOn;
+    o.frustumCulled = false;     // same bind-pose culling problem as the armour
+    o.material = mat; allMats.push(mat);
+    applyTint(mat);
+    if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
+  });
+  await Promise.all(jobs);
+  root.userData.joints = entry.joints || [];
+  poseObject(root, root.userData.joints);
+  scene.add(root); charMounted[part] = root;
+}
+let rainbowOn = false;
+const CHAR_SYNC = [];
+function buildColorLists(){
+  for (const [id] of CHAR_PARTS){
+    document.getElementById(id).innerHTML =
+      '<option value="">Default</option>' +
+      CHAR_COLORS.map((c,i) => '<option value="'+i+'">'+c[0]+'</option>').join('') +
+      '<option value="rgb">RGB…</option>';
+  }
+}
+// One tint path for the face, the hair AND the body skin the armor exposes -- they
+// share the shader, so a skin tone cannot come out different on the face than on the
+// hands. Rainbow is a real in-game option, so it cycles rather than being dropped.
+function applyCharColors(t){
+  rainbowOn = false;
+  const cols = {};
+  for (const [, part] of CHAR_PARTS){
+    const v = charColor[part];
+    if (v === null || v === undefined) { cols[part] = null; continue; }
+    if (typeof v === 'string') { cols[part] = v; continue; }   // custom RGB
+    const hex = (CHAR_COLORS[v] || [])[1];
+    if (hex) cols[part] = hex;
+    else { rainbowOn = true; cols[part] = new THREE.Color().setHSL(((t||0)*0.12)%1, .8, .55); }
+  }
+  scene.traverse(o => {
+    const m = o.material, ud = m && m.userData;
+    if (!ud || !ud.tintClass || !ud.u) return;
+    const c = cols[ud.tintClass];
+    if (!c) { ud.u.uCharAmt.value = 0; return; }
+    ud.u.uCharAmt.value = 1;
+    ud.u.uChar.value.set(c);
+  });
+}
+function buildStyleLists(){
+  for (const part of ['face','hair']){
+    const list = (manifest.chars && manifest.chars[gender] || {})[part] || [];
+    const sel = document.getElementById(part + 'Style');
+    const cur = sel.value;
+    sel.innerHTML = list.map((e,i) => '<option value="'+i+'">'+e.label+'</option>').join('');
+    const want = sel.dataset.want;
+    if (want !== undefined && +want < list.length){ sel.value = want; delete sel.dataset.want; }
+    else if (cur && +cur < list.length) sel.value = cur;
+  }
+}
+
+async function refreshChar(){
+  // Separate toggles on purpose: plenty of helms clip straight through the hair, and
+  // in game the armor hides or reshapes it. Until that mapping is read from the game
+  // data, turning hair off by hand is the escape hatch.
+  buildStyleLists();
+  await setChar('face', document.getElementById('face').checked);
+  await setChar('hair', document.getElementById('hair').checked);
+  applyCharColors();
+}
+
+async function setSlot(slot, setId){
+  if (mounted[slot]) { scene.remove(mounted[slot]); delete mounted[slot]; }
+  if (setId !== 'none') {
+    const g = await loadPiece(setId, slot);
+    if (g) {
+      scene.add(g); mounted[slot] = g;
+      applyCharColors();     // the body skin this piece exposes must match the face
+    }
+  }
+  // a new helm masks the hair differently, so the hair has to be rebuilt -- and a
+  // rebuild makes fresh materials, so the chosen colors have to be re-applied
+  if (slot === 'helm') {
+    await setChar('hair', document.getElementById('hair').checked);
+    await setChar('face', document.getElementById('face').checked);
+  }
+  applyCharColors();
+  refresh();
+}
+
+function frameAll(){
+  const objs = Object.values(mounted);
+  if (!objs.length) return;
+  const box = new THREE.Box3(); objs.forEach(o => box.expandByObject(o));
+  // expandByObject reads a skinned mesh's BIND-pose bounds, so under a game pose the box
+  // describes a T-posed figure that is no longer there -- a crouch or a bow put the head
+  // outside it and the framing cut it off. Take the posed bone positions instead.
+  // A game pose is animated, so its bounds come from the whole loop (computed once when
+  // the pose starts), not from the frame currently on screen.
+  if (poseBounds && !poseBounds.isEmpty()) box.copy(poseBounds);
+  const size = box.getSize(new THREE.Vector3());
+  const c = box.getCenter(new THREE.Vector3());
+  // size from the union, but aim at the body itself
+  if (poseCenter) c.copy(poseCenter);
+  // fit height and width independently — a T-pose is much wider than it is deep,
+  // so a bounding-sphere fit wastes most of the frame
+  const vFov = THREE.MathUtils.degToRad(camera.fov);
+  const distH = (size.y * 0.5) / Math.tan(vFov / 2);
+  const distW = (size.x * 0.5) / Math.tan(vFov / 2) / camera.aspect;
+  let dist = Math.max(distH, distW) * MARGIN + size.z * 0.5;
+  if (poseCenter){
+    // aiming off the box centre means the far side is further away; grow the fit so the
+    // whole loop still fits around the point we are actually looking at
+    const reachY = Math.max(box.max.y - c.y, c.y - box.min.y) * 2;
+    const reachX = Math.max(box.max.x - c.x, c.x - box.min.x) * 2;
+    dist = Math.max((reachY * 0.5) / Math.tan(vFov / 2),
+                    (reachX * 0.5) / Math.tan(vFov / 2) / camera.aspect) * MARGIN
+           + size.z * 0.5;
+  }
+  controls.target.copy(c);
+  camera.position.copy(c).add(new THREE.Vector3(0, 0, dist));
+  camera.near = Math.max(dist/1000, 1e-4); camera.far = dist*20;
+  camera.updateProjectionMatrix(); controls.update();
+}
+
+function refresh(){
+  const objs = Object.values(mounted);
+  const box = new THREE.Box3(); objs.forEach(o => box.expandByObject(o));
+  const s = box.getSize(new THREE.Vector3());
+  const sel = {}; SLOTS.forEach(sl => sel[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
+  const distinct = new Set(Object.values(sel).filter(v => v !== 'none'));
+  hud.textContent =
+    'MHGU mix-and-match spike\n' +
+    'loaded pieces : ' + objs.length + '\n' +
+    'distinct sets : ' + distinct.size + '  (' + [...distinct].join(', ') + ')\n' +
+    'combined bbox : ' + s.x.toFixed(3) + ' x ' + s.y.toFixed(3) + ' x ' + s.z.toFixed(3) + '\n' +
+    SLOTS.map(sl => '  ' + sl.padEnd(5) + ' ' +
+      (sel[sl] === 'none' ? '—' : labelFor(sel[sl], sl))).join(String.fromCharCode(10));
+  window.__loaded = objs.length;
+}
+
+// Slots hold a bare numeric model id; the gender prefix is applied when building the
+// piece key, so switching gender re-loads the same ids against the other body.
+function pieceKey(id, slot){ return gender + id + '_' + slot; }
+function pieceOf(id, slot){ return manifest.pieces[pieceKey(id, slot)]; }
+
+function labelFor(id, slot){
+  const e = pieceOf(id, slot);
+  return (e && e.name) ? e.name : id;
+}
+
+function optionsFor(slot){
+  return (manifest.ids || [])
+    .filter(id => pieceOf(id, slot))
+    .map(id => {
+      const e = pieceOf(id, slot);
+      return { value: id, label: labelFor(id, slot),
+               rarity: e.rarity || 0, rarityMax: e.rarityMax || e.rarity || 0 };
+    })
+    // rarity 0 means no series carries one (62 pieces); sort those to the END
+    .sort((a, b) => (a.rarity || 99) - (b.rarity || 99) ||
+                    a.label.localeCompare(b.label, undefined, {numeric:true}));
+}
+
+function rebuildSelects(filter){
+  const f = (filter || '').trim().toLowerCase();
+  for (const slot of SLOTS){
+    const sel = document.querySelector('select[data-slot="' + slot + '"]');
+    const cur = sel.value;
+    let opts = optionsFor(slot);
+    if (f) opts = opts.filter(o => o.label.toLowerCase().includes(f) || o.value === cur);
+    // Grouped by rarity. A model is shared by its rank variants and those have DIFFERENT
+    // rarities (Leather R1 / Leather S R4 / Leather X R8) -- the same reason the labels
+    // collapse to "(Base/S/X)". So group by the LOWEST, the rank the label leads with.
+    // The span is in the manifest as rarityMax but is deliberately NOT appended to the
+    // option: these names run past 60 chars and the select ellipsises at 165px, so a
+    // suffix is the first thing cut -- it would show on short names and vanish on long.
+    let html = '<option value="none">— none —</option>', group = null;
+    for (const o of opts){
+      const r = o.rarity || 0;
+      if (r !== group){
+        if (group !== null) html += '</optgroup>';
+        group = r;
+        html += '<optgroup label="' + (r ? 'Rarity ' + r : 'Unranked') + '">';
+      }
+      html += '<option value="' + o.value + '">' + o.label + '</option>';
+    }
+    if (group !== null) html += '</optgroup>';
+    sel.innerHTML = html;
+    sel.value = opts.some(o => o.value === cur) ? cur : 'none';
+  }
+}
+
+for (const slot of SLOTS) {
+  const sel = document.querySelector('select[data-slot="' + slot + '"]');
+  sel.onchange = () => setSlot(slot, sel.value).then(() => { frameAll(); saveState(); });
+}
+document.getElementById('filter').oninput = e => rebuildSelects(e.target.value);
+
+// ---- gender -------------------------------------------------------------
+async function setGender(g){
+  if (g === gender) return;
+  gender = g;
+  document.getElementById('gM').classList.toggle('on', g === 'm');
+  document.getElementById('gF').classList.toggle('on', g === 'f');
+  const keep = {};
+  for (const slot of SLOTS)
+    keep[slot] = document.querySelector('select[data-slot="' + slot + '"]').value;
+  rebuildSelects(document.getElementById('filter').value);   // names can differ per gender
+  await refreshChar();
+  for (const slot of SLOTS){
+    const sel = document.querySelector('select[data-slot="' + slot + '"]');
+    const id = keep[slot];
+    const has = id !== 'none' && pieceOf(id, slot);
+    sel.value = has ? id : 'none';
+    await setSlot(slot, sel.value);
+  }
+  frameAll();
+}
+rebuildSelects('');
+document.getElementById(gender === 'f' ? 'gF' : 'gM').classList.add('on');
+document.getElementById('gM').onclick = () => setGender('m').then(saveState);
+document.getElementById('gF').onclick = () => setGender('f').then(saveState);
+
+// ---- pigment ------------------------------------------------------------
+const pigBox = document.getElementById('pig');
+function paintPigments(){
+  pigBox.innerHTML = '';
+  const none = document.createElement('i');
+  none.title = 'no pigment';
+  none.style.background =
+    'repeating-linear-gradient(45deg,#333 0 4px,#555 4px 8px)';
+  none.onclick = () => choosePigment(null, none);
+  pigBox.appendChild(none);
+  PIGMENTS.forEach(p => {
+    const el = document.createElement('i');
+    el.style.background = p.hex;
+    el.title = p.hex + '  (#' + p.i + ')';
+    el.onclick = () => choosePigment(p.rgb, el, p.i);
+    pigBox.appendChild(el);
+  });
+  none.classList.add('on');
+}
+function choosePigment(rgb, el, idx){
+  pigment = rgb;
+  pigmentIndex = (idx === undefined) ? null : idx;
+  [...pigBox.children].forEach(c => c.classList.remove('on'));
+  if (el) el.classList.add('on');
+  armorMats.forEach(applyTint);
+  saveState();
+}
+if (!DEBUG_UI) document.getElementById('debugPanel').style.display = 'none';
+
+if (PIGMENT_ENABLED) {
+  paintPigments();
+} else {
+  pigment = null; pigmentIndex = null; useDefaults = false;   // the switch wins over saved state
+  document.getElementById('pigmentPanel').style.display = 'none';
+  document.getElementById('pigmentTuning').style.display = 'none';
+}
+
+async function apply(map){
+  for (const slot of SLOTS) {
+    const sel = document.querySelector('select[data-slot="' + slot + '"]');
+    sel.value = map[slot];
+    await setSlot(slot, map[slot]);
+  }
+  frameAll();
+}
+
+// first-run outfit when there is nothing saved yet
+const MIX = { helm:'702', body:'400', arm:'550', wst:'100', leg:'001' };
+
+document.getElementById('pose').onchange = async e => {
+  const v = e.target.value;
+  if (v.startsWith('g:')) {
+    await playGamePose(+v.slice(2));
+  } else {
+    stopGamePose();
+    currentPose = v;
+    repose();       // the animation left the bones where it stopped
+  }
+  frameAll(); saveState();
+};
+for (const [id, part] of CHAR_PARTS){
+  const sel = document.getElementById(id), rgb = document.getElementById(id + 'RGB');
+  // the picker only exists while RGB is the choice, so the row stays quiet otherwise
+  function syncRgbVisibility(){ rgb.hidden = sel.value !== 'rgb'; }
+  sel.onchange = () => {
+    if (sel.value === 'rgb') charColor[part] = rgb.value;
+    else charColor[part] = sel.value === '' ? null : +sel.value;
+    syncRgbVisibility();
+    applyCharColors(performance.now()/1000);
+    saveState();
+  };
+  rgb.oninput = () => {
+    if (sel.value !== 'rgb') return;
+    charColor[part] = rgb.value;
+    applyCharColors(performance.now()/1000);
+  };
+  rgb.onchange = saveState;   // one save per pick, not one per drag frame
+  sel.dataset.syncRgb = '1';
+  CHAR_SYNC.push(syncRgbVisibility);
+}
+document.getElementById('faceStyle').onchange = () => refreshChar().then(saveState);
+document.getElementById('hairStyle').onchange = () => refreshChar().then(saveState);
+document.getElementById('face').onchange = () => refreshChar().then(() => { frameAll(); saveState(); });
+document.getElementById('hair').onchange = () => refreshChar().then(() => { frameAll(); saveState(); });
+document.getElementById('body').onchange = e => {
+  showBody = e.target.checked;
+  scene.traverse(o => { if (o.userData && o.userData.isBody) o.visible = showBody; });
+  frameAll(); saveState();
+};
+// Off -> ten increasing speeds -> Off. The speed is not written on the button: you can
+// see how fast it is going. Only the top step renames, to Turbo.
+// The ramp is geometric (x1.55 a step) rather than linear -- rotation reads as a RATIO,
+// so even steps of +17 would feel like one jump then nine barely-different fast settings.
+const SPIN_SPEEDS = [3, 5, 7, 11, 18, 27, 42, 66, 103, 160];
+const SPIN_STEPS = [{ label: 'Rotate', speed: 0 }].concat(
+  SPIN_SPEEDS.map((v, i) => ({ label: i === SPIN_SPEEDS.length - 1 ? 'Turbo' : 'Rotate', speed: v })));
+let spinStep = 0;
+const spinBtn = document.getElementById('spinBtn');
+// The label swaps between two words of different widths, which would shunt every button
+// to its right. Measure both once and pin the button to the wider.
+(function lockSpinWidth(){
+  let w = 0;
+  for (const st of SPIN_STEPS){ spinBtn.textContent = st.label; w = Math.max(w, spinBtn.offsetWidth); }
+  spinBtn.style.minWidth = w + 'px';
+  spinBtn.style.textAlign = 'center';
+})();
+function paintSpin(){
+  const st = SPIN_STEPS[spinStep];
+  spinBtn.textContent = st.label;
+  spinBtn.classList.toggle('on', st.speed > 0);
+  controls.autoRotate = st.speed > 0;
+  controls.autoRotateSpeed = st.speed || 3;
+}
+spinBtn.onclick = () => { spinStep = (spinStep + 1) % SPIN_STEPS.length; paintSpin(); saveState(); };
+paintSpin();
+document.getElementById('maskdbg').onchange = e => {
+  const v = e.target.checked ? 1 : 0;
+  armorMats.forEach(m => { if (m.userData.u) m.userData.u.uDbg.value = v; });
+};
+function pushMask(){
+  const s0=+document.getElementById('sat0').value/100;
+  const s1=Math.max(+document.getElementById('sat1').value/100, s0+0.01);
+  const v0=+document.getElementById('val0').value/100;
+  const kt=+document.getElementById('keytol').value/100;
+  const sb=+document.getElementById('satboost').value/100;
+  armorMats.forEach(m => { const u=m.userData.u; if(!u) return;
+    u.uSat.value.set(s0, s1); u.uVal.value.set(v0, v0+0.20);
+    u.uKeyTol.value = kt; u.uSatBoost.value = sb; });
+}
+['sat0','sat1','val0','keytol','satboost'].forEach(id =>
+  document.getElementById(id).oninput = () => { pushMask(); saveState(); });
+document.getElementById('defpig').onchange = e => {
+  useDefaults = e.target.checked;
+  armorMats.forEach(applyTint);
+  const n = armorMats.filter(m => m.userData.own).length;
+  document.getElementById('pigNote').textContent = useDefaults
+    ? n + ' of ' + armorMats.length + ' materials have an authored color'
+    : '';
+  saveState();
+};
+let wireOn = false;
+const wireBtn = document.getElementById('wireBtn');
+function paintWire(){
+  wireBtn.classList.toggle('on', wireOn);
+  allMats.forEach(m => m.wireframe = wireOn);
+}
+wireBtn.onclick = () => { wireOn = !wireOn; paintWire(); saveState(); };
+
+// Debug: give every distinct ARMOUR material its own hue and list them, so a specific
+// region ("the upper ribbons") can be named against a material rather than guessed at.
+const DBG = new Map();
+document.getElementById('statusdbg').onchange = e => {
+  document.getElementById('hud').style.display = e.target.checked ? 'block' : 'none';
+};
+document.getElementById('matdbg').onchange = e => {
+  const on = e.target.checked;
+  const legend = document.getElementById('legend');
+  if (!on){
+    DBG.forEach((c, m) => { m.color.set(0xffffff); m.map = c.map; m.needsUpdate = true; });
+    DBG.clear(); legend.style.display = 'none'; legend.innerHTML = ''; return;
+  }
+  const names = [];
+  scene.traverse(o => {
+    if (!(o.isMesh || o.isSkinnedMesh) || !o.visible) return;
+    const m = o.material, n = m.name || '(unnamed)';
+    if (/face|eye|hair|make/i.test(n)) return;
+    if (!names.includes(n)) names.push(n);
+  });
+  scene.traverse(o => {
+    if (!(o.isMesh || o.isSkinnedMesh) || !o.visible) return;
+    const m = o.material, n = m.name || '(unnamed)';
+    if (/face|eye|hair|make/i.test(n)) return;
+    const hue = names.indexOf(n) / Math.max(names.length, 1);
+    if (!DBG.has(m)) DBG.set(m, { map: m.map });
+    m.map = null; m.color.setHSL(hue, 0.95, 0.55); m.needsUpdate = true;
+  });
+  legend.style.display = 'block';
+  legend.innerHTML = names.map((n, i) => {
+    const c = new THREE.Color().setHSL(i / Math.max(names.length, 1), 0.95, 0.55);
+    return '<div><span style="display:inline-block;width:10px;height:10px;background:#' +
+           c.getHexString() + ';margin-right:5px;border:1px solid #0006"></span>' + n + '</div>';
+  }).join('');
+};
+
+new ResizeObserver(fitRenderer).observe(viewport);
+addEventListener('resize', fitRenderer);
+fitRenderer();
+renderer.setAnimationLoop(() => {
+  stepGamePose();
+  stepDeviant(performance.now()/1000);
+  if (rainbowOn) applyCharColors(performance.now()/1000);
+  controls.update();
+  head.position.copy(camera.position);
+  renderer.render(scene, camera);
+});
+
+// the game's poses go in their own group, after the two authored stances
+function buildPoseList(){
+  const sel = document.getElementById('pose');
+  const list = manifest.poses || [];
+  if (!list.length) return;
+  sel.insertAdjacentHTML('beforeend',
+    '<optgroup label="Game poses">' +
+    list.map((p, i) => '<option value="g:' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('') +
+    '</optgroup>');
+}
+buildPoseList();
+// ---- one RGB pigment per armour piece --------------------------------------
+const SLOT_LABEL = { helm:'Head', body:'Chest', arm:'Arms', wst:'Waist', leg:'Legs' };
+document.getElementById('slotPig').innerHTML = SLOTS.map(sl =>
+  '<div class="field"><label for="pg_'+sl+'">'+SLOT_LABEL[sl]+'</label>' +
+  '<div class="row gap"><label class="chk" style="flex:1;min-width:0">' +
+  '<input type="checkbox" id="pgOn_'+sl+'">dye</label>' +
+  '<input type="color" id="pg_'+sl+'" class="rgb-input" title="Pigment for '+SLOT_LABEL[sl]+'"></div></div>'
+).join('');
+function readSlotPigments(){
+  for (const sl of SLOTS){
+    const on = document.getElementById('pgOn_'+sl).checked;
+    const hex = document.getElementById('pg_'+sl).value;
+    if (!on) { slotPigment[sl] = null; continue; }
+    const c = new THREE.Color(hex);
+    slotPigment[sl] = [c.r*255, c.g*255, c.b*255];
+  }
+  armorMats.forEach(applyTint);
+}
+for (const sl of SLOTS){
+  const cb = document.getElementById('pgOn_'+sl), col = document.getElementById('pg_'+sl);
+  col.value = '#c0c0c0';
+  cb.onchange  = () => { readSlotPigments(); saveState(); };
+  col.oninput  = () => { if (!cb.checked) cb.checked = true; readSlotPigments(); };
+  col.onchange = saveState;
+}
+
+// ---- Deviant pigment (hidden for now, kept wired) ---------------------------
+const devOn=document.getElementById('devOn'), devBox=document.getElementById('devBox'),
+      devA=document.getElementById('devA'), devB=document.getElementById('devB'),
+      devAnim=document.getElementById('devAnim'), devPreset=document.getElementById('devPreset');
+devPreset.innerHTML='<option value="">Custom</option>' +
+  DEVIANTS.map((d,i)=>'<option value="'+i+'">'+d[0]+'</option>').join('');
+devA.value=deviant.a; devB.value=deviant.b;
+function paintDeviant(){
+  devBox.hidden = !devOn.checked;
+  deviant.on = devOn.checked;
+  deviant.a = devA.value; deviant.b = devB.value; deviant.anim = devAnim.value;
+  if (!deviant.on) { pigment = null; armorMats.forEach(applyTint); }
+}
+devOn.onchange = () => { paintDeviant(); saveState(); };
+devAnim.onchange = () => { paintDeviant(); saveState(); };
+devPreset.onchange = () => {
+  const d = DEVIANTS[+devPreset.value];
+  if (d) { devA.value=d[1]; devB.value=d[2]; }
+  paintDeviant(); saveState();
+};
+for (const el of [devA,devB]){
+  el.oninput = () => { devPreset.value=''; paintDeviant(); };
+  el.onchange = saveState;
+}
+// stepped from the render loop; mixes A->B by the chosen animation and drives the
+// existing pigment path, so it lands on exactly the _sym_ region like any other colour
+const _dcA=new THREE.Color(), _dcB=new THREE.Color(), _dcM=new THREE.Color();
+function stepDeviant(t){
+  if (!deviant.on) return;
+  _dcA.set(deviant.a); _dcB.set(deviant.b);
+  _dcM.copy(_dcA).lerp(_dcB, deviantMix(t));
+  pigment = [_dcM.r*255, _dcM.g*255, _dcM.b*255];
+  armorMats.forEach(applyTint);
+}
+
+
+if (SAVED && Array.isArray(SAVED.slotPig)) {
+  SLOTS.forEach((sl,i) => {
+    const v = SAVED.slotPig[i];
+    if (!v) return;
+    document.getElementById('pgOn_'+sl).checked = !!v[0];
+    if (typeof v[1] === 'string') document.getElementById('pg_'+sl).value = v[1];
+  });
+}
+readSlotPigments();
+if (SAVED && SAVED.deviant && PIGMENT_ENABLED) {
+  const d=SAVED.deviant;
+  if (typeof d.a==='string') devA.value=d.a;
+  if (typeof d.b==='string') devB.value=d.b;
+  if (d.anim) devAnim.value=d.anim;
+  if (d.preset!==undefined) devPreset.value=d.preset;
+  devOn.checked=!!d.on;
+}
+paintDeviant();
+buildColorLists();   // options must exist before a saved value can be assigned
+if (SAVED && typeof SAVED.orbitLocked === 'boolean') orbitLocked = SAVED.orbitLocked;
+paintOrbitLock();
+if (SAVED && SAVED.spinStep > 0 && SAVED.spinStep < SPIN_STEPS.length) { spinStep = SAVED.spinStep; paintSpin(); }
+if (SAVED && SAVED.wireOn === true) { wireOn = true; paintWire(); }
+
+// restore the saved session before the first load so nothing flashes then changes
+if (SAVED) {
+  if (SAVED.pose && POSES[SAVED.pose]) {
+    currentPose = SAVED.pose;
+    document.getElementById('pose').value = SAVED.pose;
+  } else if (typeof SAVED.pose === 'string' && SAVED.pose.startsWith('g:')) {
+    // a game pose: select it now, start it after the pieces are mounted
+    const sel = document.getElementById('pose');
+    if ([...sel.options].some(o => o.value === SAVED.pose)) sel.value = SAVED.pose;
+  }
+  if (typeof SAVED.face === 'boolean') document.getElementById('face').checked = SAVED.face;
+  if (typeof SAVED.hair === 'boolean') document.getElementById('hair').checked = SAVED.hair;
+  // `defaultPigment` came from reading ArmorColorData's 5 bytes as per-slot dye colours.
+  // Raven's in-game check killed that: Yukumo would show an orange hat and blue legs, and
+  // it is one dark red across the set. The toggle stays in the DOM so its handler still
+  // resolves, but it is hidden and never restored.
+  if (false && typeof SAVED.defpig === 'boolean') {
+    document.getElementById('defpig').checked = SAVED.defpig;
+    useDefaults = SAVED.defpig;
+  }
+  // A saved mask from before the histogram-derived threshold would silently reinstate the
+  // old 0.06-0.30 window and undo the fix, exactly the way a stale `defpig` once put a
+  // pigment back after the picker was disabled. Restore the sliders only if the save was
+  // written against the current defaults.
+  if (Array.isArray(SAVED.mask) && SAVED.maskVer === MASK_VER) {
+    ['sat0','sat1','val0'].forEach((i,k)=>{ if(SAVED.mask[k]!=null) document.getElementById(i).value=SAVED.mask[k]; });
+  }
+  if (SAVED.charColor) {
+    for (const [id, part] of CHAR_PARTS){
+      const v = SAVED.charColor[part];
+      if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
+        charColor[part] = v;
+        document.getElementById(id).value = 'rgb';
+        document.getElementById(id + 'RGB').value = v;
+      } else if (typeof v === 'number' && CHAR_COLORS[v]) {
+        charColor[part] = v;
+        document.getElementById(id).value = String(v);
+      }
+    }
+    CHAR_SYNC.forEach(f => f());
+  }
+  ['faceStyle','hairStyle'].forEach(k => {
+    if (SAVED[k] !== undefined && SAVED[k] !== null) document.getElementById(k).dataset.want = SAVED[k];
+  });
+  if (typeof SAVED.body === 'boolean') {
+    document.getElementById('body').checked = SAVED.body;
+    showBody = SAVED.body;
+  }
+  if (PIGMENT_ENABLED && SAVED.pigmentIndex !== null && SAVED.pigmentIndex !== undefined) {
+    const hit = PIGMENTS.find(x => x.i === SAVED.pigmentIndex);
+    if (hit) choosePigment(hit.rgb, pigBox.children[SAVED.pigmentIndex + 1], hit.i);
+  }
+}
+await refreshChar();
+
+// only keep saved slots that still exist for this gender
+let startMap = MIX;
+if (SAVED && SAVED.slots) {
+  startMap = {};
+  for (const slot of SLOTS) {
+    const id = SAVED.slots[slot];
+    startMap[slot] = (id && id !== 'none' && pieceOf(id, slot)) ? id : 'none';
+  }
+}
+await apply(startMap);
+{
+  const pv = document.getElementById('pose').value;
+  if (pv.startsWith('g:')) await playGamePose(+pv.slice(2));
+}
+pushMask();
+restoring = false;      // from here on, user changes persist
+saveState();
+window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
+  get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant };
+
+// Stage colour follows the theme. scene.background is opaque, so setting only the CSS on
+// .content would be invisible behind the canvas — both have to move together. The theme
+// script runs before this module, so paint once on load and then on every change.
+function paintStage() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue("--stage").trim();
+  if (v) scene.background = new THREE.Color(v);
+}
+paintStage();
+window.addEventListener("mhgu-theme", paintStage);
+// Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
+// opening one closes the rest, so the sidebar never grows past the viewport.
+// Clicking the open panel still closes it, leaving all of them shut.
+document.querySelectorAll('.panel-head').forEach(h => {
+  h.onclick = () => {
+    const p = h.parentElement;
+    const wasOpen = p.dataset.open === 'true';
+    document.querySelectorAll('.panel').forEach(o => o.dataset.open = 'false');
+    p.dataset.open = wasOpen ? 'false' : 'true';
+  };
+});
+// start with a single panel open
+(() => {
+  const open = [...document.querySelectorAll('.panel')].filter(p => p.dataset.open === 'true');
+  open.slice(1).forEach(p => p.dataset.open = 'false');
+})();
+// Save a set to a file. Deliberately NOT the localStorage blob: this one is meant to be
+// read and shared, so every id carries the piece's name and every index its label. Import
+// reads the ids; the names are there for the human.
+const LABEL_OF = { face:'faceStyle', hair:'hairStyle' };
+function currentSet(){
+  const pieces = {};
+  for (const slot of SLOTS){
+    const id = document.querySelector('select[data-slot="' + slot + '"]').value;
+    pieces[slot] = id === 'none' ? null : { id, name: labelFor(id, slot) };
+  }
+  const styleLabel = k => {
+    const sel = document.getElementById(k);
+    return sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : null;
+  };
+  const colorOf = part => {
+    const v = charColor[part];
+    if (v === null || v === undefined) return null;
+    return typeof v === 'string' ? v : CHAR_COLORS[v][0];   // '#rrggbb' or the game's name
+  };
+  return {
+    app: 'MHGU Armor Viewer', version: 1,
+    gender, pieces,
+    hunter: {
+      face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
+      hair: document.getElementById('hair').checked ? styleLabel('hairStyle') : null,
+      body: document.getElementById('body').checked,
+      faceStyle: +document.getElementById('faceStyle').value,
+      hairStyle: +document.getElementById('hairStyle').value,
+      skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
+    },
+    pose: document.getElementById('pose').value
+  };
+}
+
+// Save / Save As / Open.
+// Where the File System Access API exists, Save writes back to the file you opened or
+// last saved to, and only Save As prompts. Where it does not, both fall back to a plain
+// download and Open falls back to the hidden <input type=file> -- so the buttons behave
+// the same way, they just cannot silently overwrite.
+const HAS_FS = typeof window.showSaveFilePicker === 'function';
+let fileHandle = null, fileName = 'mhgu-armor-set.json';
+const saveBtn = document.getElementById('saveBtn'),
+      saveAsBtn = document.getElementById('saveAsBtn'),
+      openBtn = document.getElementById('openBtn');
+
+function flash(btn, msg){
+  const orig = btn.textContent;
+  btn.textContent = msg;
+  setTimeout(() => btn.textContent = orig, 1600);
+}
+function setJson(){ return JSON.stringify(currentSet(), null, 2); }
+function download(text){
+  const blob = new Blob([text], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; a.click();
+  URL.revokeObjectURL(url);
+}
+async function writeHandle(h, text){
+  const w = await h.createWritable();
+  await w.write(text); await w.close();
+}
+async function saveAs(){
+  const text = setJson();
+  if (!HAS_FS) { download(text); flash(saveAsBtn, 'Saved'); return; }
+  try {
+    const h = await window.showSaveFilePicker({
+      suggestedName: fileName,
+      types: [{ description: 'MHGU armor set', accept: { 'application/json': ['.json'] } }]
+    });
+    await writeHandle(h, text);
+    fileHandle = h; fileName = h.name;
+    flash(saveAsBtn, 'Saved');
+  } catch (e) { if (e && e.name !== 'AbortError') flash(saveAsBtn, 'Failed'); }
+}
+saveBtn.onclick = async () => {
+  const text = setJson();
+  if (!fileHandle) { await saveAs(); return; }      // nothing open yet -> ask where
+  try { await writeHandle(fileHandle, text); flash(saveBtn, 'Saved'); }
+  catch (e) { if (e && e.name !== 'AbortError') flash(saveBtn, 'Failed'); }
+};
+saveAsBtn.onclick = saveAs;
+
+openBtn.onclick = async () => {
+  if (!HAS_FS) { document.getElementById('importFile').click(); return; }
+  try {
+    const [h] = await window.showOpenFilePicker({
+      types: [{ description: 'MHGU armor set', accept: { 'application/json': ['.json'] } }]
+    });
+    const text = await (await h.getFile()).text();
+    fileHandle = h; fileName = h.name;
+    await loadSet(text, openBtn);
+  } catch (e) { if (e && e.name !== 'AbortError') flash(openBtn, 'Failed'); }
+};
+document.getElementById('importFile').addEventListener('change', function(){
+  const file = this.files[0]; this.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => loadSet(e.target.result, openBtn);
+  reader.readAsText(file);
+});
+
+async function loadSet(text, btn){
+  {
+    try {
+      const d = JSON.parse(text);
+      if (!d || !d.pieces) throw new Error('not a set');
+      // setGender is a no-op when it already matches, and it rebuilds the lists itself
+      if (d.gender === 'm' || d.gender === 'f') await setGender(d.gender);
+      const h = d.hunter || {};
+      const setIdx = (id, v) => {
+        const sel = document.getElementById(id);
+        if (v !== undefined && v !== null && v < sel.options.length) sel.value = String(v);
+      };
+      buildStyleLists();
+      setIdx('faceStyle', h.faceStyle); setIdx('hairStyle', h.hairStyle);
+      document.getElementById('face').checked = h.face !== null && h.face !== undefined ? true : !!h.face;
+      document.getElementById('hair').checked = h.hair !== null && h.hair !== undefined ? true : !!h.hair;
+      if (typeof h.body === 'boolean') { document.getElementById('body').checked = h.body; showBody = h.body; }
+      for (const [selId, part] of CHAR_PARTS){
+        const v = h[selId];
+        const sel = document.getElementById(selId), rgb = document.getElementById(selId + 'RGB');
+        if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
+          charColor[part] = v; sel.value = 'rgb'; rgb.value = v;
+        } else {
+          const i = CHAR_COLORS.findIndex(c => c[0] === v);
+          charColor[part] = i < 0 ? null : i;
+          sel.value = i < 0 ? '' : String(i);
+        }
+      }
+      CHAR_SYNC.forEach(f => f());
+      const psel = document.getElementById('pose');
+      if (d.pose && POSES[d.pose]) {
+        stopGamePose(); currentPose = d.pose; psel.value = d.pose;
+      } else if (typeof d.pose === 'string' && d.pose.startsWith('g:') &&
+                 [...psel.options].some(o => o.value === d.pose)) {
+        psel.value = d.pose; await playGamePose(+d.pose.slice(2));
+      }
+      const map = {};
+      for (const slot of SLOTS){
+        const p = d.pieces[slot];
+        const id = p && (typeof p === 'string' ? p : p.id);
+        map[slot] = (id && pieceOf(id, slot)) ? id : 'none';
+      }
+      await refreshChar();
+      await apply(map);
+      applyCharColors();
+      saveState();
+    } catch (_) {
+      const orig = btn.textContent;
+      btn.textContent = 'Invalid file!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    }
+  }
+}
+
+document.getElementById('fitBtn').onclick = () => frameAll();
+
+window.__ready = true;
+</script>
+</body>
+</html>
