@@ -49,6 +49,9 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 
 /* Layout */
 .layout{display:flex;flex:1;min-height:0}
+/* the sidebar's own gap only reaches its direct children, and the panels are now one
+   level down inside a pane -- so each pane carries the same column gap itself */
+#paneHunter,#panePalico{display:flex;flex-direction:column;gap:8px}
 .sidebar{
   width:300px;flex-shrink:0;padding:12px;overflow-y:scroll;scrollbar-gutter:stable;
   display:flex;flex-direction:column;gap:8px;
@@ -301,6 +304,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <main class="layout">
     <aside class="sidebar">
 
+      <div class="row gap tabbar">
+        <button id="tabHunter" class="btn accent on" style="flex:1">Hunter</button>
+        <button id="tabPalico" class="btn accent" style="flex:1">Palico</button>
+      </div>
+
+      <div id="paneHunter">
       <div class="row gap">
         <button id="gM" class="btn accent" style="flex:1">Male</button>
         <button id="gF" class="btn accent" style="flex:1">Female</button>
@@ -408,6 +417,42 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </div>
       </section>
       </span>
+      </div>
+
+      <div id="panePalico" hidden>
+
+      <section class="panel" data-open="true">
+        <button class="panel-head">Equipment <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <p class="hint">Palico gear is two pieces</p>
+          <div class="field"><input type="text" id="otFilter" placeholder="filter by name&hellip;"></div>
+          <div class="field"><label for="o_helm">Head</label><select id="o_helm" data-otslot="helm"></select></div>
+          <div class="field"><label for="o_body">Chest</label><select id="o_body" data-otslot="body"></select></div>
+        </div>
+      </section>
+
+      <section class="panel" data-open="true">
+        <button class="panel-head">Palico <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div class="field"><label for="otEar">Ears</label><select id="otEar"></select></div>
+          <div class="field"><label for="otTail">Tail</label><select id="otTail"></select></div>
+          <div class="field"><label for="otEye">Eyes</label><select id="otEye"></select></div>
+          <div class="field"><label for="otEyeColor">Eye Color</label><div class="row gap"><select id="otEyeColor"></select><input type="color" id="otEyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="otCloth">Clothing</label><select id="otCloth"></select></div>
+          <div class="field"><label for="otFur">Fur</label><select id="otFur"></select></div>
+          <div class="field"><label for="otFurColor">Fur Color</label><div class="row gap"><select id="otFurColor"></select><input type="color" id="otFurColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="otPose">Pose</label><select id="otPose"></select></div>
+        </div>
+      </section>
+
+      <section class="panel" data-open="false">
+        <button class="panel-head">Pigment <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div id="otSlotPig"></div>
+        </div>
+      </section>
+
+      </div>
 
     </aside>
 
@@ -596,6 +641,24 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     paintUi();
     barBtn.onclick = function () { ui.bar = !ui.bar; paintUi(); };
     setNote.onchange = function () { ui.note = !setNote.checked; paintUi(); };
+
+    // Hunter / Palico tabs. Palicos differ enough -- two armour slots, no gender, their
+    // own base-cat parts -- that sharing one panel stack would mean hiding half of it.
+    (function(){
+      var tabs = [['tabHunter','paneHunter'], ['tabPalico','panePalico']];
+      function show(which){
+        tabs.forEach(function(t){
+          var on = t[0] === which;
+          document.getElementById(t[0]).classList.toggle('on', on);
+          document.getElementById(t[1]).hidden = !on;
+        });
+        try { localStorage.setItem('mhgu-armor-viewer-tab', which); } catch (_) {}
+      }
+      tabs.forEach(function(t){ document.getElementById(t[0]).onclick = function(){ show(t[0]); }; });
+      var saved = null;
+      try { saved = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
+      show(saved === 'tabPalico' ? 'tabPalico' : 'tabHunter');
+    })();
 
     var m = document.getElementById("linksModal");
     document.getElementById("linksBtn").onclick = function () { m.classList.remove("hidden"); };
@@ -913,6 +976,8 @@ function saveState(){
     SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
     localStorage.setItem(LS_KEY, JSON.stringify({
       gender, slots, hunterType, pigmentIndex, camera: cameraState(),
+      // one camera per figure, so the Palico's view survives a reload too
+      cameras: Object.assign({}, figCam, { [figure]: cameraState() }),
       byGender: Object.assign({}, GENDER_STATE, { [gender]: captureGender() }),
       pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
@@ -924,7 +989,9 @@ function saveState(){
       defpig: document.getElementById('defpig').checked,
       face: document.getElementById('face').checked,
       hair: document.getElementById('hair').checked,
-      charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
+      charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair,
+                   fur: charColor.fur, oeye: charColor.oeye },
+      otomo: otCapture(),
       orbitLocked, spinStep, wireOn,
       weapon: weaponSel.value, weaponPose: weaponPoseSel.value,
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
@@ -956,6 +1023,20 @@ const DEFAULT_SET = {
 // into GENDER_STATE.m so switching bodies finds him already dressed, in exactly the shape
 // captureGender() produces. Camera is deliberately absent -- it is global by design, and
 // only Fit to View moves it, so a per-gender camera would fight that.
+// The Palico a first-time visitor meets -- Raven's own, mirroring "Default Palico.json".
+// Same rule as the hunter defaults: applied ONLY when there is no saved session, so a
+// returning visitor is never overwritten.
+const DEFAULT_OTOMO = {
+  pieces: { helm: { id: "s320", name: "F Cephalos Hat X" },
+            body: { id: "s320", name: "F Cephalos Dress X" } },
+  pigment: { helm: "#971f2d", body: "#971f2d" },
+  deviant: { helm: "Stonefist", body: "Stonefist" },
+  palico: { ear: "Normal", eye: "Normal", tail: "Bushy", fur: "Type 6",
+            clothing: "Type 2", furColor: null, eyeColor: "Matcha",
+            earStyle: 0, eyeStyle: 0, tailStyle: 3, furStyle: 5 },
+  pose: "Pose 1",
+  camera: { p: [0.9805, 0.2937, 1.6435], t: [-0.0121, -0.0219, -0.0666] }
+};
 const DEFAULT_MALE = {
   slots: {helm:"s641", body:"s503", arm:"s850", wst:"s850", leg:"s642"},
   hunterType: 'all',
@@ -1106,10 +1187,17 @@ const CHAR_COLORS = [
 const CHAR_PARTS = [
   ['skinColor','skin'], ['eyeColor','eye'], ['hairColor','hair']
 ];
+// The Palico's two are the same kind of control -- one texture per gender, recoloured at
+// runtime -- so they run through the same palette, the same shader path and the same
+// "Default / 24 names / RGB..." list rather than a parallel implementation.
+const OT_CHAR_PARTS = [
+  ['otFurColor','fur'], ['otEyeColor','oeye']
+];
+const ALL_CHAR_PARTS = CHAR_PARTS.concat(OT_CHAR_PARTS);
 // null = the authored color; a NUMBER indexes CHAR_COLORS; a '#rrggbb' STRING is a
 // custom RGB pick. Keeping the game's palette and a free colour in one field means every
 // path -- render, save, export -- handles both without a second flag.
-const charColor = { skin:null, eye:null, hair:null };
+const charColor = { skin:null, eye:null, hair:null, fur:null, oeye:null };
 
 function applyTint(mat){
   // Own the uniform OBJECTS up front and hand the same ones to onBeforeCompile, so
@@ -1243,6 +1331,43 @@ const clothMounted = {};
 // pigment applies to ARMOUR only -- never the hunter's face or hair
 const armorMats = [];
 
+// ---- Palico ----------------------------------------------------------------
+// Palicos mount separately from the hunter: their own skeleton (gids 0-13 for the body,
+// 15-17 for the tail), two armour slots instead of five, no gender, and four base-cat
+// parts. The tab decides which of the two figures is on screen.
+const OT = manifest.otomo || null;
+const OT_SLOTS = ['helm', 'body'];
+const otMounted = {};
+let figure = 'hunter';
+// Each figure keeps its own camera, so switching back returns to the view you left rather
+// than re-framing. Declared here rather than beside setFigure so saveState can reach it.
+const figCam = { hunter: null, palico: null };
+// helm/body hold a model id; ear/eye/tail/fur hold an index into manifest.otomo
+const otState = { helm: 'none', body: 'none', ear: 0, eye: 0, tail: 0, fur: 0, cloth: '' };
+// What a Palico wears with no chest armour. Models 035 and 044, identified from the data
+// the same way the hunter's seven were: neither has a row in `otArmorData` (so no name and
+// no rarity), and each ships `b.arc` ALONE where every real set ships a head too.
+//
+// The structural tell is the skin mesh. Both carry the FULL 446-vert bare-cat body --
+// byte-identical to model 000's -- and add a small garment over it (72+119 verts on 035,
+// 154+185 on 044). Real armour instead REPLACES that mesh with a trimmed 427-vert version,
+// because armour covers part of the body. So this is geometry authored to be what shows
+// when nothing is equipped, which is the definition of the clothing.
+//
+// It therefore SUBSTITUTES for the bare body rather than mounting beside it -- mounting
+// both would draw the cat's skin twice. Armour wins: equipping a chest piece hides it.
+const OT_CLOTH = ['035', '044'];
+// Fur is a TEXTURE, not a mesh -- 7 patterns (o_skin000..006) shared by the body, the
+// face inside the helm, the ears and the tail. So changing it swaps maps on live
+// materials rather than reloading anything.
+function otFurTex(){
+  const f = OT && OT.fur && OT.fur[otState.fur];
+  return f ? f.tex : null;
+}
+function activeMounts(){
+  return Object.values(figure === 'palico' ? otMounted : mounted);
+}
+
 async function getTexture(file){
   if (texCache.has(file)) return texCache.get(file);
   const t = await texLoader.loadAsync(file);
@@ -1338,13 +1463,20 @@ let poseCenter = null;   // the body's own centre, averaged over the loop
 const poseClock = new THREE.Clock();
 const _v = new THREE.Vector3();
 
+// Which figure the running pose drives, and the joint table its proxy is read through.
+// A Palico's global bone ids address different bones from a hunter's, so the two cannot
+// share one table -- but they CAN share one mixer, because only one figure is ever on
+// screen at a time.
+let poseFigure = 'hunter';
 async function playGamePose(idx){
   const entry = (manifest.poses || [])[idx];
   if (!entry) return;
   return playPoseEntry(entry);
 }
-// a pose is just a (file, clip) pair -- lobby poses and weapon stances share this
-async function playPoseEntry(entry){
+// a pose is just a (file, clip) pair -- lobby poses, weapon stances and Palico poses share this
+async function playPoseEntry(entry, opt){
+  poseFigure = (opt && opt.figure) || 'hunter';
+  const poseJoints = (opt && opt.joints) || manifest.poseJoints || [];
   let gltf = poseCache.get(entry.file);
   if (!gltf) {
     gltf = await loader.loadAsync(entry.file);
@@ -1364,8 +1496,7 @@ async function playPoseEntry(entry){
   if (!clip) { err.textContent = 'pose clip missing: ' + entry.clip; return; }
   // the proxy is never added to the scene; it exists only to be sampled
   gltf.scene.updateMatrixWorld(true);
-  poseProxyBones = new Map(bonesByGid(gltf.scene, manifest.poseJoints || [])
-                             .map(e => [e.gid, e.node]));
+  poseProxyBones = new Map(bonesByGid(gltf.scene, poseJoints).map(e => [e.gid, e.node]));
   poseMixer = new THREE.AnimationMixer(gltf.scene);
   // Where the pelvis sits at REST. Many of these motions carry root translation -- they
   // are lobby animations, so the character walks, steps and turns -- and left alone the
@@ -1419,7 +1550,9 @@ async function playPoseEntry(entry){
   // feet to head. (Pelvis-to-head was the first attempt and it aims at the chest, which
   // put the body a quarter of a screen-height below centre.)
   const frameBox = new THREE.Box3(), acc = new THREE.Vector3(), fc = new THREE.Vector3();
-  const STEPS = 24;
+  // Every one of the Palico's 66 guild-card poses is a single frame, so there is nothing
+  // to walk -- sampling it 24 times would just measure t=0 over and over.
+  const STEPS = clip.duration > 0.001 ? 24 : 1;
   let nMid = 0;
   for (let i = 0; i < STEPS; i++){
     poseMixer.setTime((i / STEPS) * clip.duration);
@@ -1484,9 +1617,11 @@ function stepGamePose(){
   // local copies those pieces keep their missing ancestors at bind, so the helm hangs
   // where the head would be in T-pose while the body bends away underneath -- which is
   // the "flying off, arms in wrong places" symptom.
-  for (const root of Object.values(mounted)
-                      .concat(Object.values(charMounted))
-                      .concat(Object.values(clothMounted))){
+  const roots = poseFigure === 'palico'
+    ? Object.values(otMounted)
+    : Object.values(mounted).concat(Object.values(charMounted))
+                            .concat(Object.values(clothMounted));
+  for (const root of roots){
     for (const { gid, node } of gidBonesOf(root)){
       const src = poseProxyBones.get(gid);
       if (!src || !node.parent) continue;
@@ -1546,16 +1681,33 @@ const HIDE_DUP_HAND = new Set(['568']);
 
 async function loadPiece(id, slot){
   const key = gender + id + '_' + slot;      // gender is part of the cache key
-  const hideDupHand = slot === 'arm' && HIDE_DUP_HAND.has(id);
   const entry = manifest.pieces[key];
   if (!entry) return null;
+  return loadEntry(entry, { key: key, slot: slot,
+    hideDupHand: slot === 'arm' && HIDE_DUP_HAND.has(id) });
+}
+
+// The mesh + material pipeline, shared by hunter armor, clothing and Palicos. A Palico is
+// built from the same MT Framework parts and needs every rule in here -- the Group[100]
+// proxy layer, the two meanings of the `_bm` alpha, the `_sym_` dye region, the env
+// matcap -- so it takes this path instead of a second copy that would drift from it.
+// `opt.otomo` changes only which materials count as fur/eye and where their maps come from.
+async function loadEntry(entry, opt){
+  const key = opt.key, slot = opt.slot;
+  const hideDupHand = !!opt.hideDupHand, otomo = !!opt.otomo;
   let gltf = glbCache.get(key);
   if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(key, gltf); }
   // Object3D.clone() does NOT rebind skeletons: every clone keeps pointing at the
   // ORIGINAL glb's bones, which live outside the scene graph and never get their world
   // matrices updated - so posing one piece silently desyncs it from the others.
   const root = skeletonClone(gltf.scene);
-  const hideSet = new Set((entry.hide || []).map(h => h[0] + '#' + h[1]));
+  // A hide entry is [material, verts] or, for an alternate mesh group, [material, verts,
+  // group]. The group form is needed because two alternates can share BOTH name and vertex
+  // count -- o210_helm ships its 20-vert trim twice -- so a name+count key would hide the
+  // copy meant to stay. Two sets rather than one so the 2-element form stays exact.
+  const hideSet = new Set(), hideGrp = new Set();
+  for (const h of (entry.hide || []))
+    (h.length > 2 ? hideGrp : hideSet).add(h[0] + '#' + h[1] + (h.length > 2 ? '#' + h[2] : ''));
   const jobs = [];
   root.traverse(o => {
     if (o.isMesh || o.isSkinnedMesh) {
@@ -1576,9 +1728,19 @@ async function loadPiece(id, slot){
       // Group[1] and Group[2], so its hands never rendered. Across 2,500 pieces only 7 use
       // a group outside {0,100} at all -- 13 primitives -- so this is a narrow correction.
       const isBlob = isLod || meshGroupId(o) >= 100 || hideSet.has(srcName + '#' + verts)
+                  || hideGrp.has(srcName + '#' + verts + '#' + meshGroupId(o))
                   || (hideDupHand && meshGroupId(o) === 2 && /envskin/i.test(srcName));
-      const isSkin = !isBlob && /skin/i.test(srcName);
-      const file = (isBlob || isSkin) ? (entry.skin || entry.tex)
+      // A Palico's flesh is its FUR, and it is spread across four material names --
+      // o_skin (the body, shipped inside body.arc), o_face (shipped inside the HELM),
+      // o_ear and o_tail. All four take whichever of the 7 fur patterns is selected,
+      // which is why the pattern is a texture swap and not a mesh swap.
+      const isFur = otomo && /o_(skin|face|ear|tail)/i.test(srcName);
+      // the eye's own map; `_light` is the specular glint, not the iris, so it is left
+      // alone by the eye-colour tint
+      const isOtEye = otomo && /o_eye/i.test(srcName);
+      const isSkin = otomo ? isFur : (!isBlob && /skin/i.test(srcName));
+      const file = otomo ? (isFur ? otFurTex() : entry.tex)
+                 : (isBlob || isSkin) ? (entry.skin || entry.tex)
                                       : textureForMaterial(srcName, entry);
       // The `_bm` alpha means two different things depending on the material variant,
       // which is why a global alphaTest once culled most of the armour:
@@ -1596,19 +1758,34 @@ async function loadPiece(id, slot){
       // What IS safe either way: discard only what is essentially transparent. A real
       // cutout goes to zero in the regions it removes, and a gloss ramp never does.
       const isAlphaMat = /^XfBA/.test(srcName);
+      // A Palico's XfBA alpha is a GLOSS RAMP far more often than a cutout, so the
+      // hunter's 0.5 erases the armour. Measured over the 117 Palico pieces that carry an
+      // XfBA material: the mid-band averages 33.6% of texels (a real cutout is bimodal --
+      // Gore sits at 1.4%), and 53 of them keep under 5% of their texture above a 0.5 cut,
+      // which is exactly "a lot of Palico equipment does not render".
+      //
+      // What the alpha DOES separate cleanly is zero from everything else: a==0 averages
+      // 16.5% of texels but a<=8 only 21.3%, so the authored holes sit at exactly zero and
+      // everything above 8 is ramp. Cutting just above zero drops 4% of a texture; cutting
+      // at 0.5 drops 40%. This is the rule the comment above already argued for -- discard
+      // only what is essentially transparent -- applied where it is measurable.
+      // Left at 0.5 for the hunter, whose armour is not what was measured here.
+      const alphaCut = isAlphaMat ? (otomo ? 0.03 : 0.5) : 0;
       const mat = new THREE.MeshStandardMaterial({
         roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
-        transparent:false, alphaTest: isAlphaMat ? 0.5 : 0 });
+        transparent:false, alphaTest: alphaCut });
       // the hunter's flesh is not dyeable by pigment -- it takes the skin-tone selector.
       // `undyeable` is the game's own flag: armorSeriesData byte +113, which is 0 on
       // exactly two armour lines library-wide (Criminal and Hylian), both confirmed
       // undyeable in game, and 1 on every set confirmed dyeable -- Garo included, which
       // is what separates it from the three earlier guesses that a positive broke.
-      mat.userData.noTint = isSkin || isBlob || !!entry.undyeable;
-      if (isSkin) mat.userData.tintClass = 'skin';
+      mat.userData.noTint = isSkin || isBlob || isOtEye || !!entry.undyeable;
+      if (isSkin) mat.userData.tintClass = otomo ? 'fur' : 'skin';
+      // the glint keeps its authored white; only the iris takes the eye colour
+      if (isOtEye && !/_light/i.test(srcName)) mat.userData.tintClass = 'oeye';
       // `_sym_` names the dyeable region; skin and the proxy never qualify
       mat.userData.dyeRegion = !isSkin && !isBlob && /_sym/i.test(srcName);
-      mat.userData.slot = slot;
+      mat.userData.slot = otomo ? 'o' + slot : slot;
       // `defaultPig` is the armor's own default pigment -- mSymbolCol from
       // armorSeriesData (+116 male / +119 female), a direct index into the 125-colour
       // palette. It replaced `defaultPigment`, which read ArmorColorData's five bytes as
@@ -1648,7 +1825,10 @@ async function loadPiece(id, slot){
   });
   await Promise.all(jobs);
   root.userData.joints = entry.joints || [];
-  poseObject(root, root.userData.joints);
+  // POSES is keyed by the HUNTER's global bone ids; a Palico's gids address different
+  // bones entirely, so it stays at its bind pose rather than being posed by a table that
+  // does not describe it.
+  if (!otomo) poseObject(root, root.userData.joints);
   return root;
 }
 
@@ -1907,8 +2087,18 @@ function stepWeaponPart(part, isOff){
 // head + hair + body together is what makes an unarmored region look like a person
 // rather than a hole.
 const charMounted = {};
+// Same interleaving as setSlot: two runs both remove, both await their load, then both
+// add -- and charMounted only remembers the last, so the earlier one is orphaned in the
+// scene forever. Hammering the gender toggle piled up female heads on a male body.
+const charSeq = { face: 0, hair: 0 };
+function clearChar(part){
+  for (const o of scene.children.slice())
+    if (o.userData && o.userData.charPart === part) scene.remove(o);
+  delete charMounted[part];
+}
 async function setChar(part, on){
-  if (charMounted[part]) { scene.remove(charMounted[part]); delete charMounted[part]; }
+  const seq = ++charSeq[part];
+  clearChar(part);
   if (!on) return;
   const list = (manifest.chars && manifest.chars[gender] || {})[part] || [];
   if (!list.length) return;
@@ -1918,6 +2108,7 @@ async function setChar(part, on){
   const ck = gender + '_' + part + entry.id;
   let gltf = glbCache.get(ck);
   if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(ck, gltf); }
+  if (seq !== charSeq[part]) return;          // superseded while loading
   const root = skeletonClone(gltf.scene);
   const hideSet = new Set((entry.hide || []).map(h => h[0] + '#' + h[1]));
   // NB: for armor, a non-zero mesh group means the proxy blob and is hidden outright.
@@ -1948,12 +2139,15 @@ async function setChar(part, on){
   await Promise.all(jobs);
   root.userData.joints = entry.joints || [];
   poseObject(root, root.userData.joints);
+  if (seq !== charSeq[part]) return;
+  clearChar(part);                            // nothing of this part survives the swap
+  root.userData.charPart = part;
   scene.add(root); charMounted[part] = root;
 }
 let rainbowOn = false;
 const CHAR_SYNC = [];
 function buildColorLists(){
-  for (const [id] of CHAR_PARTS){
+  for (const [id] of ALL_CHAR_PARTS){
     document.getElementById(id).innerHTML =
       '<option value="">Default</option>' +
       CHAR_COLORS.map((c,i) => '<option value="'+i+'">'+c[0]+'</option>').join('') +
@@ -1966,7 +2160,7 @@ function buildColorLists(){
 function applyCharColors(t){
   rainbowOn = false;
   const cols = {};
-  for (const [, part] of CHAR_PARTS){
+  for (const [, part] of ALL_CHAR_PARTS){
     const v = charColor[part];
     if (v === null || v === undefined) { cols[part] = null; continue; }
     if (typeof v === 'string') { cols[part] = v; continue; }   // custom RGB
@@ -2103,7 +2297,7 @@ async function setClothing(){
 clothSel.onchange = () => setClothing().then(saveState);
 
 function frameAll(){
-  const objs = Object.values(mounted);
+  const objs = activeMounts();
   if (!objs.length) return;
   const box = new THREE.Box3(); objs.forEach(o => box.expandByObject(o));
   // expandByObject reads a skinned mesh's BIND-pose bounds, so under a game pose the box
@@ -2356,10 +2550,19 @@ function applyCharColorState(cc){
   CHAR_SYNC.forEach(f => f());
 }
 
+// Clicking the toggle faster than a body loads used to MIX the two sets, in two ways.
+// The capture at the top ran while a previous switch was still half-applied, so it wrote a
+// part-dressed body into the OTHER gender's state -- permanently, since that is what gets
+// saved. And the two runs' await loops interleaved, mounting pieces from both. A ticket
+// fixes the second; skipping the capture while one is in flight fixes the first, because
+// the in-flight call already recorded the departing body correctly.
+let genderSeq = 0, genderBusy = false;
 async function setGender(g){
   if (g === gender) return;
-  GENDER_STATE[gender] = captureGender();       // remember what this body was wearing
-  const prev = captureGender();
+  const seq = ++genderSeq;
+  if (!genderBusy) GENDER_STATE[gender] = captureGender();   // remember this body
+  const prev = GENDER_STATE[gender] || captureGender();
+  genderBusy = true;
   gender = g;
   for (const k of Object.keys(OPT_CACHE)) delete OPT_CACHE[k];
   document.getElementById('gM').classList.toggle('on', g === 'm');
@@ -2386,11 +2589,13 @@ async function setGender(g){
   if (want.clothing !== undefined) document.getElementById('clothing').value = want.clothing;
   applyCharColorState(want.charColor);
   await refreshChar();
+  if (seq !== genderSeq) return;            // superseded by a later click
   for (const slot of SLOTS){
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
     const id = tokenFor(slot, want.slots ? want.slots[slot] : 'none');
     sel.value = id;
     await setSlot(slot, id);
+    if (seq !== genderSeq) return;
   }
   applyCharColors();
   applySlotDev(want.slotDev);
@@ -2412,7 +2617,10 @@ async function setGender(g){
     const ps = document.getElementById('pose');
     ps.value = want.pose;
     await ps.onchange({ target: ps });
+    if (seq !== genderSeq) return;
   }
+  // only the newest run clears the flag; an interrupted one leaves it set for its successor
+  if (seq === genderSeq) genderBusy = false;
 }
 document.getElementById('htype').value = hunterType;
 rebuildSelects('');
@@ -2485,7 +2693,7 @@ document.getElementById('pose').onchange = async e => {
   }
   saveState();
 };
-for (const [id, part] of CHAR_PARTS){
+for (const [id, part] of ALL_CHAR_PARTS){
   const sel = document.getElementById(id), rgb = document.getElementById(id + 'RGB');
   // the picker only exists while RGB is the choice, so the row stays quiet otherwise
   function syncRgbVisibility(){ rgb.hidden = sel.value !== 'rgb'; }
@@ -2695,8 +2903,18 @@ document.getElementById('slotPig').innerHTML =
 // sits with Skin Tone / Eye Color / Hair Color in CharMakeMsg.
 document.getElementById('clothPig').innerHTML =
   pigRow('cloth', 'Clothing Color', 'Pigment for the clothing');
+// The Palico's two pieces get their own rows and their own All, built here so the hex
+// field, the palette button and persistence all wire themselves the same way the
+// hunter's do -- the two figures simply never write over each other.
+if (document.getElementById('otSlotPig'))
+  document.getElementById('otSlotPig').innerHTML =
+    pigRow('oall', 'All', 'Pigment for both Palico pieces') +
+    '<hr style="border:0;border-top:1px solid var(--line);margin:8px 0">' +
+    pigRow('ohelm', 'Head', 'Pigment for the Palico head') +
+    pigRow('obody', 'Chest', 'Pigment for the Palico chest');
 // every pigment row, including the ones outside the Pigment panel
-const PIG_ROWS = SLOTS.concat(['all', 'cloth']);
+const PIG_ROWS = SLOTS.concat(['all', 'cloth', 'oall', 'ohelm', 'obody']);
+const OT_PIG = ['ohelm', 'obody'];
 
 // the hex label doubles as a copy button
 function paintHexLabels(){
@@ -2726,7 +2944,9 @@ for (const id of PIG_ROWS){
     const cb = document.getElementById('pgOn_'+id);
     if (!cb.checked) cb.checked = true;
     if (id === 'all') pushAll();
+    else if (id === 'oall') otPushAll();
     else if (id === 'cloth') readSlotPigments();      // its own thing; All does not speak for it
+    else if (OT_PIG.indexOf(id) >= 0) { otAllCb.checked = false; readSlotPigments(); }
     else { allCb.checked = false; readSlotPigments(); }
     paintHexLabels();
     saveState();
@@ -2735,7 +2955,7 @@ for (const id of PIG_ROWS){
   f.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); f.blur(); } };
 }
 function readSlotPigments(){
-  for (const sl of SLOTS.concat(['cloth'])){
+  for (const sl of SLOTS.concat(['cloth'], OT_PIG)){
     const on = document.getElementById('pgOn_'+sl).checked;
     const hex = document.getElementById('pg_'+sl).value;
     if (!on) { slotPigment[sl] = null; continue; }
@@ -2778,6 +2998,28 @@ function pushAll(){
 allCb.onchange  = () => { pushAll(); saveState(); };
 allCol.oninput  = () => { if (!allCb.checked) allCb.checked = true; pushAll(); };
 allCol.onchange = saveState;
+
+// the same three controls again for the Palico, against its own two rows
+const otAllCb = document.getElementById('pgOn_oall'), otAllCol = document.getElementById('pg_oall');
+otAllCol.value = PIG_NONE;
+function otPushAll(){
+  for (const sl of OT_PIG){
+    document.getElementById('pgOn_' + sl).checked = otAllCb.checked;
+    document.getElementById('pg_' + sl).value = otAllCol.value;
+  }
+  readSlotPigments();
+  paintHexLabels();
+}
+otAllCb.onchange  = () => { otPushAll(); saveState(); };
+otAllCol.oninput  = () => { if (!otAllCb.checked) otAllCb.checked = true; otPushAll(); };
+otAllCol.onchange = saveState;
+for (const sl of OT_PIG){
+  const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
+  col.value = PIG_NONE;
+  cb.onchange  = () => { otAllCb.checked = false; readSlotPigments(); saveState(); };
+  col.oninput  = () => { if (!cb.checked) cb.checked = true; otAllCb.checked = false; readSlotPigments(); };
+  col.onchange = saveState;
+}
 
 // ---- the game's own pigments, reachable from each row -----------------------
 // PIGMENTS is equipBaseColorData.ebcd verbatim: 125 RGB triples, in the game's order.
@@ -2832,7 +3074,12 @@ if (BASE_PALETTE_UI) {
 // pigment id for each of the five armour slots -- so it is assigned from this modal, which
 // already knows which row it was opened for. That replaces the old single global deviant,
 // which had no way to say which piece it applied to.
-const slotDeviant = { helm:null, body:null, arm:null, wst:null, leg:null, cloth:null };
+const slotDeviant = { helm:null, body:null, arm:null, wst:null, leg:null, cloth:null,
+                      ohelm:null, obody:null };
+// every row a deviant pigment can be assigned to. The Palico's two were missing from all
+// of these lists, so a deviant could be PICKED for a Palico piece and then never animated,
+// never saved and never restored.
+const DEV_SLOTS = SLOTS.concat(['cloth'], OT_PIG);
 const ANIM_OPTS = a =>
   '<option value="fade"' + (a === 'fade' ? ' selected' : '') + '>Fade</option>' +
   '<option value="pulse"' + (a === 'pulse' ? ' selected' : '') + '>Pulse</option>';
@@ -2869,7 +3116,7 @@ document.getElementById('pigPalettes').innerHTML = PALETTES.map(([nm, off, cols]
   '</div>').join('');
 function applySlotDev(list){
   if (!Array.isArray(list)) return;
-  SLOTS.concat(['cloth']).forEach((sl, i) => {
+  DEV_SLOTS.forEach((sl, i) => {
     const v = list[i];
     if (!v) { slotDeviant[sl] = null; return; }
     // a preset is stored by NAME so reordering cannot shift it; a custom pair stores itself
@@ -2880,12 +3127,23 @@ function applySlotDev(list){
 }
 // one entry per slot: a preset name, or {a,b,anim} for a custom pair
 function slotDevState(){
-  return SLOTS.concat(['cloth']).map(sl => {
+  return DEV_SLOTS.map(sl => {
     const d = slotDeviant[sl];
     if (!d) return null;
     return d.name === 'Custom' ? { a:d.a, b:d.b, anim:d.anim } : d.name;
   });
 }
+// Which rows the open picker writes to. This used to be `pigTarget === 'all' ? SLOTS :
+// [pigTarget]`, which meant the Palico's own All row looped over the HUNTER's five slots
+// and edited the wrong figure entirely.
+function pigTargets(){
+  if (pigTarget === 'all') return SLOTS;
+  if (pigTarget === 'oall') return OT_PIG;
+  return [pigTarget];
+}
+function pigIsOtomo(){ return pigTarget === 'oall' || OT_PIG.indexOf(pigTarget) >= 0; }
+function pigAllCb(){ return pigIsOtomo() ? otAllCb : allCb; }
+function pigAllCol(){ return pigIsOtomo() ? otAllCol : allCol; }
 function closePig(){ pigModal.classList.add('hidden'); }
 function openPig(id, label){
   pigTarget = id;
@@ -2900,14 +3158,16 @@ pigModal.querySelector('.modal-card').onclick = e => {
   const dev = e.target.closest('button[data-dev]');
   if (dev) {
     const idx = +dev.dataset.dev;
-    for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])) setSlotDeviant(sl, idx);
-    if (pigTarget === 'all') { allCb.checked = false; allCol.value = PIG_NONE; }
+    for (const sl of pigTargets()) setSlotDeviant(sl, idx);
+    if (pigTarget === 'all' || pigTarget === 'oall') {
+      pigAllCb().checked = false; pigAllCol().value = PIG_NONE;
+    }
     readSlotPigments(); paintHexLabels(); saveState(); closePig();
     return;
   }
   const b = e.target.closest('button[data-hex]');
   if (!b) return;
-  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])) slotDeviant[sl] = null;
+  for (const sl of pigTargets()) slotDeviant[sl] = null;
   const f = document.getElementById('pgHex_' + pigTarget);
   f.value = b.dataset.hex;
   f.onchange();            // the one commit path -- validates, ticks the row, pushes All
@@ -2918,6 +3178,18 @@ pigModal.querySelector('.modal-card').onclick = e => {
 // that colour in the row. A piece with no pigment to restore -- an empty slot, one of the
 // 28 undyeable pieces, or one of the 42 that join to no series -- falls back to off.
 function defaultPigHex(slot){
+  // The Palico's own default. `cOtArmorBase` has no mSymbolCol; its only colour fields are
+  // mBaseColHelm / mBaseColBody (otArmorData +31 / +32), and those track the dyeable
+  // region closely enough to use -- of the pieces carrying a `_sym_` material, 478 of 480
+  // helms and 476 of 478 bodies have a non-zero value, while pieces with no `_sym_` region
+  // read zero 45-62% of the time.
+  if (slot === 'ohelm' || slot === 'obody'){
+    const k = slot.slice(1);
+    const e = OT && OT.pieces['o' + otModelOf(k, otState[k]) + '_' + k];
+    if (!e || e.defaultPig === undefined) return null;
+    const p = PIGMENTS.find(x => x.i === e.defaultPig);
+    return p ? p.hex : null;
+  }
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
   const id = sel ? modelOf(slot, sel.value) : null;      // the select holds a token
   if (!id) return null;
@@ -2929,7 +3201,7 @@ function defaultPigHex(slot){
 // Default on All restores each piece SEPARATELY -- it must not go through pushAll(),
 // which writes one colour into all five and would stamp All's colour over every piece.
 document.getElementById('pigDefault').onclick = () => {
-  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
+  for (const sl of pigTargets()){
     slotDeviant[sl] = null;
     // the clothing belongs to no armor series, so it has no mSymbolCol to restore
     const hex = sl === 'cloth' ? null : defaultPigHex(sl);
@@ -2937,9 +3209,9 @@ document.getElementById('pigDefault').onclick = () => {
     cb.checked = !!hex;
     col.value = hex || PIG_NONE;
   }
-  // the five are now each on their own default, so All no longer speaks for them
-  if (pigTarget !== 'cloth') allCb.checked = false;
-  if (pigTarget === 'all') allCol.value = PIG_NONE;
+  // the rows are now each on their own default, so All no longer speaks for them
+  if (pigTarget !== 'cloth') pigAllCb().checked = false;
+  if (pigTarget === 'all' || pigTarget === 'oall') pigAllCol().value = PIG_NONE;
   readSlotPigments(); paintHexLabels(); saveState();
   closePig();
 };
@@ -2952,7 +3224,7 @@ for (const selEl of document.querySelectorAll('select.devanim[data-dev]')){
   selEl.onchange = () => {
     const i = +selEl.dataset.dev, a = selEl.value;
     DEVIANTS[i][3] = a; devAnimOverride[DEVIANTS[i][0]] = a;
-    for (const sl of SLOTS.concat(['cloth']))
+    for (const sl of DEV_SLOTS)
       if (slotDeviant[sl] && slotDeviant[sl].name === DEVIANTS[i][0]) slotDeviant[sl].anim = a;
     saveState();
   };
@@ -2961,13 +3233,15 @@ document.getElementById('cusApply').onclick = () => {
   const a = document.getElementById('cusA').value,
         b = document.getElementById('cusB').value,
         an = document.getElementById('cusAnim').value;
-  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
+  for (const sl of pigTargets()){
     slotDeviant[sl] = { name:'Custom', a, b, anim:an };
     const cb = document.getElementById('pgOn_' + sl);
     if (cb && !cb.checked) cb.checked = true;
     document.getElementById('pg_' + sl).value = a;
   }
-  if (pigTarget === 'all'){ allCb.checked = false; allCol.value = PIG_NONE; }
+  if (pigTarget === 'all' || pigTarget === 'oall'){
+    pigAllCb().checked = false; pigAllCol().value = PIG_NONE;
+  }
   readSlotPigments(); paintHexLabels(); saveState(); closePig();
 };
 function applyDevAnimOverrides(o){
@@ -2980,7 +3254,9 @@ function applyDevAnimOverrides(o){
     if (selEl) selEl.value = a;
   }
 }
-const PIG_ROW_LABEL = Object.assign({ all: 'All', cloth: 'Clothing Color' }, SLOT_LABEL);
+const PIG_ROW_LABEL = Object.assign(
+  { all: 'All', cloth: 'Clothing Color',
+    oall: 'Palico — All', ohelm: 'Palico — Head', obody: 'Palico — Chest' }, SLOT_LABEL);
 for (const id of PIG_ROWS)
   document.getElementById('pgPal_' + id).onclick = () => openPig(id, PIG_ROW_LABEL[id]);
 
@@ -3016,7 +3292,7 @@ const _dcA=new THREE.Color(), _dcB=new THREE.Color(), _dcM=new THREE.Color();
 // it. A slot whose row is unticked is skipped, so unticking stops the animation too.
 function stepDeviant(t){
   let any = false;
-  for (const sl of SLOTS.concat(['cloth'])){
+  for (const sl of DEV_SLOTS){
     const d = slotDeviant[sl];
     if (!d) continue;
     const cb = document.getElementById('pgOn_' + sl);
@@ -3117,7 +3393,7 @@ if (SAVED) {
     ['sat0','sat1','val0'].forEach((i,k)=>{ if(SAVED.mask[k]!=null) document.getElementById(i).value=SAVED.mask[k]; });
   }
   if (SAVED.charColor) {
-    for (const [id, part] of CHAR_PARTS){
+    for (const [id, part] of ALL_CHAR_PARTS){
       const v = SAVED.charColor[part];
       if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
         charColor[part] = v;
@@ -3144,6 +3420,348 @@ if (SAVED) {
     if (hit) choosePigment(hit.rgb, pigBox.children[SAVED.pigmentIndex + 1], hit.i);
   }
 }
+// ==== Palico =================================================================
+// Assembled from five sources rather than the hunter's five armour slots: the head and
+// chest armour, plus ears, eyes and a tail. Two parts of the cat ride INSIDE the armour
+// -- body.arc carries the fur body and helm.arc carries the face -- so there is no
+// separate bare-cat mesh to mount. Model 000 is the unadorned pair, which is what
+// "— none —" selects; the same trick the hunter's Chakra pieces use.
+const otSel     = { helm: document.getElementById('o_helm'),
+                    body: document.getElementById('o_body') };
+const otPartSel = { ear:  document.getElementById('otEar'),
+                    eye:  document.getElementById('otEye'),
+                    tail: document.getElementById('otTail') };
+const otFurSel  = document.getElementById('otFur');
+const OT_PARTS  = ['ear', 'eye', 'tail'];
+const OT_BARE   = '000';
+const otSeq     = { helm:0, body:0, ear:0, eye:0, tail:0 };
+
+function otPiece(id, slot){ return OT ? OT.pieces['o' + id + '_' + slot] : null; }
+
+// The list is the Palico Smithy's, 1:1. `otArmorCreate.oec` is a single 526-row forge
+// table for both slots and its row order is the order the game shows -- a real ordering,
+// not series order, with 409 rows out of place. So each forgeable piece is its own row
+// rather than rank variants collapsing onto one entry per model, which is what a player
+// sees and matches how the hunter's list works.
+//
+// Values are `s<series>` tokens, not model ids, because two forge rows share a model --
+// a bare id could not tell F Acorn Helm from F Acorn Helm S on reload.
+const OT_OPT_CACHE = {};
+function otOptions(slot){
+  if (OT_OPT_CACHE[slot]) return OT_OPT_CACHE[slot];
+  const out = [];
+  for (const r of ((OT && OT.smithy && OT.smithy[slot]) || [])){
+    if (!otPiece(r.model, slot)) continue;
+    // MHXX-only gear last, under its own heading. Its entries carry the game's own
+    // JAPANESE name: MHGU never shipped them so there is no English string to use, and
+    // making one up is not on. The costume heads before it are pieces the forge equips
+    // with the body and never names separately, so they take the SET's name.
+    const group = r.jp ? 'MHXX only' : r.set ? 'Set gear'
+                : r.r ? 'Rarity ' + r.r : 'Unranked';
+    out.push({ value: 's' + r.series, label: r.name, model: r.model, group: group });
+  }
+  return (OT_OPT_CACHE[slot] = out);
+}
+// `— none —` is the BARE cat, not an empty slot: the fur body and the face ride inside
+// body.arc and helm.arc, so model 000 is what "wearing nothing" looks like.
+function otModelOf(slot, v){
+  if (!v || v === 'none') return OT_BARE;
+  const o = otOptions(slot).find(x => x.value === v);
+  if (o) return o.model;
+  return otPiece(v, slot) ? v : OT_BARE;   // a save from before the Smithy order
+}
+// resolve whatever a save holds to a token in the current list
+function otTokenFor(slot, v){
+  if (!v || v === 'none' || v === OT_BARE) return 'none';
+  const opts = otOptions(slot);
+  if (opts.some(o => o.value === v)) return v;
+  const m = opts.find(o => o.model === v);        // legacy: a bare model id
+  return m ? m.value : 'none';
+}
+
+function otBuildSelects(filter){
+  if (!OT) return;
+  const f = (filter || '').trim().toLowerCase();
+  for (const slot of OT_SLOTS){
+    const sel = otSel[slot], cur = otState[slot];
+    let opts = otOptions(slot);
+    // the worn piece always stays listed, or filtering would silently undress the cat
+    if (f) opts = opts.filter(o => o.label.toLowerCase().indexOf(f) >= 0 || o.value === cur);
+    // Pure forge order, NOT sorted by rarity -- the Smithy runs rarity-ascending and then
+    // appends its special block, and re-sorting would scatter that through the middle.
+    // The group breaks on every CHANGE, so a rarity that reappears late is that block.
+    let html = '<option value="none">&mdash; none &mdash;</option>', group = null;
+    for (const o of opts){
+      if (o.group !== group){
+        if (group !== null) html += '</optgroup>';
+        group = o.group;
+        html += '<optgroup label="' + group + '">';
+      }
+      html += '<option value="' + o.value + '">' + o.label + '</option>';
+    }
+    if (group !== null) html += '</optgroup>';
+    sel.innerHTML = html;
+    sel.value = [...sel.options].some(o => o.value === cur) ? cur : 'none';
+  }
+}
+
+function otBuildParts(){
+  if (!OT) return;
+  for (const part of OT_PARTS){
+    const list = OT.parts[part] || [];
+    otPartSel[part].innerHTML =
+      list.map((e, i) => '<option value="' + i + '">' + e.name + '</option>').join('');
+    if (otState[part] >= list.length) otState[part] = 0;
+    otPartSel[part].value = String(otState[part]);
+  }
+  // Labelled Type 1-2 in file order: they have no names in the game data to use, the same
+  // position the 7 fur patterns and the hunter's own clothing are in.
+  const cs = document.getElementById('otCloth');
+  cs.innerHTML = '<option value="">&mdash; none &mdash;</option>' +
+    OT_CLOTH.filter(id => otPiece(id, 'body'))
+            .map((id, i) => '<option value="' + id + '">Type ' + (i + 1) + '</option>').join('');
+  cs.value = [...cs.options].some(o => o.value === otState.cloth) ? otState.cloth : '';
+  const fur = OT.fur || [];
+  otFurSel.innerHTML =
+    fur.map((e, i) => '<option value="' + i + '">' + e.name + '</option>').join('');
+  if (otState.fur >= fur.length) otState.fur = 0;
+  otFurSel.value = String(otState.fur);
+}
+
+function otClear(k){
+  const g = otMounted[k];
+  if (g) { scene.remove(g); delete otMounted[k]; }
+}
+
+async function otMount(k){
+  if (!OT) return;
+  const seq = ++otSeq[k];
+  const isArmor = OT_SLOTS.indexOf(k) >= 0;
+  // the clothing stands in for the bare body, and only while the chest is empty
+  const worn = isArmor ? otModelOf(k, otState[k]) : null;
+  const id = (k === 'body' && worn === OT_BARE && otState.cloth) ? otState.cloth : worn;
+  const entry = isArmor ? otPiece(id, k) : (OT.parts[k] || [])[otState[k]];
+  otClear(k);
+  if (!entry) return;
+  const key = isArmor ? ('o' + id + '_' + k) : ('o_' + k + otState[k]);
+  const g = await loadEntry(entry, { key: key, slot: k, otomo: true });
+  if (seq !== otSeq[k] || !g) return;          // superseded while loading
+  otClear(k);
+  g.userData.otPart = k;
+  g.visible = figure === 'palico';
+  scene.add(g);
+  otMounted[k] = g;
+}
+
+// Which of the ears / eyes / tail the worn gear covers. This is the game's own
+// `.plpartsdisp`, which Palico gear carries on BOTH pieces (a hunter's ships on helms
+// only). A CLEARED bit means hide, and the bits were read off which pieces clear them:
+// open headwear -- Angel Halo, Barman's Shades, Dante Wig -- clears nothing, masks clear
+// the extra bit, and full-body "Suits" are what clear the tail.
+//
+// Every entry is identical in 371 of the 373 tables; the two that vary (o_helm110/171)
+// vary across indices 0..4, which is exactly the number of ear shapes -- so the helm's
+// table is read at the EAR index and the body's at the TAIL index.
+function otPartHidden(part){
+  const bits = OT && OT.maskBits && OT.maskBits[part];
+  if (!bits) return false;
+  const chosen = { ear: otState.ear, eye: otState.eye, tail: otState.tail }[part];
+  for (const slot of OT_SLOTS){
+    // otState holds a TOKEN, not a model id. Resolving it is what the move to Smithy
+    // order broke: `otPiece('s8', 'helm')` is undefined, so this returned false every
+    // time and NOTHING was masked -- ears and eyes came straight through every helmet.
+    const worn = otModelOf(slot, otState[slot]);
+    const id = (slot === 'body' && worn === OT_BARE && otState.cloth) ? otState.cloth : worn;
+    const e = otPiece(id, slot);
+    if (!e) continue;
+    if (e.pd){
+      const idx = slot === 'helm' ? otState.ear : otState.tail;
+      const raw = Array.isArray(e.pd) ? (e.pd[idx] || e.pd[0]) : e.pd;
+      const v = parseInt(raw.substr(bits[0] * 4, 4), 16);
+      if (!((v >> bits[1]) & 1)) return true;
+    }
+    // Per-CHOICE mask, measured offline. The game's table is per PIECE -- one bit for
+    // "hides the ears" -- so it cannot say a hat sits fine over Normal ears and swallows
+    // Round ones, which is a real distinction when there are five ear shapes and five
+    // tails. Alta Hat buries Perky and Round and clears the other three. Computed by
+    // ray-casting each part's vertices against the gear's triangles and hiding the part
+    // when a quarter of it ends up inside; a bounding-box test called almost everything
+    // a clip and was useless.
+    const c = e.clip && e.clip[part];
+    if (c && ((c >> chosen) & 1)) return true;
+  }
+  return false;
+}
+function otApplyMasks(){
+  for (const part of OT_PARTS){
+    const g = otMounted[part];
+    if (g) g.visible = figure === 'palico' && !otPartHidden(part);
+  }
+}
+
+// The 7 fur patterns are textures, so switching one swaps maps on the live materials
+// rather than reloading any geometry. Found by traversal so a remounted piece can never
+// leave a stale material behind in a cached list.
+async function otApplyFur(){
+  const file = otFurTex();
+  if (!file) return;
+  const t = await getTexture(file);
+  for (const g of Object.values(otMounted))
+    g.traverse(o => {
+      const m = o.material;
+      if (m && m.userData && m.userData.tintClass === 'fur'){ m.map = t; m.needsUpdate = true; }
+    });
+}
+
+async function otApply(){
+  if (!OT) return;
+  for (const k of OT_SLOTS.concat(OT_PARTS)) await otMount(k);
+  await otApplyFur();
+  // only start the pose if the Palico is the figure on screen -- otherwise it would take
+  // the mixer away from the hunter, which is what is actually being looked at
+  if (figure === 'palico') await otPlayPose();
+  otApplyMasks();
+  applyCharColors();
+  readSlotPigments();
+}
+
+// Which figure is on screen. A first look at either one gets framed, since a Palico is a
+// third the size of a hunter; after that each keeps its own camera.
+function setFigure(f){
+  if (f === figure) return;
+  // Not while restoring: at startup the camera on screen belongs to the SAVED figure, so
+  // banking it against the outgoing one would overwrite the other figure's saved view.
+  if (!restoring) figCam[figure] = cameraState();
+  figure = f;
+  const h = f === 'hunter';
+  for (const g of Object.values(mounted)) g.visible = h;
+  for (const g of Object.values(charMounted)) g.visible = h;
+  for (const g of Object.values(clothMounted)) g.visible = h;
+  if (weaponRoot) weaponRoot.visible = h;
+  if (weaponOff) weaponOff.visible = h;
+  for (const g of Object.values(otMounted)) g.visible = !h;
+  otApplyMasks();
+  // The pose system drives ONE figure at a time, so hand it to whichever is now on
+  // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
+  // Palico stands in bind pose beside it.
+  const done = h ? restoreHunterPose() : otPlayPose();
+  Promise.resolve(done).then(() => {
+    if (figCam[f]) applyCameraState(figCam[f]); else frameAll();
+  });
+}
+// put the hunter back on whatever its own two selects ask for
+async function restoreHunterPose(){
+  const e = weaponEntry(weaponSel.value);
+  const wp = e && e.poses && e.poses[+weaponPoseSel.value];
+  if (wp) return playPoseEntry(wp);
+  const pv = document.getElementById('pose').value;
+  if (typeof pv === 'string' && pv.startsWith('g:')) return playGamePose(+pv.slice(2));
+  stopGamePose(); repose();
+}
+// the tab buttons already own their onclick, so listen alongside it
+document.getElementById('tabHunter').addEventListener('click', () => setFigure('hunter'));
+document.getElementById('tabPalico').addEventListener('click', () => setFigure('palico'));
+
+function otCapture(){
+  if (!OT || !document.getElementById('pgOn_ohelm')) return null;
+  return {
+    helm: otState.helm, body: otState.body,
+    ear: otState.ear, eye: otState.eye, tail: otState.tail, fur: otState.fur,
+    cloth: otState.cloth,
+    pose: document.getElementById('otPose') ? document.getElementById('otPose').value : '',
+    pig: OT_PIG.map(sl => [document.getElementById('pgOn_' + sl).checked,
+                           document.getElementById('pg_' + sl).value]),
+    allPig: [document.getElementById('pgOn_oall').checked,
+             document.getElementById('pg_oall').value]
+  };
+}
+
+let otPoseWant = null;    // declared ahead of the restore that writes it
+if (SAVED && SAVED.cameras)
+  for (const k of ['hunter', 'palico'])
+    if (SAVED.cameras[k]) figCam[k] = SAVED.cameras[k];
+if (OT && SAVED && SAVED.otomo){
+  const o = SAVED.otomo;
+  for (const k of OT_SLOTS)
+    if (typeof o[k] === 'string') otState[k] = otTokenFor(k, o[k]);
+  if (typeof o.cloth === 'string' &&
+      (o.cloth === '' || OT_CLOTH.indexOf(o.cloth) >= 0)) otState.cloth = o.cloth;
+  for (const k of OT_PARTS.concat(['fur']))
+    if (typeof o[k] === 'number' && o[k] >= 0) otState[k] = o[k];
+  if (Array.isArray(o.pig))
+    o.pig.forEach((v, i) => {
+      const sl = OT_PIG[i];
+      if (!v || !sl) return;
+      document.getElementById('pgOn_' + sl).checked = !!v[0];
+      if (v[1]) document.getElementById('pg_' + sl).value = v[1];
+    });
+  if (Array.isArray(o.allPig)){
+    document.getElementById('pgOn_oall').checked = !!o.allPig[0];
+    if (o.allPig[1]) document.getElementById('pg_oall').value = o.allPig[1];
+  }
+  if (typeof o.pose === 'string') otPoseWant = o.pose;
+} else if (OT && !SAVED) {
+  readOtomoSet(DEFAULT_OTOMO);
+  otPoseWant = DEFAULT_OTOMO.pose;              // a LABEL here, not an index
+  figCam.palico = DEFAULT_OTOMO.camera;
+}
+otBuildSelects('');
+otBuildParts();
+for (const slot of OT_SLOTS)
+  otSel[slot].onchange = async () => {
+    otState[slot] = otSel[slot].value;
+    await otMount(slot);
+    // a new piece brings new materials: they need the fur map, the colours and the pigment
+    await otApplyFur(); otApplyMasks(); applyCharColors(); readSlotPigments(); saveState();
+  };
+for (const part of OT_PARTS)
+  otPartSel[part].onchange = async () => {
+    otState[part] = +otPartSel[part].value;
+    await otMount(part);
+    await otApplyFur(); otApplyMasks(); applyCharColors(); readSlotPigments(); saveState();
+  };
+otFurSel.onchange = async () => {
+  otState.fur = +otFurSel.value;
+  await otApplyFur(); saveState();
+};
+// reads the select, not the event, like every other handler here
+const otClothSel = document.getElementById('otCloth');
+otClothSel.onchange = async () => {
+  otState.cloth = otClothSel.value;
+  await otMount('body');
+  await otApplyFur(); otApplyMasks(); applyCharColors(); readSlotPigments(); saveState();
+};
+
+// Palico poses. `lneko_5` / `lneko_7` are the lobby loops; `neko_gc` is the guild-card
+// set, and those 66 are single-frame held poses rather than animations.
+const otPoseSel = document.getElementById('otPose');
+function otBuildPoses(){
+  const list = (OT && OT.poses) || [];
+  otPoseSel.innerHTML = '<option value="">Bind pose</option>' +
+    list.map((p, i) => '<option value="' + i + '" title="' + p.clip + '">' +
+                       p.label + '</option>').join('');
+}
+async function otPlayPose(){
+  const list = (OT && OT.poses) || [];
+  const v = otPoseSel.value;
+  const e = v === '' ? null : list[+v];
+  if (!e) { stopGamePose(); return; }
+  await playPoseEntry(e, { figure: 'palico', joints: (OT && OT.poseJoints) || [] });
+}
+otBuildPoses();
+// A first visit gets Pose 1 rather than the bind pose: the Palico models ship in a
+// T-pose, arms straight out, which is not a thing anyone wants to look at.
+{
+  const byLabel = otPoseWant === null ? null
+    : [...otPoseSel.options].find(o => o.textContent === otPoseWant);
+  if (otPoseWant !== null && [...otPoseSel.options].some(o => o.value === otPoseWant))
+    otPoseSel.value = otPoseWant;               // a saved index
+  else if (byLabel) otPoseSel.value = byLabel.value;   // the default's label
+  else if (otPoseSel.options.length > 1) otPoseSel.value = '0';
+}
+otPoseSel.onchange = () => otPlayPose().then(saveState);
+document.getElementById('otFilter').oninput = e => otBuildSelects(e.target.value);
+
 await refreshChar();
 
 // only keep saved slots that still exist for this gender
@@ -3167,12 +3785,19 @@ if (weaponSel.value !== 'none') await setWeapon(weaponSel.value);
   stepWeapon();
 }
 pushMask();
+await otApply();
 restoring = false;      // from here on, user changes persist
 // The camera is framed ONCE, here, and after that only Fit to View moves it: every
 // other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
 // view back mid-adjustment. A saved camera wins over the automatic framing.
 if (!applyCameraState(SAVED && SAVED.camera) &&
     !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
+// the tab bar restored its own selection before this script ran; match the figure to it
+{
+  let t = null;
+  try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
+  if (t === 'tabPalico') setFigure('palico');
+}
 saveState();
 {
   let camTimer = null;
@@ -3255,7 +3880,7 @@ window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
   weaponRoot: () => weaponRoot,
   weaponOff: () => weaponOff,
   handBone,
-  get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant };
+  get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
 
 // Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
 // opening one closes the rest, so the sidebar never grows past the viewport.
@@ -3264,14 +3889,18 @@ document.querySelectorAll('.panel-head').forEach(h => {
   h.onclick = () => {
     const p = h.parentElement;
     const wasOpen = p.dataset.open === 'true';
-    document.querySelectorAll('.panel').forEach(o => o.dataset.open = 'false');
+    const pane = p.closest('#paneHunter, #panePalico') || document;
+    pane.querySelectorAll('.panel').forEach(o => o.dataset.open = 'false');
     p.dataset.open = wasOpen ? 'false' : 'true';
   };
 });
-// start with a single panel open
+// Start with a single panel open PER PANE. Scoping this to the document closed the
+// Palico's Equipment panel, because the hunter's is first in the markup and won.
 (() => {
-  const open = [...document.querySelectorAll('.panel')].filter(p => p.dataset.open === 'true');
-  open.slice(1).forEach(p => p.dataset.open = 'false');
+  for (const pane of document.querySelectorAll('#paneHunter, #panePalico')){
+    const open = [...pane.querySelectorAll('.panel')].filter(p => p.dataset.open === 'true');
+    open.slice(1).forEach(p => p.dataset.open = 'false');
+  }
 })();
 // Save a set to a file. Deliberately NOT the localStorage blob: this one is meant to be
 // read and shared, so every id carries the piece's name and every index its label. Import
@@ -3320,8 +3949,136 @@ function currentSet(){
       skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
     },
     pose: document.getElementById('pose').value,
-    camera: cameraState()
+    camera: cameraState(),
+    // The Palico, in the same shape and the same spirit as the hunter above: every id
+    // carries its name and every index its label, so a shared file stays readable and a
+    // reordered list cannot silently change what it means.
+    otomo: otomoSet()
   };
+}
+
+function otomoSet(){
+  if (!OT) return null;
+  const label = (sel) => sel && sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : null;
+  const pieces = {};
+  for (const slot of OT_SLOTS){
+    const v = otState[slot];
+    pieces[slot] = (!v || v === 'none') ? null
+      : { id: v, name: (otOptions(slot).find(o => o.value === v) || {}).label || v };
+  }
+  const pigment = {}, deviant = {};
+  OT_PIG.forEach((row, i) => {
+    const slot = OT_SLOTS[i];
+    pigment[slot] = document.getElementById('pgOn_' + row).checked
+      ? document.getElementById('pg_' + row).value : null;
+  });
+  {
+    const st = slotDevState();                       // DEV_SLOTS order; the Palico's are last
+    OT_PIG.forEach((row, i) => {
+      const v = st[DEV_SLOTS.indexOf(row)];
+      if (v) deviant[OT_SLOTS[i]] = v;
+    });
+  }
+  const colorOf = part => {
+    const v = charColor[part];
+    if (v === null || v === undefined) return null;
+    return typeof v === 'string' ? v : CHAR_COLORS[v][0];
+  };
+  const partName = (p) => (OT.parts[p][otState[p]] || {}).name || null;
+  return {
+    pieces, pigment, deviant,
+    palico: {
+      ear: partName('ear'), eye: partName('eye'), tail: partName('tail'),
+      fur: ((OT.fur || [])[otState.fur] || {}).name || null,
+      clothing: otState.cloth ? label(document.getElementById('otCloth')) : null,
+      furColor: colorOf('fur'), eyeColor: colorOf('oeye'),
+      earStyle: otState.ear, eyeStyle: otState.eye,
+      tailStyle: otState.tail, furStyle: otState.fur
+    },
+    pose: label(otPoseSel) || null,
+    camera: figure === 'palico' ? cameraState() : figCam.palico
+  };
+}
+
+// The Palico half of a set file. Matched by LABEL first, exactly as the hunter's face and
+// hair styles are, so reordering a list cannot silently change which ear or tail a shared
+// file means; the numeric index is kept as a fallback for a label that no longer exists.
+// Files written before the Palico existed simply have no `otomo` key and are left alone.
+async function applyOtomoSet(o){
+  if (!OT || !o) return;
+  readOtomoSet(o);
+  otBuildSelects(document.getElementById('otFilter').value);
+  otBuildParts();
+  if (o.pose && otPoseSel){
+    const hit = [...otPoseSel.options].find(x => x.textContent === o.pose);
+    if (hit) otPoseSel.value = hit.value;
+  }
+  if (o.camera) figCam.palico = o.camera;
+  await otApply();
+  readSlotPigments();
+}
+
+// The state half, split out so the first-visit default can seed itself the same way an
+// opened file does. Runs BEFORE the selects are built, so it must not read the DOM for
+// anything it decides -- hence the clothing is matched on its own label rather than on
+// the option list, which does not exist yet at startup.
+function readOtomoSet(o){
+  if (!OT || !o) return;
+  for (const slot of OT_SLOTS){
+    const p = o.pieces && o.pieces[slot];
+    const id = p && (typeof p === 'string' ? p : p.id);
+    otState[slot] = id ? otTokenFor(slot, id) : 'none';
+  }
+  const pl = o.palico || {};
+  for (const [part, key] of [['ear', 'earStyle'], ['eye', 'eyeStyle'], ['tail', 'tailStyle']]){
+    const list = OT.parts[part] || [];
+    let i = list.findIndex(e => e.name === pl[part]);
+    if (i < 0 && typeof pl[key] === 'number' && pl[key] < list.length) i = pl[key];
+    if (i >= 0) otState[part] = i;
+  }
+  {
+    const list = OT.fur || [];
+    let i = list.findIndex(e => e.name === pl.fur);
+    if (i < 0 && typeof pl.furStyle === 'number' && pl.furStyle < list.length) i = pl.furStyle;
+    if (i >= 0) otState.fur = i;
+  }
+  {
+    const i = OT_CLOTH.findIndex((id, k) => ('Type ' + (k + 1)) === pl.clothing);
+    otState.cloth = i >= 0 ? OT_CLOTH[i] : '';
+    const cs = document.getElementById('otCloth');
+    if (cs && cs.options.length) cs.value = otState.cloth;
+  }
+  for (const [part, sid] of [['fur', 'otFurColor'], ['oeye', 'otEyeColor']]){
+    const v = pl[part === 'fur' ? 'furColor' : 'eyeColor'];
+    const sel = document.getElementById(sid), rgb = document.getElementById(sid + 'RGB');
+    if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)){
+      charColor[part] = v; sel.value = 'rgb'; rgb.value = v;
+    } else {
+      const i = CHAR_COLORS.findIndex(c => c[0] === v);
+      charColor[part] = i < 0 ? null : i;
+      sel.value = i < 0 ? '' : String(i);
+    }
+  }
+  CHAR_SYNC.forEach(f => f());
+  if (o.pigment)
+    OT_PIG.forEach((row, i) => {
+      const hex = o.pigment[OT_SLOTS[i]];
+      const on = typeof hex === 'string' && /^#[0-9a-f]{6}$/i.test(hex);
+      document.getElementById('pgOn_' + row).checked = on;
+      if (on) document.getElementById('pg_' + row).value = hex;
+    });
+  {
+    // slotDevState()'s shape: one entry per DEV_SLOTS row, so build a full-length list
+    const list = DEV_SLOTS.map(sl => slotDeviant[sl]
+      ? (slotDeviant[sl].name === 'Custom'
+         ? { a: slotDeviant[sl].a, b: slotDeviant[sl].b, anim: slotDeviant[sl].anim }
+         : slotDeviant[sl].name)
+      : null);
+    OT_PIG.forEach((row, i) => {
+      list[DEV_SLOTS.indexOf(row)] = (o.deviant || {})[OT_SLOTS[i]] || null;
+    });
+    applySlotDev(list);
+  }
 }
 
 // Save / Save As / Open.
@@ -3460,6 +4217,7 @@ async function loadSet(text, btn){
       }
       await refreshChar();
       await apply(map);
+      await applyOtomoSet(d.otomo);
       applyCharColors();
       // Opening a set is a load, not an incidental UI change, so it may frame -- but
       // only when the file carries no camera of its own.
