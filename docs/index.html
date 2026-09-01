@@ -217,11 +217,25 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   cursor:pointer}
 .palbtn:hover{background:#ffffff1a;border-color:var(--accent-hover)}
 #pigModal .modal-card{width:min(420px,92vw)}
-#pigGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0}
-#pigGrid button{aspect-ratio:1;padding:0;border:1px solid var(--line);border-radius:4px;
-  cursor:pointer}
-#pigGrid button:hover{border-color:#fff}
-#pigGrid button.sel{outline:2px solid #fff;outline-offset:1px}
+#pigGrid,.pig-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0}
+#pigGrid button,.pig-grid button{aspect-ratio:1;padding:0;border:1px solid var(--line);
+  border-radius:4px;cursor:pointer}
+#pigGrid button:hover,.pig-grid button:hover{border-color:#fff}
+#pigGrid button.sel,.pig-grid button.sel{outline:2px solid #fff;outline-offset:1px}
+#pigDeviant .stage-h{margin:14px 0 0}
+#pigDevList .stage-h{margin:14px 0 6px}
+#pigPalettes .stage-h,#pigBaseHead .stage-h{margin:16px 0 0;font-size:13px}
+#pigPalettes .hx,#pigBaseHead .hx{font-weight:400;font-size:11px;opacity:.6}
+#pigPalettes .stage-h:first-child{margin-top:6px}
+.devrow{display:flex;align-items:center;gap:6px;margin:0 0 4px}
+.devpick{display:flex;align-items:center;gap:8px;flex:1;min-width:0;padding:5px 8px;
+  background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--text);
+  cursor:pointer;font:inherit;font-size:12px;text-align:left}
+.devpick:hover{border-color:var(--accent-hover);background:#ffffff12}
+.devanim{flex:0 0 auto;width:76px}
+.devrow .sw{width:16px;height:16px;border-radius:3px;border:1px solid var(--line);flex:0 0 auto}
+.devrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.devrow .hx{opacity:.65;font-size:11px}
 
 /* Other MHGU apps modal — the block is shared verbatim with the sibling apps. */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;
@@ -345,18 +359,22 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div id="slotPig"></div>
           <span id="legacyPig" hidden>
           <div id="pig"></div>
-          <label class="chk" style="margin-top:10px"><input type="checkbox" id="devOn">Deviant pigment</label>
+          </span>
+          <span id="devLegacy" hidden>
+          <label class="chk"><input type="checkbox" id="devOn">Deviant pigment</label>
           <span id="devBox" hidden>
             <div class="field"><label for="devPreset">Preset</label><select id="devPreset"></select></div>
             <div class="field"><label>Colors</label>
               <div class="row gap">
                 <input type="color" id="devA" class="rgb-input" title="Colour A">
                 <input type="color" id="devB" class="rgb-input" title="Colour B">
-                <select id="devAnim" style="flex:1;min-width:0">
-                  <option value="fade">Fade A &harr; B</option>
-                  <option value="pulse">Pulse to B</option>
-                </select>
               </div>
+            </div>
+            <div class="field"><label for="devAnim">Animation</label>
+              <select id="devAnim">
+                <option value="fade">Fade A &harr; B</option>
+                <option value="pulse">Pulse to B</option>
+              </select>
             </div>
           </span>
           </span>
@@ -410,6 +428,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <div class="modal-card">
     <h2 id="pigTitle">Pigment</h2>
     <button id="pigDefault" class="btn block">Default</button>
+    <div id="pigPalettes"></div>
+    <div id="pigDevList"></div>
+    <div id="pigDeviant"></div>
+    <div id="pigBaseHead"></div>
     <div id="pigGrid"></div>
     <div class="row end gap">
       <button id="pigClose" class="btn">Close</button>
@@ -905,6 +927,8 @@ function saveState(){
                  preset:devPreset.value },
       slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
                                document.getElementById('pg_'+sl).value]),
+      // by NAME, so reordering DEVIANTS cannot silently shift which pigment a piece has
+      slotDev: slotDevState(), devAnim: devAnimOverride,
       allPig: [document.getElementById('pgOn_all').checked,
                document.getElementById('pg_all').value]
     }));
@@ -959,26 +983,71 @@ let pigment = null;          // null = the armor's own colors, untinted
 // The NAMES are the game's. The colour PAIRS are approximations from each Deviant's
 // own palette -- the real values are hardcoded in the executable, not shipped in romfs --
 // so they are a starting point for Raven to correct, not authority.
+// The GAME'S OWN color pairs, extracted from the executable -- these are not guesses.
+// Chain: the pigment id reaches 0x56e228, which treats ids 0/1 as the non-animated cases
+// and calls 0x55f474(table, id-2, which) twice, once per color. That lookup is
+// `ptr + index*8 + which*4`, i.e. 8 bytes = two u32 colors per entry. The table is built
+// at runtime in BSS by an initialiser at 0x560bd4 that writes them as movw/movt
+// immediates, so it was recovered by EMULATING that function (unicorn: map the segments
+// plus BSS and a stack, skip calls, run 0x560bd4 -> 0x561288) and reading memory back.
+//
+// The order is `Color_Special_1..18` from ResultMsg, corroborated in the binary itself:
+// the UI at 0x5742d0 uses the SAME register both to test the 18-bit unlock mask at +0xd18
+// and to index this table. It also matches the monsters on sight -- Snowbaron white,
+// Silverwind black+white, Dreadqueen purple, Grimclaw brown+yellow, Rustrazor rust.
+// Channel order matters and is easy to get backwards: the u32 is 0xAABBGGRR, i.e. RED in
+// the LOW byte. Confirmed from the RGB565->RGBA converter at 0x5daad4, which puts the 565
+// red bits into bits 7-3, green into 15-11, blue into 23-19. Reading it as 0xAARRGGBB
+// instead swaps red and blue and produces plausible-looking but wrong pairs.
+// 4th field is the animation: 'fade' (slow A <-> B) or 'pulse' (rests on A, brief trip
+// to B). Assignment is Raven's, from the game. Each row's dropdown in the picker overrides
+// it at runtime and the choice persists.
 const DEVIANTS = [
-  ['Redhelm',      '#8c2b22', '#e8d9c0'], ['Snowbaron',   '#dfe9f2', '#5a7fa8'],
-  ['Stonefist',    '#6f6256', '#c9a227'], ['Dreadqueen',  '#5d2a6b', '#c8a13a'],
-  ['Drilltusk',    '#6b4a2a', '#d9822b'], ['Silverwind',  '#e6e9ec', '#2f3a45'],
-  ['Crystalbeard', '#c9b27a', '#7fd8e8'], ['Deadeye',     '#3b2f2a', '#d94f3a'],
-  ['Dreadking',    '#1e1c1f', '#c0392b'], ['Thunderlord', '#d4af37', '#2b6fa8'],
-  ['Grimclaw',     '#3d2b23', '#d98b2b'], ['Hellblade',   '#1c1a1a', '#e8452a'],
-  ['Nightcloak',   '#2a2440', '#8fd6e8'], ['Rustrazor',   '#8a5a2b', '#c0c5c9'],
-  ['Soulseer',     '#e3c9d8', '#7b3fa0'], ['Boltreaver',  '#2f5f4a', '#f2e14c'],
-  ['Elderfrost',   '#e9f2f5', '#6fa8bf'], ['Bloodbath',   '#7a1f1f', '#e0d6c2']
+  ['Redhelm',      '#0089ec', '#ff4033', 'fade'],
+  ['Snowbaron',    '#ffffff', '#8f43ff', 'pulse'],
+  ['Stonefist',    '#971f2d', '#fcbac4', 'pulse'],
+  ['Dreadqueen',   '#400f5b', '#ff0fbf', 'pulse'],
+  ['Drilltusk',    '#3a0a00', '#ff763b', 'pulse'],
+  ['Silverwind',   '#212121', '#ffffff', 'pulse'],
+  ['Crystalbeard', '#4b410d', '#fee68d', 'pulse'],
+  ['Deadeye',      '#293f14', '#cdfad0', 'pulse'],
+  ['Dreadking',    '#060000', '#ff2121', 'fade'],
+  ['Thunderlord',  '#413509', '#fff546', 'fade'],
+  ['Grimclaw',     '#002d6b', '#93f8ff', 'fade'],
+  ['Hellblade',    '#560000', '#ff8e00', 'fade'],
+  ['Nightcloak',   '#000217', '#273fe5', 'fade'],
+  ['Rustrazor',    '#15274b', '#bcfffe', 'pulse'],
+  ['Soulseer',     '#312425', '#fe97f0', 'fade'],
+  ['Boltreaver',   '#4dbf00', '#9cd3ff', 'fade'],
+  ['Elderfrost',   '#292930', '#c5dee4', 'fade'],
+  ['Bloodbath',    '#1e32f0', '#ff2929', 'pulse'],
+];
+// The other colour palettes the same executable initialiser builds, each with its own
+// base pointer in .data. The 2nd field is the offset from the Deviant pair table -- kept
+// as a source note for tracing them back, deliberately NOT shown in the UI. Names are
+// placeholders until each is identified against the game.
+const PALETTES = [
+  ['Group 1', 't+144', ['#e6e6e6', '#ffffff', '#bebebe', '#ff0000', '#ffff50', '#0080ff', '#00ff00', '#d1ba3f', '#ff8400', '#f011ee', '#6fe8ed', '#5f5f5f']],
+  ['Group 2', 't+192', ['#7c2020', '#28190f', '#56ff56', '#be3200', '#6e46ff', '#003296', '#28285a', '#4e320b', '#a01e98']],
+  ['Group 3', 't+264', ['#f5f5f5', '#e1505c', '#69bf83', '#9fbbff', '#f7cf65', '#c3a3d1', '#9bdff0', '#f79a65', '#f8889d', '#add56d', '#aaaaaa', '#c1972e', '#57ebc7', '#55893b', '#990000', '#003399', '#660066']],
+  ['Group 4', 't+352', ['#e6e6e6', '#b092f2', '#ded55e', '#e88e9e', '#6fc773', '#708ef8', '#da565a', '#4c9eac', '#ee8c5d', '#ff45bd', '#7d00ff']],
+  ['Group 5', 't+396', ['#f22515', '#3dd7d2', '#e6e60a', '#0ae80a', '#f5a4a4']],
+  ['Group 6', 't+416', ['#5f5f5f', '#ffffff', '#f011ee', '#ff0000', '#2028ff', '#00ff00', '#ffff00', '#80bfff', '#ff8400']],
+  ['Group 7', 't+452', ['#f01010', '#10f010', '#b4b4b4', '#4040f0', '#be621b', '#bd76d4']],
+  ['Group 8', 't+504', ['#000080', '#c80000', '#c86e00', '#ffff00', '#00d250', '#d2d2d2', '#0000ff', '#cd32f0', '#d2d2d2', '#232323', '#7f7f7f']],
 ];
 // Raven, on the two in-game animations: one slowly goes A <-> B; the other rests on A,
-// pulses briefly to B, and returns.
-const deviant = { on:false, a:'#8c2b22', b:'#e8d9c0', anim:'fade' };
+// pulses briefly to B, and returns. Each pigment has a FIXED animation in game.
+// WHICH of the two each one uses is not in the data -- the colour table is 8 bytes, two
+// colours and nothing else, and the initialiser at 0x560bd4 writes no parallel per-pigment
+// array -- so the assignment below is set by hand and corrected against the game.
+const deviant = { on:false, a:'#0089ec', b:'#ff4033', anim:'fade' };
 // One pigment per equipment slot, which is how the game itself stores it:
 // cArmorColorBase is mHeadColorIndex / mTorsoColorIndex / mArmColorIndex /
 // mWaistColorIndex / mLegColorIndex -- five indices, one per piece.
 const slotPigment = { helm:null, body:null, arm:null, wst:null, leg:null };
-function deviantMix(t){
-  if (deviant.anim === 'pulse'){
+function deviantMix(t, anim){
+  if (anim === 'pulse'){
     // mostly A, with a short excursion to B once per cycle
     const P = 2.6, u = (t % P) / P;
     const d = u - 0.72;
@@ -2241,6 +2310,7 @@ function captureGender(){
     charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
     slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
                               document.getElementById('pg_'+sl).value]),
+    slotDev: slotDevState(),
     allPig: [document.getElementById('pgOn_all').checked,
              document.getElementById('pg_all').value] };
 }
@@ -2297,6 +2367,7 @@ async function setGender(g){
     await setSlot(slot, id);
   }
   applyCharColors();
+  applySlotDev(want.slotDev);
   if (Array.isArray(want.slotPig)){
     SLOTS.forEach((sl, i) => {
       const v = want.slotPig[i];
@@ -2697,26 +2768,120 @@ const pigModal = document.getElementById('pigModal');
 const pigGrid  = document.getElementById('pigGrid');
 let pigTarget = null;
 const pigSeen = new Set();
-pigGrid.innerHTML = PIGMENTS.filter(p => {
-  const h = p.hex.toLowerCase();
-  if (pigSeen.has(h)) return false;
-  pigSeen.add(h); return true;
-}).map(p =>
-  '<button type="button" data-hex="' + p.hex + '" title="' + p.hex + '" ' +
-  'style="background:' + p.hex + '"></button>').join('');
+const pigTile = (hex, title) =>
+  '<button type="button" data-hex="' + hex + '" title="' + title + '" ' +
+  'style="background:' + hex + '"></button>';
+// The raw 125-colour palette is the armour BASE-colour table, not the pigment list the
+// game offers, and at 112 swatches it swamped the picker once the real groups were in.
+// Hidden, not deleted: `defaultPig` still indexes it, and flipping this shows it again.
+const BASE_PALETTE_UI = false;
+if (BASE_PALETTE_UI) {
+  document.getElementById('pigBaseHead').innerHTML =
+    '<h3 class="stage-h">Base palette <span class="hx">' +
+    '112 colors &middot; equipBaseColorData</span></h3>';
+  pigGrid.innerHTML = PIGMENTS.filter(p => {
+    const h = p.hex.toLowerCase();
+    if (pigSeen.has(h)) return false;
+    pigSeen.add(h); return true;
+  }).map(p => pigTile(p.hex, p.hex)).join('');
+}
+// The Deviant pigments' two colors, offered as ordinary STATIC swatches as well -- the
+// pair is what the game animates between, but either half is a perfectly good flat color
+// and there is no other way to reach them. Named so the source is obvious on hover, and
+// deduped against the 125 so a color the base palette already has is not repeated.
+{
+  const extra = [];
+  for (const [name, a, b] of DEVIANTS)
+    for (const [hex, half] of [[a, 'A'], [b, 'B']]) {
+      const h = hex.toLowerCase();
+      if (pigSeen.has(h)) continue;
+      pigSeen.add(h);
+      extra.push(pigTile(hex, name + ' ' + half + ' — ' + hex.toUpperCase()));
+    }
+  if (extra.length)
+    document.getElementById('pigDeviant').innerHTML =
+      '<h3 class="stage-h">Deviant colors</h3><div class="pig-grid">' + extra.join('') + '</div>';
+}
+// A Deviant pigment is a PER-PIECE choice in game -- armorSeriesData stores a 5-bit
+// pigment id for each of the five armour slots -- so it is assigned from this modal, which
+// already knows which row it was opened for. That replaces the old single global deviant,
+// which had no way to say which piece it applied to.
+const slotDeviant = { helm:null, body:null, arm:null, wst:null, leg:null, cloth:null };
+const ANIM_OPTS = a =>
+  '<option value="fade"' + (a === 'fade' ? ' selected' : '') + '>Fade</option>' +
+  '<option value="pulse"' + (a === 'pulse' ? ' selected' : '') + '>Pulse</option>';
+document.getElementById('pigDevList').innerHTML =
+  '<h3 class="stage-h">Deviant pigments</h3>' +
+  DEVIANTS.map((d, i) =>
+    '<div class="devrow">' +
+    '<button type="button" class="devpick" data-dev="' + i + '">' +
+    '<span class="sw" style="background:' + d[1] + '"></span>' +
+    '<span class="sw" style="background:' + d[2] + '"></span>' +
+    '<span class="nm">' + d[0] + '</span>' +
+    '<span class="hx">' + d[1].toUpperCase() + ' / ' + d[2].toUpperCase() + '</span></button>' +
+    '<select class="devanim" data-dev="' + i + '">' + ANIM_OPTS(d[3]) + '</select>' +
+    '</div>').join('') +
+  '<h3 class="stage-h">Custom</h3>' +
+  '<div class="devrow">' +
+  '<input type="color" id="cusA" class="rgb-input" value="#0089ec" title="Color A">' +
+  '<input type="color" id="cusB" class="rgb-input" value="#ff4033" title="Color B">' +
+  '<select class="devanim" id="cusAnim">' + ANIM_OPTS('pulse') + '</select>' +
+  '<button type="button" class="btn tiny" id="cusApply">Apply</button>' +
+  '</div>';
+function setSlotDeviant(sl, idx){
+  const d = DEVIANTS[idx];
+  slotDeviant[sl] = d ? { name:d[0], a:d[1], b:d[2], anim:d[3] } : null;
+  const cb = document.getElementById('pgOn_' + sl);
+  if (d && !cb.checked) cb.checked = true;
+  if (d) document.getElementById('pg_' + sl).value = d[1];   // rest colour until it steps
+}
+// resolve saved deviant names back to table entries; unknown names simply drop
+// the other executable palettes, shown as labelled sections so they can be identified
+document.getElementById('pigPalettes').innerHTML = PALETTES.map(([nm, off, cols]) =>
+  '<h3 class="stage-h">' + nm + ' <span class="hx">' + cols.length + ' colors</span></h3>' +
+  '<div class="pig-grid">' + cols.map(c => pigTile(c, nm + ' — ' + c.toUpperCase())).join('') +
+  '</div>').join('');
+function applySlotDev(list){
+  if (!Array.isArray(list)) return;
+  SLOTS.concat(['cloth']).forEach((sl, i) => {
+    const v = list[i];
+    if (!v) { slotDeviant[sl] = null; return; }
+    // a preset is stored by NAME so reordering cannot shift it; a custom pair stores itself
+    if (typeof v === 'object'){ slotDeviant[sl] = { name:'Custom', a:v.a, b:v.b, anim:v.anim }; return; }
+    const d = DEVIANTS.find(x => x[0] === v);
+    slotDeviant[sl] = d ? { name:d[0], a:d[1], b:d[2], anim:d[3] } : null;
+  });
+}
+// one entry per slot: a preset name, or {a,b,anim} for a custom pair
+function slotDevState(){
+  return SLOTS.concat(['cloth']).map(sl => {
+    const d = slotDeviant[sl];
+    if (!d) return null;
+    return d.name === 'Custom' ? { a:d.a, b:d.b, anim:d.anim } : d.name;
+  });
+}
 function closePig(){ pigModal.classList.add('hidden'); }
 function openPig(id, label){
   pigTarget = id;
   document.getElementById('pigTitle').textContent = label;
   const cur = document.getElementById('pg_' + id).value.toLowerCase();
   const on  = document.getElementById('pgOn_' + id).checked;
-  for (const b of pigGrid.children)
+  for (const b of pigModal.querySelectorAll('button[data-hex]'))
     b.classList.toggle('sel', on && b.dataset.hex.toLowerCase() === cur);
   pigModal.classList.remove('hidden');
 }
-pigGrid.onclick = e => {
+pigModal.querySelector('.modal-card').onclick = e => {
+  const dev = e.target.closest('button[data-dev]');
+  if (dev) {
+    const idx = +dev.dataset.dev;
+    for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])) setSlotDeviant(sl, idx);
+    if (pigTarget === 'all') { allCb.checked = false; allCol.value = PIG_NONE; }
+    readSlotPigments(); paintHexLabels(); saveState(); closePig();
+    return;
+  }
   const b = e.target.closest('button[data-hex]');
   if (!b) return;
+  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])) slotDeviant[sl] = null;
   const f = document.getElementById('pgHex_' + pigTarget);
   f.value = b.dataset.hex;
   f.onchange();            // the one commit path -- validates, ticks the row, pushes All
@@ -2739,6 +2904,7 @@ function defaultPigHex(slot){
 // which writes one colour into all five and would stamp All's colour over every piece.
 document.getElementById('pigDefault').onclick = () => {
   for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
+    slotDeviant[sl] = null;
     // the clothing belongs to no armor series, so it has no mSymbolCol to restore
     const hex = sl === 'cloth' ? null : defaultPigHex(sl);
     const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
@@ -2753,6 +2919,41 @@ document.getElementById('pigDefault').onclick = () => {
 };
 document.getElementById('pigClose').onclick = closePig;
 pigModal.onclick = e => { if (e.target === pigModal) closePig(); };
+// Changing a pigment's animation rewrites the table entry and follows through to every
+// piece already wearing it, so the choice is a property of the pigment, not of the picker.
+const devAnimOverride = {};
+for (const selEl of document.querySelectorAll('select.devanim[data-dev]')){
+  selEl.onchange = () => {
+    const i = +selEl.dataset.dev, a = selEl.value;
+    DEVIANTS[i][3] = a; devAnimOverride[DEVIANTS[i][0]] = a;
+    for (const sl of SLOTS.concat(['cloth']))
+      if (slotDeviant[sl] && slotDeviant[sl].name === DEVIANTS[i][0]) slotDeviant[sl].anim = a;
+    saveState();
+  };
+}
+document.getElementById('cusApply').onclick = () => {
+  const a = document.getElementById('cusA').value,
+        b = document.getElementById('cusB').value,
+        an = document.getElementById('cusAnim').value;
+  for (const sl of (pigTarget === 'all' ? SLOTS : [pigTarget])){
+    slotDeviant[sl] = { name:'Custom', a, b, anim:an };
+    const cb = document.getElementById('pgOn_' + sl);
+    if (cb && !cb.checked) cb.checked = true;
+    document.getElementById('pg_' + sl).value = a;
+  }
+  if (pigTarget === 'all'){ allCb.checked = false; allCol.value = PIG_NONE; }
+  readSlotPigments(); paintHexLabels(); saveState(); closePig();
+};
+function applyDevAnimOverrides(o){
+  if (!o) return;
+  for (const [nm, a] of Object.entries(o)){
+    const i = DEVIANTS.findIndex(x => x[0] === nm);
+    if (i < 0 || (a !== 'fade' && a !== 'pulse')) continue;
+    DEVIANTS[i][3] = a; devAnimOverride[nm] = a;
+    const selEl = document.querySelector('select.devanim[data-dev="' + i + '"]');
+    if (selEl) selEl.value = a;
+  }
+}
 const PIG_ROW_LABEL = Object.assign({ all: 'All', cloth: 'Clothing Color' }, SLOT_LABEL);
 for (const id of PIG_ROWS)
   document.getElementById('pgPal_' + id).onclick = () => openPig(id, PIG_ROW_LABEL[id]);
@@ -2784,15 +2985,26 @@ for (const el of [devA,devB]){
 // stepped from the render loop; mixes A->B by the chosen animation and drives the
 // existing pigment path, so it lands on exactly the _sym_ region like any other colour
 const _dcA=new THREE.Color(), _dcB=new THREE.Color(), _dcM=new THREE.Color();
+// Per slot, because a Deviant pigment is assigned per armour piece. Overwrites that slot's
+// entry in slotPigment each frame; readSlotPigments sets the resting colour, this animates
+// it. A slot whose row is unticked is skipped, so unticking stops the animation too.
 function stepDeviant(t){
-  if (!deviant.on) return;
-  _dcA.set(deviant.a); _dcB.set(deviant.b);
-  _dcM.copy(_dcA).lerp(_dcB, deviantMix(t));
-  pigment = [_dcM.r*255, _dcM.g*255, _dcM.b*255];
-  armorMats.forEach(applyTint);
+  let any = false;
+  for (const sl of SLOTS.concat(['cloth'])){
+    const d = slotDeviant[sl];
+    if (!d) continue;
+    const cb = document.getElementById('pgOn_' + sl);
+    if (cb && !cb.checked) continue;
+    _dcA.set(d.a); _dcB.set(d.b);
+    _dcM.copy(_dcA).lerp(_dcB, deviantMix(t, d.anim));
+    slotPigment[sl] = [_dcM.r*255, _dcM.g*255, _dcM.b*255];
+    any = true;
+  }
+  if (any) armorMats.forEach(applyTint);
 }
 
 
+if (SAVED) { applyDevAnimOverrides(SAVED.devAnim); applySlotDev(SAVED.slotDev); }
 if (SAVED && Array.isArray(SAVED.slotPig)) {
   SLOTS.forEach((sl,i) => {
     const v = SAVED.slotPig[i];
@@ -3038,14 +3250,15 @@ function currentSet(){
   };
   // Only the five per-slot pigments are written -- "All" is a write-through control, so
   // the slots already carry its effect and storing it too could contradict them.
-  const pigment = {};
+  const pigment = {}, deviant = {};
   for (const slot of SLOTS){
     pigment[slot] = document.getElementById('pgOn_' + slot).checked
       ? document.getElementById('pg_' + slot).value : null;
+    if (slotDeviant[slot]) deviant[slot] = slotDeviant[slot].name;
   }
   return {
     app: 'MHGU Armor Viewer', version: 2,
-    gender, pieces, pigment,
+    gender, pieces, pigment, deviant,
     hunter: {
       face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
       hair: document.getElementById('hair').checked ? styleLabel('hairStyle') : null,
@@ -3172,6 +3385,7 @@ async function loadSet(text, btn){
                  [...psel.options].some(o => o.value === d.pose)) {
         psel.value = d.pose; await playGamePose(+d.pose.slice(2));
       }
+      applySlotDev(SLOTS.concat(['cloth']).map(sl => (d.deviant || {})[sl] || null));
       // pigment is absent from version 1 files -- leave the current colours alone then
       if (d.pigment){
         for (const slot of SLOTS){
