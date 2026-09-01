@@ -182,7 +182,9 @@ header #bar .btn.tiny{margin-right:0}
 .rgb-input{flex:0 0 auto;width:34px;height:30px;padding:0;cursor:pointer;
   background:var(--bg2);border:1px solid var(--line);border-radius:7px}
 .rgb-input::-webkit-color-swatch-wrapper{padding:2px}
-.rgb-input::-webkit-color-swatch{border:none;border-radius:5px}
+/* the colour itself gets the black edge, so a pale pigment still reads as a swatch */
+.rgb-input::-webkit-color-swatch{border:1px solid #000;border-radius:5px}
+.rgb-input::-moz-color-swatch{border:1px solid #000;border-radius:5px}
 .field select,.field input[type=text]{
   background:var(--bg2);color:var(--text);border:1px solid var(--line);border-radius:7px;
   padding:6px 8px;font-size:13px;line-height:1.4;
@@ -218,7 +220,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .palbtn:hover{background:#ffffff1a;border-color:var(--accent-hover)}
 #pigModal .modal-card{width:min(420px,92vw)}
 #pigGrid,.pig-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0}
-#pigGrid button,.pig-grid button{aspect-ratio:1;padding:0;border:1px solid var(--line);
+/* black, not --line: a pale swatch against the panel had no edge at all, so light
+   colours ran together and white was invisible */
+#pigGrid button,.pig-grid button{aspect-ratio:1;padding:0;border:1px solid #000;
   border-radius:4px;cursor:pointer}
 #pigGrid button:hover,.pig-grid button:hover{border-color:#fff}
 #pigGrid button.sel,.pig-grid button.sel{outline:2px solid #fff;outline-offset:1px}
@@ -233,7 +237,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   cursor:pointer;font:inherit;font-size:12px;text-align:left}
 .devpick:hover{border-color:var(--accent-hover);background:#ffffff12}
 .devanim{flex:0 0 auto;width:76px}
-.devrow .sw{width:16px;height:16px;border-radius:3px;border:1px solid var(--line);flex:0 0 auto}
+.devrow .sw{width:16px;height:16px;border-radius:3px;border:1px solid #000;flex:0 0 auto}
 .devrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .devrow .hx{opacity:.65;font-size:11px}
 
@@ -939,9 +943,30 @@ const SAVED = loadState();
 // mix of test pieces. Mirrors Default.json exactly.
 const DEFAULT_SET = {
   gender: "f",
-  pieces: {"helm": "197", "body": "293", "arm": "663", "wst": "226", "leg": "644"},
-  hairStyle: 24, faceStyle: 0, hairColor: "#707156",
-  pose: "g:53"
+  // Smithy tokens, the same shape the selects hold -- tokenFor() migrates them if the
+  // lists ever change, so this survives a rebuild of the forge data.
+  pieces: {"helm":"s425","body":"s378","arm":"s3","wst":"s112","leg":"s17"},
+  pigment: {"helm":"#5f5f5f","body":"#971f2d","arm":"#e6e6e6","wst":"#971f2d","leg":"#e6e6e6"},
+  deviant: {"body":"Stonefist","wst":"Stonefist"},
+  hairStyle: 24, faceStyle: 0, hairColor: "#707156", clothing: "Type 7",
+  pose: "g:53",
+  camera: { p:[0.696, 0.2017, 2.8853], t:[-0.0002, -0.237, -0.052] }
+};
+// The male hunter's first-visit set. The female is what loads; this is seeded straight
+// into GENDER_STATE.m so switching bodies finds him already dressed, in exactly the shape
+// captureGender() produces. Camera is deliberately absent -- it is global by design, and
+// only Fit to View moves it, so a per-gender camera would fight that.
+const DEFAULT_MALE = {
+  slots: {helm:"s641", body:"s503", arm:"s850", wst:"s850", leg:"s642"},
+  hunterType: 'all',
+  faceStyle: "0", hairStyle: "24",
+  face: true, hair: false, body: true,
+  clothing: "", pose: "g:10",
+  charColor: { skin: null, eye: null, hair: "#707156" },
+  slotPig: [[true,"#212121"], [true,"#4b410d"], [true,"#15274b"],
+            [true,"#15274b"], [true,"#232323"]],
+  slotDev: ["Silverwind", "Crystalbeard", "Rustrazor", "Rustrazor", null, null],
+  allPig: [false, "#c0c0c0"]
 };
 let gender = SAVED && (SAVED.gender === 'f' || SAVED.gender === 'm')
              ? SAVED.gender : DEFAULT_SET.gender;
@@ -2294,6 +2319,7 @@ document.getElementById('htype').onchange = e => {
 // choices across the switch loses work every time. Held here rather than in the slots
 // themselves so the ACTIVE gender is still the single source of truth for rendering.
 const GENDER_STATE = { m: null, f: null };
+if (!SAVED) GENDER_STATE.m = DEFAULT_MALE;   // dressed and waiting behind the gender toggle
 if (SAVED && SAVED.byGender)
   for (const g of ['m', 'f']) if (SAVED.byGender[g]) GENDER_STATE[g] = SAVED.byGender[g];
 function captureGender(){
@@ -3041,6 +3067,23 @@ if (!SAVED && DEFAULT_SET.pose) {
   const ps = document.getElementById('pose');
   if ([...ps.options].some(o => o.value === DEFAULT_SET.pose)) ps.value = DEFAULT_SET.pose;
 }
+// the rest of the first-visit set: clothing, the per-piece pigments and the two Deviant
+// pigments. All guarded on !SAVED so a returning visitor is never overwritten.
+if (!SAVED) {
+  if (DEFAULT_SET.clothing){
+    const cs = document.getElementById('clothing');
+    const hit = [...cs.options].find(o => o.textContent === DEFAULT_SET.clothing);
+    if (hit) cs.value = hit.value;
+  }
+  if (DEFAULT_SET.pigment)
+    for (const [sl, hex] of Object.entries(DEFAULT_SET.pigment)){
+      const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
+      if (cb && col) { cb.checked = true; col.value = hex; }
+    }
+  if (DEFAULT_SET.deviant)
+    applySlotDev(SLOTS.concat(['cloth']).map(sl => DEFAULT_SET.deviant[sl] || null));
+  readSlotPigments();
+}
 if (SAVED && typeof SAVED.orbitLocked === 'boolean') orbitLocked = SAVED.orbitLocked;
 paintOrbitLock();
 if (SAVED && SAVED.spinStep > 0 && SAVED.spinStep < SPIN_STEPS.length) { spinStep = SAVED.spinStep; paintSpin(); }
@@ -3128,7 +3171,8 @@ restoring = false;      // from here on, user changes persist
 // The camera is framed ONCE, here, and after that only Fit to View moves it: every
 // other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
 // view back mid-adjustment. A saved camera wins over the automatic framing.
-if (!applyCameraState(SAVED && SAVED.camera)) frameAll();
+if (!applyCameraState(SAVED && SAVED.camera) &&
+    !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
 saveState();
 {
   let camTimer = null;
@@ -3254,11 +3298,16 @@ function currentSet(){
   for (const slot of SLOTS){
     pigment[slot] = document.getElementById('pgOn_' + slot).checked
       ? document.getElementById('pg_' + slot).value : null;
-    if (slotDeviant[slot]) deviant[slot] = slotDeviant[slot].name;
+  }
+  // Same shape as the session save: a preset by NAME, a custom pair as {a,b,anim}.
+  // Storing only the name lost a custom pigment's colours on import.
+  {
+    const keys = SLOTS.concat(['cloth']), st = slotDevState();
+    keys.forEach((sl, i) => { if (st[i]) deviant[sl] = st[i]; });
   }
   return {
     app: 'MHGU Armor Viewer', version: 2,
-    gender, pieces, pigment, deviant,
+    gender, pieces, pigment, deviant, devAnim: devAnimOverride,
     hunter: {
       face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
       hair: document.getElementById('hair').checked ? styleLabel('hairStyle') : null,
@@ -3385,6 +3434,7 @@ async function loadSet(text, btn){
                  [...psel.options].some(o => o.value === d.pose)) {
         psel.value = d.pose; await playGamePose(+d.pose.slice(2));
       }
+      applyDevAnimOverrides(d.devAnim);
       applySlotDev(SLOTS.concat(['cloth']).map(sl => (d.deviant || {})[sl] || null));
       // pigment is absent from version 1 files -- leave the current colours alone then
       if (d.pigment){
