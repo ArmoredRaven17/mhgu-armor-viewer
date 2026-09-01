@@ -346,10 +346,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="clothing">Clothing</label><select id="clothing"></select></div>
           <div id="clothPig"></div>
           <div class="field"><label for="pose">Pose</label>
-            <select id="pose">
-              <option value="relaxed" selected>Relaxed</option>
-              <option value="t-pose">T-pose</option>
-            </select>
+            <select id="pose"></select>
           </div>
         </div>
       </section>
@@ -1222,7 +1219,21 @@ function applyTint(mat){
       uVal: { value: new THREE.Vector2(0.15, 0.35) },   // brightness gate
       uChar: { value: new THREE.Color(1,1,1) },  // hair / eye / skin color
       uCharAmt: { value: 0 },
-      uRegion: { value: 0 }   // 1 on the material that IS the dyeable region
+      uRegion: { value: 0 },  // 1 on the material that IS the dyeable region
+      // 1 where the texture's ALPHA is a real cutout and must reach alphaTest.
+      //
+      // This shader replaces <map_fragment> wholesale, and the replacement only ever
+      // multiplied diffuseColor.RGB -- so the sampled alpha was dropped on the floor and
+      // `alphaTest` compared against a diffuseColor.a that was always 1. Nothing was ever
+      // discarded. It shows up on the Palico's eyes, whose quads are deliberately
+      // oversized so one mesh covers every eye option: the surround is authored fully
+      // transparent (92-95% of those texels sit at alpha exactly 0) and was drawing solid.
+      //
+      // Deliberately opt-IN rather than applied everywhere. On most armour the `_bm` alpha
+      // is a GLOSS ramp, not opacity, so feeding it to a 0.5 alphaTest would punch holes
+      // through every shaded area -- the failure recorded early on as "alphaTest 0.5 culls
+      // most of the armour". Widening this needs its own pass and Raven's eyes on it.
+      uAlphaCut: { value: 0 }
     };
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, mat.userData.u);
@@ -1234,6 +1245,7 @@ function applyTint(mat){
                  ' uniform vec3 uKey; uniform float uHasKey; uniform float uKeyTol;' +
                  ' uniform float uSatBoost;' +
                  ' uniform vec3 uChar; uniform float uCharAmt; uniform float uRegion;' +
+                 ' uniform float uAlphaCut;' +
                  ' float gGloss = 0.0; void main() {')
         .replace('#include <map_fragment>',
           `#ifdef USE_MAP
@@ -1284,6 +1296,8 @@ function applyTint(mat){
              }
                diffuseColor.rgb *= base;
              }
+             // hand the sampled alpha to alphaTest where the map is a real cutout
+             diffuseColor.a *= mix( 1.0, texel.a, uAlphaCut );
            #endif`)
         // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
         // Sample it with the view-space normal and add it on top of the lit color.
@@ -1735,8 +1749,7 @@ async function loadEntry(entry, opt){
       // o_ear and o_tail. All four take whichever of the 7 fur patterns is selected,
       // which is why the pattern is a texture swap and not a mesh swap.
       const isFur = otomo && /o_(skin|face|ear|tail)/i.test(srcName);
-      // the eye's own map; `_light` is the specular glint, not the iris, so it is left
-      // alone by the eye-colour tint
+      // the eye's own map; `_light` is the glint, not the iris, so it takes no eye colour
       const isOtEye = otomo && /o_eye/i.test(srcName);
       const isSkin = otomo ? isFur : (!isBlob && /skin/i.test(srcName));
       const file = otomo ? (isFur ? otFurTex() : entry.tex)
@@ -1818,6 +1831,9 @@ async function loadEntry(entry, opt){
         }));
       }
       applyTint(mat);
+      // The eye quads are OVERSIZED on purpose -- one mesh has to cover every eye option
+      // -- so the surround is authored transparent and only its ALPHA keeps it off screen.
+      if (isOtEye) mat.userData.u.uAlphaCut.value = 1;
       if (isBlob) { o.visible = false; }
       else if (isSkin) { o.userData.isBody = true; o.visible = showBody; }
       if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
@@ -2835,6 +2851,9 @@ function buildPoseList(){
   const sel = document.getElementById('pose');
   const list = manifest.poses || [];
   if (!list.length) return;
+  // Only the game's own held poses are offered. `relaxed` and `t-pose` were ours, authored
+  // before the lobby motions were found; `relaxed` survives as the internal resting stance
+  // behind a weapon stance, but it is not something to pick any more.
   sel.insertAdjacentHTML('beforeend',
     '<optgroup label="Game poses">' +
     list.map((p, i) => '<option value="g:' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('') +
@@ -2872,7 +2891,8 @@ weaponPoseSel.onchange = async () => {
   const p = e && e.poses && e.poses[+weaponPoseSel.value];
   weaponStowed = !p;                    // no stance -> the weapon goes on the back
   if (p) {
-    document.getElementById('pose').value = 'relaxed';   // a stance replaces the lobby pose
+    // a stance replaces the lobby pose; nothing in the list describes that, so show none
+    document.getElementById('pose').selectedIndex = -1;
     await playPoseEntry(p);
   } else {
     stopGamePose(); repose();
