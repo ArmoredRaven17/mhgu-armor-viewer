@@ -970,7 +970,13 @@ function saveState(){
   if (restoring) return;
   try {
     const slots = {};
-    SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
+    // '' is never a real choice -- it is what a select reports when its value was set to
+    // something the list does not hold. Saving it silently deletes the piece, so fall back
+    // to what is actually mounted rather than writing the blank through.
+    SLOTS.forEach(sl => {
+      const v = document.querySelector('select[data-slot="'+sl+'"]').value;
+      slots[sl] = v || (SAVED && SAVED.slots && SAVED.slots[sl]) || 'none';
+    });
     localStorage.setItem(LS_KEY, JSON.stringify({
       gender, slots, hunterType, pigmentIndex, camera: cameraState(),
       // one camera per figure, so the Palico's view survives a reload too
@@ -2508,7 +2514,16 @@ function rebuildSelects(filter){
     }
     if (group !== null) html += '</optgroup>';
     sel.innerHTML = html;
-    sel.value = opts.some(o => o.value === cur) ? cur : 'none';
+    // Blademaster / Gunner and the name box are VIEWS over the list. Neither may change
+    // what is equipped, so the selection is restored unconditionally rather than falling
+    // back to 'none' when the filtered list happens not to contain it.
+    //
+    // That fallback silently unequipped CHAKRA on any type change: `opts` holds forge
+    // rows only, so it never contains the Chakra token (nor 'none'), and the "keep what is
+    // equipped" re-insert above could not find it either. The select then read "- none -",
+    // and htype's handler saves immediately, so the loss was persisted -- taking the
+    // clothing with it, since the clothing is what Chakra renders.
+    selectToken(sel, slot, cur);
   }
 }
 
@@ -2609,7 +2624,9 @@ async function setGender(g){
   for (const slot of SLOTS){
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
     const id = tokenFor(slot, want.slots ? want.slots[slot] : 'none');
-    sel.value = id;
+    // through the helper, not a bare assignment: the type filter carries across a gender
+    // switch, so the piece being restored is often absent from the filtered list
+    selectToken(sel, slot, id);
     await setSlot(slot, id);
     if (seq !== genderSeq) return;
   }
@@ -2682,12 +2699,29 @@ if (PIGMENT_ENABLED) {
   document.getElementById('pigmentTuning').style.display = 'none';
 }
 
+// Assigning a <select> a value that is not among its options silently yields '' -- it
+// does not throw. Blademaster / Gunner is a VIEW, so at startup the equipped piece is
+// routinely absent from the filtered list, and `sel.value = v` left the row BLANK. The
+// mesh still mounted, so it looked fine until the next saveState wrote that empty string
+// and the reload after that dropped the piece for good.
+//
+// Every path that selects a piece goes through here, so a filtered-out piece is put back
+// into the list and stays selected.
+function selectToken(sel, slot, v){
+  sel.value = v;
+  if (sel.value !== v && v){
+    sel.insertAdjacentHTML('afterbegin',
+      '<option value="' + v + '">' + labelOf(slot, v) + '</option>');
+    sel.value = v;
+  }
+}
+
 async function apply(map){
   for (const slot of SLOTS) {
     const sel = document.querySelector('select[data-slot="' + slot + '"]');
     // tokenFor migrates a bare model id -- the first-run outfit and any pre-Smithy save
     const v = tokenFor(slot, map[slot]);
-    sel.value = v;
+    selectToken(sel, slot, v);
     await setSlot(slot, v);
   }
 }
@@ -3697,9 +3731,16 @@ function otCapture(){
 }
 
 let otPoseWant = null;    // declared ahead of the restore that writes it
-if (SAVED && SAVED.cameras)
+if (SAVED && SAVED.cameras){
   for (const k of ['hunter', 'palico'])
     if (SAVED.cameras[k]) figCam[k] = SAVED.cameras[k];
+} else if (SAVED && SAVED.camera){
+  // A save from before per-figure cameras carries ONE camera, and it belongs to whichever
+  // tab was open when it was written -- not automatically to the hunter.
+  let t = null;
+  try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
+  figCam[t === 'tabPalico' ? 'palico' : 'hunter'] = SAVED.camera;
+}
 if (OT && SAVED && SAVED.otomo){
   const o = SAVED.otomo;
   for (const k of OT_SLOTS)
@@ -3806,18 +3847,22 @@ if (weaponSel.value !== 'none') await setWeapon(weaponSel.value);
 }
 pushMask();
 await otApply();
-restoring = false;      // from here on, user changes persist
-// The camera is framed ONCE, here, and after that only Fit to View moves it: every
-// other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
-// view back mid-adjustment. A saved camera wins over the automatic framing.
-if (!applyCameraState(SAVED && SAVED.camera) &&
-    !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
-// the tab bar restored its own selection before this script ran; match the figure to it
+// Match the figure to the tab bar, which restored its own selection before this script
+// ran. This MUST happen while `restoring` is still true: setFigure banks the camera
+// currently on screen against the figure it is leaving, and at startup that camera
+// belongs to whichever figure was SAVED. Doing it after `restoring = false` wrote the
+// Palico's view into figCam.hunter, so switching to the hunter arrived zoomed in on it.
 {
   let t = null;
   try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
   if (t === 'tabPalico') setFigure('palico');
 }
+restoring = false;      // from here on, user changes persist
+// The camera is framed ONCE, here, and after that only Fit to View moves it: every
+// other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
+// view back mid-adjustment. A saved camera wins over the automatic framing.
+if (!applyCameraState(figCam[figure] || (SAVED && SAVED.camera)) &&
+    !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
 saveState();
 {
   let camTimer = null;
