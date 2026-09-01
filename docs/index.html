@@ -113,9 +113,9 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
    counts the space from the centre to the right edge, so the bar would cap at half
    the viewport and wrap into a stack while the left half sat empty. */
 #bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
-  display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;
   width:max-content;max-width:calc(100% - 32px);
-  padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+  padding:8px 12px;border:1px solid var(--line);border-radius:8px;
   background-color:var(--bg2);
   background-image:
     linear-gradient(color-mix(in srgb,var(--bg2) 84%,transparent),
@@ -139,6 +139,9 @@ header #bar .btn.tiny{margin-right:0}
 #orbitLock{display:inline-flex;align-items:center;gap:6px}
 #orbitLock img{width:14px;height:14px;display:block}
 #viewport canvas{display:block;width:100%;height:100%}
+/* Scoped to the render area on purpose: #bar and the overlays are SIBLINGS of #viewport,
+   so the toolbar keeps its pointer and stays usable while the cursor is hidden. */
+#viewport.nocursor,#viewport.nocursor canvas{cursor:none}
 
 /* Buttons */
 .btn{background:#ffffff14;color:var(--text);border:1px solid var(--line);
@@ -495,11 +498,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div id="err"></div>
       <div id="bar">
         <button id="fitBtn" class="btn tiny" title="Frame the whole figure">Fit to View</button>
-        <div class="sep"></div>
         <button id="spinBtn" class="btn tiny" title="Cycle the turntable speed">Rotate</button>
-        <button id="orbitLock" class="btn tiny" title="Lock the orbit so dragging pans the view instead of rotating it"><img id="orbitLockIcon" alt="">Orbit</button>
-        <div class="sep"></div>
+        <button id="orbitLock" class="btn tiny" title="Lock the orbit so dragging pans the view instead of rotating it"><img id="orbitLockIcon" alt=""><span id="orbitLockText">Orbit</span></button>
         <button id="wireBtn" class="btn tiny" title="Draw the meshes as wireframe">Wireframe</button>
+        <button id="cursorBtn" class="btn tiny" title="Hide the mouse pointer over the model">Hide Cursor</button>
       </div>
     </section>
   </main>
@@ -951,8 +953,19 @@ const BOOK_ICON = { locked: "data:image/webp;base64,UklGRs4AAABXRUJQVlA4TMIAAAAv
 let orbitLocked = false;
 const orbitLockBtn = document.getElementById('orbitLock');
 const orbitLockIcon = document.getElementById('orbitLockIcon');
+// The button names the mode that is ACTIVE: dragging orbits, or dragging pans.
+const orbitLockText = document.getElementById('orbitLockText');
+// Same problem the Rotate/Turbo button has -- two labels of different widths would shunt
+// everything to the right of it. Measure both once and pin the button to the wider.
+(function lockOrbitWidth(){
+  let w = 0;
+  for (const t of ['Orbit', 'Pan']){ orbitLockText.textContent = t; w = Math.max(w, orbitLockBtn.offsetWidth); }
+  orbitLockBtn.style.minWidth = w + 'px';
+  orbitLockBtn.style.justifyContent = 'center';
+})();
 function paintOrbitLock(){
-  orbitLockIcon.src = BOOK_ICON[orbitLocked ? 'locked' : 'unlocked'];
+  orbitLockIcon.src = BOOK_ICON[orbitLocked ? 'unlocked' : 'locked'];
+  orbitLockText.textContent = orbitLocked ? 'Pan' : 'Orbit';
   orbitLockBtn.classList.toggle('on', !orbitLocked);
   controls.mouseButtons.LEFT = orbitLocked ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
   controls.touches.ONE = orbitLocked ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
@@ -1030,7 +1043,7 @@ function saveState(){
       charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair,
                    fur: charColor.fur, oeye: charColor.oeye },
       otomo: otCapture(),
-      orbitLocked, spinStep, wireOn,
+      orbitLocked, spinStep, wireOn, hideCursor,
       weapon: weaponSel.value, weaponPose: weaponPoseSel.value,
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
@@ -2869,6 +2882,15 @@ function paintWire(){
 }
 wireBtn.onclick = () => { wireOn = !wireOn; paintWire(); saveState(); };
 
+// Hide the mouse pointer over the model -- a clean look at a set, and clean screenshots.
+let hideCursor = false;
+const cursorBtn = document.getElementById('cursorBtn');
+function paintCursor(){
+  cursorBtn.classList.toggle('on', hideCursor);
+  document.getElementById('viewport').classList.toggle('nocursor', hideCursor);
+}
+cursorBtn.onclick = () => { hideCursor = !hideCursor; paintCursor(); saveState(); };
+
 // Debug: give every distinct ARMOUR material its own hue and list them, so a specific
 // region ("the upper ribbons") can be named against a material rather than guessed at.
 const DBG = new Map();
@@ -3456,6 +3478,7 @@ if (SAVED && typeof SAVED.orbitLocked === 'boolean') orbitLocked = SAVED.orbitLo
 paintOrbitLock();
 if (SAVED && SAVED.spinStep > 0 && SAVED.spinStep < SPIN_STEPS.length) { spinStep = SAVED.spinStep; paintSpin(); }
 if (SAVED && SAVED.wireOn === true) { wireOn = true; paintWire(); }
+if (SAVED && SAVED.hideCursor === true) { hideCursor = true; paintCursor(); }
 
 // restore the saved session before the first load so nothing flashes then changes
 if (SAVED) {
