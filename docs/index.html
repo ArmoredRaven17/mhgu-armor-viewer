@@ -16,13 +16,33 @@
   --stage:#0e1013;
   --line:#ffffff1f; --card:#ffffff0d;
 }
-*{box-sizing:border-box;scrollbar-color:var(--accent) var(--bg2);scrollbar-width:auto}
-::-webkit-scrollbar{width:14px;height:14px}
-::-webkit-scrollbar-track{background:var(--bg2)}
-::-webkit-scrollbar-thumb{background:var(--accent);border-radius:7px;
-  border:3px solid var(--bg2);background-clip:padding-box}
+*{box-sizing:border-box}
+/* The standard properties and ::-webkit-scrollbar are mutually exclusive in Chrome: set
+   `scrollbar-color` or `scrollbar-width` on an element and the -webkit pseudo-elements
+   below are IGNORED for it. Having both on `*` is why the width here had no effect --
+   scrollbars measured 15px (the `auto` default) no matter what was asked for. So the
+   standard ones are scoped to engines with no -webkit pseudo-element (Firefox), which
+   get the colours; Chrome takes the rules below and an actual custom width. */
+@supports not selector(::-webkit-scrollbar){
+  *{scrollbar-color:var(--accent) var(--bg2);scrollbar-width:auto}
+}
+::-webkit-scrollbar{width:22px;height:22px}
+/* a touch darker than the panel so the channel itself is visible */
+::-webkit-scrollbar-track{background:var(--bg);border-radius:11px}
+/* min-height matters more than width on these lists: an equipment dropdown holds over a
+   thousand options, so a proportional thumb is a few pixels tall and unusable to drag. */
+/* The thumb sat on a track the same colour as the panel behind it, so it read as part of
+   the background. A lighter fill plus a light inset edge gives it a shape of its own
+   without hard-coding a colour that would fight the theme. */
+::-webkit-scrollbar-thumb{background:var(--accent-hover);border-radius:10px;min-height:56px;
+  border:3px solid transparent;background-clip:padding-box;
+  box-shadow:inset 0 0 0 1px #ffffff55}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent-hover);background-clip:padding-box;
-  border:3px solid var(--bg2)}
+  border:2px solid transparent;box-shadow:inset 0 0 0 1px #ffffff99}
+/* Stated again for the dropdown lists. Whether a native <select> popup honours page CSS
+   is up to the engine -- Chrome on Windows draws that list itself and ignores it. */
+select::-webkit-scrollbar{width:22px}
+select::-webkit-scrollbar-thumb{min-height:56px}
 input,select,button,textarea{font-family:inherit}
 html,body{margin:0;height:100%;overflow:hidden}
 body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--text);
@@ -195,6 +215,21 @@ header #bar .btn.tiny{margin-right:0}
      sidebar far wider than its declared width */
   width:100%;min-width:0;max-width:100%;text-overflow:ellipsis;
 }
+
+/* A select opened as an in-page LIST rather than a native popup -- see the comment on
+   openAsList(). Being page-rendered is the whole point: it takes the scrollbar above. */
+/* clamp, not min(): a viewport that reports 0 height -- a background tab does -- makes
+   min(62vh, 560px) evaluate to 0 and the list collapses to nothing. clamp keeps a floor. */
+/* max-width:none matters: the slot selects carry max-width:100% to keep long names from
+   forcing the sidebar wide, and once this is position:fixed that 100% resolves against
+   the VIEWPORT instead of the panel -- which collapses the list to the width of its own
+   scrollbar wherever the viewport reports 0. The explicit width set in openAsList wins. */
+select.aslist{position:fixed;z-index:70;overflow-y:auto;max-width:none;
+  max-height:clamp(240px,62vh,560px);
+  background:var(--bg2);border:1px solid var(--accent);border-radius:8px;
+  padding:2px;box-shadow:0 10px 28px #000a}
+select.aslist option{padding:5px 8px}
+select.aslist optgroup{padding-top:2px}
 .field input[type=text]::placeholder{color:var(--text-hint);opacity:1}
 input[type=range]{width:100%;accent-color:var(--accent)}
 
@@ -2403,7 +2438,7 @@ function optionsFor(slot){
     // pieces -- and those stay in the list whichever type is picked
     if (hunterType !== 'all' && r.t !== 2 && r.t !== (hunterType === 'b' ? 0 : 1)) continue;
     forge.push({ value: 's' + r.series, label: r.name, model: r.model,
-                 group: r.r ? 'Rarity ' + r.r : 'Unranked', rank: r.r || 99 });
+                 group: 'Rarity ' + r.r });
   }
   // Pure forge order -- NOT sorted by rarity. The Smithy is rarity-ascending for the first
   // ~1000 rows and then appends a block of collab and special gear (Varia Suit, Hero's,
@@ -3514,7 +3549,7 @@ function otOptions(slot){
     // making one up is not on. The costume heads before it are pieces the forge equips
     // with the body and never names separately, so they take the SET's name.
     const group = r.jp ? 'MHXX only' : r.set ? 'Set gear'
-                : r.r ? 'Rarity ' + r.r : 'Unranked';
+                : 'Rarity ' + r.r;
     out.push({ value: 's' + r.series, label: r.name, model: r.model, group: group });
   }
   return (OT_OPT_CACHE[slot] = out);
@@ -3951,6 +3986,67 @@ window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
   get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
 
 // Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
+// Chrome draws a <select>'s POPUP itself, and page CSS never reaches it -- so the
+// dropdown keeps a hairline scrollbar no matter how wide ::-webkit-scrollbar is, which is
+// exactly what Raven kept seeing on both the deployed and the local build. A select
+// rendered IN PAGE does take it (a `size` listbox measured 23px against the same rules).
+//
+// So on open, the long lists become an in-page listbox positioned where the popup would
+// have been, and go back to a normal closed select as soon as a choice is made or focus
+// leaves. Same element, same options, same change handlers -- only the rendering differs.
+function openAsList(sel){
+  if (sel.dataset.aslist) return;
+  const r = sel.getBoundingClientRect();
+  sel.dataset.aslist = '1';
+  sel.dataset.prevSize = sel.size;
+  sel.size = 14;
+  sel.classList.add('aslist');
+  sel.style.left = r.left + 'px';
+  sel.style.width = r.width + 'px';
+  // open downwards, or upwards when there is more room above
+  const below = window.innerHeight - r.bottom;
+  if (below < 240 && r.top > below) { sel.style.bottom = (window.innerHeight - r.top) + 'px'; sel.style.top = ''; }
+  else { sel.style.top = r.bottom + 'px'; sel.style.bottom = ''; }
+  // Keep the current choice in view, which the native popup does for free. `offsetTop` on
+  // an <option> reads 0 in Chrome, so estimate from the row index instead -- optgroup
+  // headers make rows slightly uneven, which only costs a row or two of accuracy.
+  const i = sel.selectedIndex;
+  if (i > 0){
+    const row = sel.scrollHeight / Math.max(sel.options.length, 1);
+    sel.scrollTop = Math.max(0, (i * row) - sel.clientHeight / 2);
+  }
+}
+function closeAsList(sel){
+  if (!sel.dataset.aslist) return;
+  delete sel.dataset.aslist;
+  sel.size = +sel.dataset.prevSize || 0;
+  sel.classList.remove('aslist');
+  sel.style.left = sel.style.top = sel.style.bottom = sel.style.width = '';
+}
+function asListify(sel){
+  if (!sel || sel.dataset.aslistWired) return;
+  sel.dataset.aslistWired = '1';
+  sel.addEventListener('mousedown', e => {
+    if (sel.dataset.aslist) return;       // a click on an option must select it
+    e.preventDefault();                   // suppress the native popup
+    openAsList(sel);
+    sel.focus();
+  });
+  sel.addEventListener('change', () => closeAsList(sel));
+  sel.addEventListener('blur', () => closeAsList(sel));
+  sel.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAsList(sel); sel.blur(); } });
+}
+// the long ones: equipment on both figures, and the pose list
+for (const sel of document.querySelectorAll('select[data-slot], select[data-otslot], #pose, #otPose'))
+  asListify(sel);
+// Capture phase, so a scroll ANYWHERE closes the list -- it is position:fixed and would
+// otherwise be left behind by the sidebar. But that includes scrolling the list ITSELF,
+// which closed it on the first drag and made it unusable. Only outside scrolls count.
+window.addEventListener('scroll', e => {
+  for (const sel of document.querySelectorAll('select.aslist'))
+    if (e.target !== sel) closeAsList(sel);
+}, true);
+
 // opening one closes the rest, so the sidebar never grows past the viewport.
 // Clicking the open panel still closes it, leaving all of them shut.
 document.querySelectorAll('.panel-head').forEach(h => {
