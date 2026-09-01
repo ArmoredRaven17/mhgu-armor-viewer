@@ -1157,8 +1157,11 @@ const deviant = { on:false, a:'#0089ec', b:'#ff4033', anim:'fade' };
 const slotPigment = { helm:null, body:null, arm:null, wst:null, leg:null };
 function deviantMix(t, anim){
   if (anim === 'pulse'){
-    // mostly A, with a short excursion to B once per cycle
-    const P = 2.6, u = (t % P) / P;
+    // Mostly A, with a short excursion to B once per cycle. The gaussian's width is in
+    // CYCLE fraction, so raising P stretches the flash and the gap between flashes
+    // together -- the whole animation slows rather than just firing less often.
+    // 2.6s read as too quick; at 4.0 the flash itself lasts about 0.8s.
+    const P = 4.0, u = (t % P) / P;
     const d = u - 0.72;
     return Math.exp(-(d * d) / 0.0045);
   }
