@@ -1,0 +1,537 @@
+{
+ "_doc": "Fixed scenes for before/after renders. Loaded by index.html when the URL carries ?scene=<name>. Pieces are 3-digit model ids per slot (null = empty). weapon.model null = the class's shipped sample. camera: front|back|left|right, framed by the app. Fields the running build does not understand are ignored, so one file serves the old and the new viewer.",
+ "viewport": [
+  1280,
+  800
+ ],
+ "defaults": {
+  "gender": "m",
+  "pieces": {
+   "helm": "001",
+   "body": "001",
+   "arm": "001",
+   "wst": "001",
+   "leg": "001"
+  },
+  "face": "000",
+  "hair": "000",
+  "pose": null,
+  "weapon": null,
+  "drawn": true,
+  "stance": 0,
+  "form": null,
+  "pigment": null,
+  "camera": "front",
+  "figure": "hunter"
+ },
+ "scenes": {
+  "gs-drawn": {
+   "weapon": {
+    "cls": "w00",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "gs-sheathed": {
+   "weapon": {
+    "cls": "w00",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sns-shield": {
+   "weapon": {
+    "cls": "w01",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "db-both": {
+   "weapon": {
+    "cls": "w11",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "bow-arrows": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "camera": "left"
+  },
+  "cb-sword": {
+   "weapon": {
+    "cls": "w14",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "cb-axe": {
+   "weapon": {
+    "cls": "w14",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "form": 4
+  },
+  "hbg": {
+   "weapon": {
+    "cls": "w04",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "camera": "right"
+  },
+  "ls-saya": {
+   "weapon": {
+    "cls": "w07",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "camera": "back"
+  },
+  "ig-kinsect": {
+   "weapon": {
+    "cls": "w13",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "kinsect": "001"
+  },
+  "gore-vest": {
+   "pieces": {
+    "helm": "141",
+    "body": "141",
+    "arm": "141",
+    "wst": "141",
+    "leg": "141"
+   }
+  },
+  "lecturer-boots": {
+   "gender": "f",
+   "pieces": {
+    "helm": "107",
+    "body": "107",
+    "arm": "107",
+    "wst": "107",
+    "leg": "107"
+   }
+  },
+  "yukumo-gloss": {
+   "pieces": {
+    "helm": "131",
+    "body": "131",
+    "arm": "131",
+    "wst": "131",
+    "leg": "131"
+   }
+  },
+  "m664-env-dye": {
+   "pieces": {
+    "helm": "664",
+    "body": "664",
+    "arm": "664",
+    "wst": "664",
+    "leg": "664"
+   },
+   "pigment": {
+    "helm": "#2e6fbf",
+    "body": "#2e6fbf",
+    "arm": "#2e6fbf",
+    "wst": "#2e6fbf",
+    "leg": "#2e6fbf"
+   }
+  },
+  "deviant-pigment": {
+   "pieces": {
+    "helm": "653",
+    "body": "653",
+    "arm": "653",
+    "wst": "653",
+    "leg": "653"
+   },
+   "deviant": "Silverwind"
+  },
+  "palico-default": {
+   "figure": "palico"
+  },
+  "sh-w00-back": {
+   "weapon": {
+    "cls": "w00",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w00-right": {
+   "weapon": {
+    "cls": "w00",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w00": {
+   "weapon": {
+    "cls": "w00",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w01-back": {
+   "weapon": {
+    "cls": "w01",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w01-right": {
+   "weapon": {
+    "cls": "w01",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w01": {
+   "weapon": {
+    "cls": "w01",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w02-back": {
+   "weapon": {
+    "cls": "w02",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w02-right": {
+   "weapon": {
+    "cls": "w02",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w02": {
+   "weapon": {
+    "cls": "w02",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w03-back": {
+   "weapon": {
+    "cls": "w03",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w03-right": {
+   "weapon": {
+    "cls": "w03",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w03": {
+   "weapon": {
+    "cls": "w03",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w04-back": {
+   "weapon": {
+    "cls": "w04",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w04-right": {
+   "weapon": {
+    "cls": "w04",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w04": {
+   "weapon": {
+    "cls": "w04",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w06-back": {
+   "weapon": {
+    "cls": "w06",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w06-right": {
+   "weapon": {
+    "cls": "w06",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w06": {
+   "weapon": {
+    "cls": "w06",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w07-back": {
+   "weapon": {
+    "cls": "w07",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w07-right": {
+   "weapon": {
+    "cls": "w07",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w07": {
+   "weapon": {
+    "cls": "w07",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w08-back": {
+   "weapon": {
+    "cls": "w08",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w08-right": {
+   "weapon": {
+    "cls": "w08",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w08": {
+   "weapon": {
+    "cls": "w08",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w09-back": {
+   "weapon": {
+    "cls": "w09",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w09-right": {
+   "weapon": {
+    "cls": "w09",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w09": {
+   "weapon": {
+    "cls": "w09",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w10-back": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w10-right": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w10": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w11-back": {
+   "weapon": {
+    "cls": "w11",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w11-right": {
+   "weapon": {
+    "cls": "w11",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w11": {
+   "weapon": {
+    "cls": "w11",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w12-back": {
+   "weapon": {
+    "cls": "w12",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w12-right": {
+   "weapon": {
+    "cls": "w12",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w12": {
+   "weapon": {
+    "cls": "w12",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w13-back": {
+   "weapon": {
+    "cls": "w13",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w13-right": {
+   "weapon": {
+    "cls": "w13",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w13": {
+   "weapon": {
+    "cls": "w13",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "sh-w14-back": {
+   "weapon": {
+    "cls": "w14",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "back"
+  },
+  "sh-w14-right": {
+   "weapon": {
+    "cls": "w14",
+    "model": null
+   },
+   "drawn": false,
+   "camera": "right"
+  },
+  "dr-w14": {
+   "weapon": {
+    "cls": "w14",
+    "model": null
+   },
+   "drawn": true,
+   "camera": "front"
+  },
+  "bow-arrow-520": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "arrow": "520",
+   "camera": "left"
+  },
+  "bow-arrow-521": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "arrow": "521",
+   "camera": "left"
+  },
+  "bow-arrow-621": {
+   "weapon": {
+    "cls": "w10",
+    "model": null
+   },
+   "drawn": true,
+   "stance": 0,
+   "arrow": "621",
+   "camera": "left"
+  }
+ }
+}

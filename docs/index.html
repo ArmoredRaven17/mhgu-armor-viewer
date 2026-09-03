@@ -11,7 +11,7 @@
 
 :root{
   --bg:#3e3e3e; --bg1:#000000; --bg2:#333; --hover:#2f2f2f;
-  --accent:#7a7a7a; --accent-hover:#9a9a9a;
+  --accent:#7a7a7a; --accent-hover:#9a9a9a; --cta:#19e0d2;
   --text:#f3f3f3; --text-dim:#ffffff; --text-hint:#b9b9b9;
   --stage:#0e1013;
   --line:#ffffff1f; --card:#ffffff0d;
@@ -108,6 +108,10 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
    tint come off. Nothing else about the app changes — only the surface being keyed. */
 :root.chroma .content{background-image:none}
 #viewport{position:absolute;inset:0}
+/* "Loading..." over the render area until the first framed render (Raven, 2026-09-03) */
+#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--text-hint);font-size:15px;letter-spacing:.06em;pointer-events:none}
+#loading[hidden]{display:none}
 /* Floating toolbar over the render area, matching the Weapon Tree's #bar.
    width:max-content is load-bearing: with left:50% the default shrink-to-fit only
    counts the space from the centre to the right edge, so the bar would cap at half
@@ -156,6 +160,10 @@ header #bar .btn.tiny{margin-right:0}
   background-position:right;
 }
 .btn.accent{background:var(--bg1);border-color:#000;color:#fff;font-weight:600}
+/* Reset: the Bingo app's accent button on the theme's complementary colour (--cta) */
+.btn.cta{background:var(--cta);background-image:none;border-color:rgba(0,0,0,.45);color:#fff;font-weight:600;
+  text-shadow:-1px 0 rgba(0,0,0,.55),1px 0 rgba(0,0,0,.55),0 -1px rgba(0,0,0,.55),0 1px rgba(0,0,0,.55)}
+.btn.cta:hover{background:color-mix(in srgb,var(--cta) 84%,#ffffff)}
 /* Selected gender. Was a fixed green (#3d6b45) that ignored the theme entirely; this is the
    theme's own colour instead — var(--hover) is darken(hex,.30), the family's deep shade.
 
@@ -333,6 +341,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <button id="saveBtn"   class="btn tiny" title="Save the current set">Save</button>
     <button id="saveAsBtn" class="btn tiny" title="Save the current set to a new file">Save As&hellip;</button>
     <button id="openBtn"   class="btn tiny" title="Open a saved set">Open</button>
+    <button id="resetBtn"  class="btn tiny cta" title="Restore the defaults for the hunter or Palico on screen">Reset</button>
     <input type="file" id="importFile" accept=".json" style="display:none">
     <button id="aboutBtn" class="icon-btn" title="About" aria-label="About">&#9432;</button>
     <button id="themeBtn" class="icon-btn" title="Settings" aria-label="Settings">&#9881;</button>
@@ -370,7 +379,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </div>
       </section>
 
-      <section class="panel" data-open="true">
+      <section class="panel" data-open="false">
         <button class="panel-head">Hunter <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <label class="chk"><input type="checkbox" id="face" checked>Face</label>
@@ -392,8 +401,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <section class="panel" id="weaponPanel" data-open="false">
         <button class="panel-head">Weapon <span class="chev">&#9662;</span></button>
         <div class="panel-body">
-          <div class="field"><label for="weapon">Weapon</label><select id="weapon"></select></div>
+          <div class="field"><label for="weaponClass">Class</label><select id="weaponClass"></select></div>
+          <div class="field"><label for="weaponModel">Weapon</label><select id="weaponModel"></select></div>
+          <div class="field"><label for="weaponDrawn">Carry</label><select id="weaponDrawn"><option value="1">Drawn</option><option value="0">Sheathed</option></select></div>
           <div class="field"><label for="weaponPose">Stance</label><select id="weaponPose"></select></div>
+          <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
+          <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
+          <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
+
         </div>
       </section>
 
@@ -431,7 +446,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </span>
 
 
-      <span id="debugPanel">
+      <span id="debugPanel" style="display:none">   <!-- shown only in debug mode; hidden from the first paint (Raven, 2026-09-03) -->
       <section class="panel" data-open="false">
         <button class="panel-head">Debug <span class="chev">&#9662;</span></button>
         <div class="panel-body">
@@ -466,7 +481,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </div>
       </section>
 
-      <section class="panel" data-open="true">
+      <section class="panel" data-open="false">
         <button class="panel-head">Palico <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <div class="field"><label for="otEar">Ears</label><select id="otEar"></select></div>
@@ -493,6 +508,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
     <section class="content">
       <div id="viewport"></div>
+      <div id="loading">Loading...</div>
           <div id="hud">loading&hellip;</div>
       <p id="renderNote">Some armors may not render correctly at this time or some oddities may happen</p>
       <div id="err"></div>
@@ -558,8 +574,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <span class="app-desc">Renders the scene, with GLTFLoader, OrbitControls and SkeletonUtils.</span></li>
       <li><span class="app-name">Pillow</span>
         <span class="app-desc">Converted the extracted textures to PNG during the build.</span></li>
-      <li><span class="app-name">MHGU-Modding wiki</span> &mdash; by RTHKKona and contributors
-        <span class="app-desc">Documented the model and texture extraction route this project followed.</span></li>
+      <li><span class="app-name">MHGU-Modding wiki</span> &mdash; by RTHKKona and contributors, ported from GReinoso96 and Aradi147's XXModding
+        <span class="app-desc">Documented the model and texture extraction route this project followed, and the weapon data table layout.</span></li>
     </ul>
 
     <h3>Assets</h3>
@@ -816,6 +832,22 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     const darken = (rgb, f) => { const [h, s, l] = rgbToHsl(rgb); return hslToRgb([h, s, clamp01(l * f)]); };
     const lighten = (rgb, t) => { const [h, s, l] = rgbToHsl(rgb); return hslToRgb([h, s, clamp01(l + (1 - l) * t)]); };
     const css = rgb => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    // The complementary colour, the Bingo app's rule for its highlight (winColor): the hue
+    // rotated a full 180 deg from the theme, saturation .95, the lightest shade from .60 down
+    // that keeps white text at 4.5:1. The Reset button wears it (Raven, 2026-09-03:
+    // "complementary colored, refer to Bingo App").
+    const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const relLum = ([r, g, b]) => 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const contrast = (a, b) => { const x = relLum(a), y = relLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+    const WHITE = [255, 255, 255];
+    function complement(c) {
+      const hue = (rgbToHsl(c)[0] + 0.5) % 1;
+      for (let l = 0.60; l >= 0.20; l -= 0.01) {
+        const cand = hslToRgb([hue, 0.95, l]);
+        if (contrast(cand, WHITE) >= 4.5) return cand;
+      }
+      return hslToRgb([hue, 0.95, 0.20]);
+    }
 
     let current = DEFAULT_HEX;
 
@@ -827,6 +859,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       r.setProperty("--hover", css(darken(c, .30)));
       r.setProperty("--accent", css(darken(c, .70)));
       r.setProperty("--accent-hover", css(lighten(c, .40)));
+      r.setProperty("--cta", css(complement(c)));
       // Weapon Trees' factor, verbatim — unless a chroma backdrop is overriding it.
       r.setProperty("--stage", STAGES[stageMode] || css(darken(c, .18)));
       r.setProperty("--text", "#ffffff");
@@ -898,6 +931,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   })();
 </script>
 
+<script src="mount-rom.js?v=1"></script>
+
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
@@ -907,14 +942,25 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
 <script type="module">
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { clone as skeletonClone } from 'three/addons/utils/SkeletonUtils.js';
+import { createStage } from './render/stage.js';
+import { initAssets, loadJson, getTexture } from './render/assets.js';
+import { playerBone } from './render/skeleton.js';
+import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow }
+  from './render/material.js';
+import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
+import { PoseDriver, POSES } from './render/pose.js';
+import { ROM as MOUNT_ROM } from './render/mount.js';
+import { WeaponRig } from './render/weapon.js';
+import { classes as weaponClasses, loadClass as loadWeaponClass, loadKinsects, modelIdOf, rowFor } from './render/weapons-index.js';
+import { loadMaterialsDb } from './render/materials-db.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
 
 const CLEAN = new URLSearchParams(location.search).has('clean');
+// `?scene=<name>` renders one of dev/scenes.json's fixed scenes for before/after comparison
+// (dev/serve.py saves the shots). A scene run ignores the saved session and never writes one.
+const SCENE = new URLSearchParams(location.search).get('scene');
 const MARGIN = CLEAN ? 1.02 : 1.35;   // leave room for the side panels when they are shown
 if (CLEAN) { document.querySelector('.sidebar').style.display='none';
              document.querySelector('.titlebar').style.display='none';
@@ -922,29 +968,22 @@ if (CLEAN) { document.querySelector('.sidebar').style.display='none';
 
 // cache-bust: the dev server sends no no-cache headers and a stale manifest
 // silently strips the joint table, which makes posing a no-op
-const manifest = await (await fetch('manifest.json?v=' + Date.now())).json();
+const manifest = await loadJson('manifest.json');
 const SLOTS = manifest.slots;
 
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+// The renderer, scene, camera, orbit controls and the light rig live in render/stage.js.
+// a scene run renders at exactly the viewport size so shots are comparable across machines
 const viewport = document.getElementById('viewport');
-viewport.appendChild(renderer.domElement);
-// size to the CONTENT area, not the window -- there is a 300px sidebar now
-function fitRenderer(){
-  const w = viewport.clientWidth || 1, h = viewport.clientHeight || 1;
-  renderer.setSize(w, h);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-
-// No scene background: the canvas is transparent and .content paints the backdrop in CSS, so
-// the stage can carry a texture (an opaque clear colour cannot) and a chroma key is exactly
-// the value CSS was given, with no colour-space conversion in between.
-const scene = new THREE.Scene(); scene.background = null;
-const camera = new THREE.PerspectiveCamera(38, 1, 0.001, 5000);
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.autoRotate = false; controls.autoRotateSpeed = 1.8;
+const stage = createStage(viewport, { margin: MARGIN,
+                                      pixelRatio: SCENE ? 1 : Math.min(devicePixelRatio,2),
+                                      fixedSize: SCENE ? [1280, 800] : null });
+const { renderer, scene, camera, controls } = stage;
+// every model goes under `world` (the identity group; see render/stage.js for why it is not a
+// mirror); `scene` keeps the lights
+const world = stage.world;
+const head = stage.lights.head;     // the headlight; the render loop keeps it on the camera
+const fitRenderer = stage.fit;
+initAssets(renderer);
 
 // Orbit / pan lock, same control the Weapon Tree carries: unlocked (the default,
 // button lit) drags to orbit; locked drags to pan instead. OrbitControls already does
@@ -984,18 +1023,10 @@ viewport.addEventListener('auxclick', e => {
   if (moved < 5) { e.preventDefault(); toggleOrbitLock(); }
 });
 
-
-scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x30281f, 1.4));
-const key = new THREE.DirectionalLight(0xffffff, 2.3); key.position.set(3,5,4); scene.add(key);
-const rim = new THREE.DirectionalLight(0x88aaff, 1.1); rim.position.set(-4,2,-5); scene.add(rim);
-const fill = new THREE.DirectionalLight(0xffffff, 0.55); fill.position.set(0,-3,2); scene.add(fill);
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-// headlight: follows the camera so whatever you orbit to stays readable
-const head = new THREE.DirectionalLight(0xffffff, 0.9); scene.add(head);
-
-const PIGMENTS = await (await fetch('pigments.json?v=' + Date.now())).json();
+const PIGMENTS = await loadJson('pigments.json');
 const LS_KEY = 'mhgu-armor-viewer';
 function loadState(){
+  if (SCENE) return null;
   try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch(e){ return null; }
 }
 let restoring = true;   // restoring fires the same handlers; don't let them save yet
@@ -1015,7 +1046,7 @@ function applyCameraState(c){
   return true;
 }
 function saveState(){
-  if (restoring) return;
+  if (restoring || SCENE) return;
   try {
     const slots = {};
     // '' is never a real choice -- it is what a select reports when its value was set to
@@ -1033,6 +1064,7 @@ function saveState(){
       pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
       clothing: document.getElementById('clothing').value,
+      clothingExplicit: true,        // this save knows Type 1 is the default; a '' is a choice
       faceStyle: document.getElementById('faceStyle').value,
       hairStyle: document.getElementById('hairStyle').value,
       mask: ['sat0','sat1','val0'].map(i=>document.getElementById(i).value),
@@ -1044,7 +1076,9 @@ function saveState(){
                    fur: charColor.fur, oeye: charColor.oeye },
       otomo: otCapture(),
       orbitLocked, spinStep, wireOn, hideCursor,
-      weapon: weaponSel.value, weaponPose: weaponPoseSel.value,
+      weapon: { cls: weaponClassSel.value, model: weapon.modelId },
+      weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
+      weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, arrow: arrowSel.value,
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
       slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
@@ -1088,12 +1122,21 @@ const DEFAULT_OTOMO = {
   pose: "Pose 1",
   camera: { p: [0.9805, 0.2937, 1.6435], t: [-0.0121, -0.0219, -0.0666] }
 };
+// Raven's DefaultMale.json (2026-09-03): Shadow Shades / Blue Guild Vest / Malfestio Guards
+// X / Malfestio Coat X / Black Leather Chaps with their pigments and Deviant pulses, face
+// Type 1, no hair, pose g:10, and his Heavy Bowgun -- Daora's Delphinidae drawn in Stance 12
+// with the Power Barrel. The weapon and the camera are global, so both are applied the first
+// time the male is shown in a fresh session (setGender), once; a captured body carries
+// neither, so nothing fights the user's own framing afterwards. The file's clothing was the
+// old "none" default; Type 1 is the default now (Raven, the same day).
 const DEFAULT_MALE = {
   slots: {helm:"s641", body:"s503", arm:"s850", wst:"s850", leg:"s642"},
+  weapon: { class: "w04", model: "013", drawn: true, stance: "Stance 12", form: 16 },
+  camera: { p: [1.5041, -0.129, 2.895], t: [-0.4285, -0.5002, 0.2089] },
   hunterType: 'all',
   faceStyle: "0", hairStyle: "24",
   face: true, hair: false, body: true,
-  clothing: "", pose: "g:10",
+  clothing: "060", pose: "g:10",
   charColor: { skin: null, eye: null, hair: "#707156" },
   slotPig: [[true,"#212121"], [true,"#4b410d"], [true,"#15274b"],
             [true,"#15274b"], [true,"#232323"]],
@@ -1104,7 +1147,8 @@ let gender = SAVED && (SAVED.gender === 'f' || SAVED.gender === 'm')
              ? SAVED.gender : DEFAULT_SET.gender;
 let pigmentIndex = null;
 let showBody = true;     // the hunter's body, textured with the skin map
-let useDefaults = false; // apply each piece's OWN authored pigment instead of one global color
+// tint.useDefaults (render/material.js): apply each piece's OWN authored pigment instead of
+// one global color
 
 // Pigment is shelved. The dyeable REGION is not derivable from anything we can read:
 // every texture-based test has been falsified against the game (alpha, thresholded alpha,
@@ -1130,11 +1174,12 @@ const MASK_VER = 2;
 // Off again. The material-colour view did its job -- it is what identified the _sym_
 // material as the dye region -- and the mask sliders are only a fallback now.
 const DEBUG_UI = false;
-// The weapon placement is not finished -- the mount joint the engine uses (player bone 13)
-// is in none of the game's data files, so the hand position is still approximate. Panel
-// stays in the DOM so its handlers keep resolving; only the UI is hidden.
-const WEAPON_UI = false;
-let pigment = null;          // null = the armor's own colors, untinted
+// The weapon placement is not finished -- the transform from the hand joint to the weapon
+// is set in code, not in any data file, so the hand position is still approximate. The
+// panel is back ON at Raven's request so the placements can be judged and tuned against
+// real weapons; flip this to false to hide it again without touching anything else.
+const WEAPON_UI = true;
+// tint.pigment (render/material.js) is the global pigment: null = the armor's own colors, untinted
 
 // The 18 Deviant pigments, named from Color_Special_1..18 in ResultMsg_eng.gmd.
 // The NAMES are the game's. The colour PAIRS are approximations from each Deviant's
@@ -1202,7 +1247,8 @@ const deviant = { on:false, a:'#0089ec', b:'#ff4033', anim:'fade' };
 // One pigment per equipment slot, which is how the game itself stores it:
 // cArmorColorBase is mHeadColorIndex / mTorsoColorIndex / mArmColorIndex /
 // mWaistColorIndex / mLegColorIndex -- five indices, one per piece.
-const slotPigment = { helm:null, body:null, arm:null, wst:null, leg:null };
+// The object itself lives in render/material.js, so applyTint reads what this UI writes.
+const slotPigment = tint.slotPigment;
 function deviantMix(t, anim){
   if (anim === 'pulse'){
     // Mostly A, with a short excursion to B once per cycle. The gaussian's width is in
@@ -1216,12 +1262,6 @@ function deviantMix(t, anim){
   const P = 5.0;                      // slow, symmetric A <-> B
   return 0.5 - 0.5 * Math.cos((t / P) * Math.PI * 2);
 }
-
-// MHGU dyes armor with a pigment. The _bm alpha channel is the mask: bright on the
-// metal/cloth trim, dark on monster-part scales -- which matches what the game lets you
-// dye. So tint by alpha rather than washing the whole piece.
-// matcap strength: the slider is gone, the env contribution stays at this level
-const envAmount = 0.55;
 
 // The game's own color names, read from nativeNX/eng/table/CharMakeMsg_eng.gmd
 // (89 labels / 89 strings, an exact fit to EOF -- an earlier pass called this file
@@ -1253,154 +1293,12 @@ const ALL_CHAR_PARTS = CHAR_PARTS.concat(OT_CHAR_PARTS);
 // path -- render, save, export -- handles both without a second flag.
 const charColor = { skin:null, eye:null, hair:null, fur:null, oeye:null };
 
-function applyTint(mat){
-  // Own the uniform OBJECTS up front and hand the same ones to onBeforeCompile, so
-  // changing pigment or sheen is just a .value write -- no recompile.
-  if (!mat.userData.u){
-    mat.userData.u = {
-      uTint: { value: new THREE.Color(1,1,1) },
-      uAmt:  { value: 0 },
-      uEnv:  { value: null },
-      uEnvAmt: { value: 0 },
-      uDbg: { value: 0 },
-      uKey: { value: new THREE.Color(1,1,1) },          // the armor's AUTHORED color
-      uHasKey: { value: 0 },
-      uKeyTol: { value: 0.15 },
-      uSatBoost: { value: 1.0 },   // debug: exaggerate color so neutral areas stand out
-      // Cut at the VALLEY between the two populations, not inside one of them.
-      // An armour texture is bimodal in saturation: the neutral (dyeable) lobe runs
-      // 0..~0.45 and the coloured armour sits at 0.5+, with a clear trough between.
-      // The old 0.06-0.30 window ended mid-lobe, so it selected the whitest part of a
-      // dyeable band and dropped the rest -- "correct area, but not the full area".
-      uSat: { value: new THREE.Vector2(0.20, 0.45) },   // saturation window
-      uVal: { value: new THREE.Vector2(0.15, 0.35) },   // brightness gate
-      uChar: { value: new THREE.Color(1,1,1) },  // hair / eye / skin color
-      uCharAmt: { value: 0 },
-      uRegion: { value: 0 },  // 1 on the material that IS the dyeable region
-      // 1 where the texture's ALPHA is a real cutout and must reach alphaTest.
-      //
-      // This shader replaces <map_fragment> wholesale, and the replacement only ever
-      // multiplied diffuseColor.RGB -- so the sampled alpha was dropped on the floor and
-      // `alphaTest` compared against a diffuseColor.a that was always 1. Nothing was ever
-      // discarded. It shows up on the Palico's eyes, whose quads are deliberately
-      // oversized so one mesh covers every eye option: the surround is authored fully
-      // transparent (92-95% of those texels sit at alpha exactly 0) and was drawing solid.
-      //
-      // Deliberately opt-IN rather than applied everywhere. On most armour the `_bm` alpha
-      // is a GLOSS ramp, not opacity, so feeding it to a 0.5 alphaTest would punch holes
-      // through every shaded area -- the failure recorded early on as "alphaTest 0.5 culls
-      // most of the armour". Widening this needs its own pass and Raven's eyes on it.
-      uAlphaCut: { value: 0 }
-    };
-    mat.onBeforeCompile = (sh) => {
-      Object.assign(sh.uniforms, mat.userData.u);
-      sh.fragmentShader = sh.fragmentShader
-        .replace('void main() {',
-                 'uniform vec3 uTint; uniform float uAmt;' +
-                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform float uDbg;' +
-                 ' uniform vec2 uSat; uniform vec2 uVal;' +
-                 ' uniform vec3 uKey; uniform float uHasKey; uniform float uKeyTol;' +
-                 ' uniform float uSatBoost;' +
-                 ' uniform vec3 uChar; uniform float uCharAmt; uniform float uRegion;' +
-                 ' uniform float uAlphaCut;' +
-                 ' float gGloss = 0.0; void main() {')
-        .replace('#include <map_fragment>',
-          `#ifdef USE_MAP
-             vec4 texel = texture2D( map, vMapUv );
-             gGloss = texel.a;                       // alpha is the GLOSS mask (for env)
-             // MHGU authors the dyeable part of a texture as DESATURATED white/grey so a
-             // pigment can be multiplied into it -- undyed, those areas read as the white
-             // sashes and boots you see. So the mask is low saturation, not the alpha:
-             // colorful areas (monster hide, painted trim) keep their own color, and
-             // near-black is skipped so shadowed cloth does not light up.
-             float mxC = max( texel.r, max( texel.g, texel.b ) );
-             float mnC = min( texel.r, min( texel.g, texel.b ) );
-             float sat = mxC > 0.0 ? ( mxC - mnC ) / mxC : 0.0;
-             // THE REGION IS THE MATERIAL. Rendering the Yukumo kasa with one hue per
-             // material shows the _sym_ material is exactly the band that dyes -- the
-             // texel heuristics were approximating a shape the model already states
-             // outright, which is why they always caught "the right area but not all of
-             // it". uRegion is 1 only on that material.
-             //
-             // The saturation window is kept as a fallback for the handful of pieces
-             // whose dye area is not a separate material.
-             float dye = uRegion > 0.5 ? 1.0
-                       : ( 1.0 - smoothstep( uSat.x, uSat.y, sat ) )
-                         * smoothstep( uVal.x, uVal.y, mxC ) * 0.0;
-             float luma = dot( texel.rgb, vec3(0.299, 0.587, 0.114) );
-             if ( uDbg > 0.5 ) {
-               // magenta = what the mask selects, greyscale = left alone
-               diffuseColor.rgb *= mix( vec3(luma * 0.55), vec3(1.0, 0.0, 0.85), dye );
-             } else {
-               // A plain multiply can only DARKEN, so a dark piece barely moves when
-               // dyed -- Astalos reads as unchanged -- while in game it visibly takes the
-               // colour. Recolour by luminance instead, the same treatment the hair and
-               // skin tints use, so the pigment's hue survives on dark armour while the
-               // weave and shading still come through the luma term.
-               vec3 dyed = uTint * ( 0.30 + luma * 1.35 );
-               vec3 base = mix( texel.rgb, dyed, uAmt * dye );
-               // Debug: push saturation so COLOURED areas go vivid and the neutral
-               // (dyeable) ones stay grey -- greying the rest out, as the mask view does,
-               // makes those two indistinguishable.
-               base = clamp( vec3(luma) + ( base - vec3(luma) ) * uSatBoost, 0.0, 1.0 );
-             // Hair / eye / skin color. Recolor by LUMINANCE rather than multiplying:
-             // a multiply can only ever darken, so a dark brown hair texture could never
-             // reach blonde. Scaling the chosen color by luma (x2, so mid-grey lands on
-             // the color itself) keeps the strand and shading detail while actually
-             // changing the hue.
-             if ( uCharAmt > 0.0 ) {
-               base = mix( base, uChar * luma * 2.0, uCharAmt );
-             }
-               diffuseColor.rgb *= base;
-             }
-             // hand the sampled alpha to alphaTest where the map is a real cutout
-             diffuseColor.a *= mix( 1.0, texel.a, uAlphaCut );
-           #endif`)
-        // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
-        // Sample it with the view-space normal and add it on top of the lit color.
-        .replace('#include <dithering_fragment>',
-          `#include <dithering_fragment>
-           if ( uEnvAmt > 0.0 ) {
-             vec3 vn = normalize( normal );
-             vec2 muv = vn.xy * 0.5 + 0.5;
-             vec3 env = texture2D( uEnv, muv ).rgb;
-             // gloss^2 biases the sheen toward genuinely reflective texels: ~400 pieces
-             // have a near-solid gloss mask and a linear term washes them out.
-             float g = gGloss * gGloss;
-             // SCREEN blend, not additive -- a + b*(1-a) cannot exceed 1, so bright
-             // armor keeps its detail instead of clipping to white.
-             gl_FragColor.rgb += env * g * uEnvAmt * ( 1.0 - gl_FragColor.rgb );
-           }`);
-    };
-    mat.needsUpdate = true;
-  }
-  const u = mat.userData.u;
-  u.uRegion.value = mat.userData.dyeRegion ? 1 : 0;
-  const own = useDefaults && mat.userData.own ? mat.userData.own.rgb : null;
-  const slotCol = slotPigment[mat.userData.slot] || null;
-  const use = own || slotCol || (useDefaults ? null : pigment);
-  const key = mat.userData.own;                 // authored color = the region key
-  u.uHasKey.value = key ? 1 : 0;
-  if (key) u.uKey.value.setRGB(key.rgb[0]/255, key.rgb[1]/255, key.rgb[2]/255);
-  if (use && !mat.userData.noTint){
-    u.uTint.value.setRGB(use[0]/255, use[1]/255, use[2]/255);
-    u.uAmt.value = 1;
-  } else {
-    u.uAmt.value = 0;
-  }
-  u.uEnvAmt.value = (u.uEnv.value && /env/i.test(mat.name || '')) ? envAmount : 0;
-}
-
-const loader = new GLTFLoader(), texLoader = new THREE.TextureLoader();
-// tiled maps viewed at a glancing angle (skirts, capes) alias badly without this
-const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
-const texCache = new Map(), glbCache = new Map();
-const mounted = {}, allMats = [];
+// applyTint, the pigment shader and the material registries (allMats, armorMats) live in
+// render/material.js; the loaders and caches in render/assets.js.
+const mounted = {};
 // clothing is mounted separately from armor: it fills only the slots armor leaves empty,
 // so it cannot live in `mounted` without the two fighting over the same keys
 const clothMounted = {};
-// pigment applies to ARMOUR only -- never the hunter's face or hair
-const armorMats = [];
 
 // ---- Palico ----------------------------------------------------------------
 // Palicos mount separately from the hunter: their own skeleton (gids 0-13 for the body,
@@ -1439,471 +1337,49 @@ function activeMounts(){
   return Object.values(figure === 'palico' ? otMounted : mounted);
 }
 
-async function getTexture(file){
-  if (texCache.has(file)) return texCache.get(file);
-  const t = await texLoader.loadAsync(file);
-  t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;
-  // MT Framework tiles its maps: 14% of primitives have UVs outside 0..1, up to 6x on
-  // capes, long hair and skirts. three.js defaults to ClampToEdge, which smears the edge
-  // texel across everything past the first tile -- it reads as the texture being
-  // magnified rather than repeated.
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = maxAnisotropy;
-  texCache.set(file, t); return t;
-}
-
-// A harvested piece IS one slot of one set, so its texture is known from the key --
-// no need to parse material names. That matters because the game's own naming is
-// inconsistent: "m_heml004_env_" (a typo for helm), "wst045_sym_" (no m_ prefix),
-// "f_helm_sym_" (no set number). Guessing from those pulled a DIFFERENT slot's texture
-// on 383 materials and fell back on 54% of them.
-function textureForMaterial(name, entry){
-  if (/skin/i.test(name) && entry.skin) return entry.skin;
-  if (entry.tex) return entry.tex;          // armor: one piece, one texture
-
-  // Character parts are the exception -- a face legitimately ships several maps
-  // (face, eye, and the makeup variants), so those do match on the material name.
-  const T = entry.textures || {};
-  const keys = Object.keys(T).filter(k => !k.endsWith('+a'));
-  const pick = re => { const k = keys.find(k => re.test(k)); return k ? T[k] : null; };
-  if (/eye/i.test(name))  return pick(/eye/i);
-  if (/hair/i.test(name)) return pick(/hair/i);
-  if (/face/i.test(name)) return pick(/face\d*_bm$/i) || pick(/face/i);
-  return pick(/_bm$/i);
-}
-
 // ---- posing -------------------------------------------------------------
-// Every piece is skinned to the SAME shared skeleton, addressed by global bone id
-// (node names are "<localIdx>:<globalId>", with a "<...>_s" leaf duplicate used as the
-// skin joint). three.js STRIPS the colon, so bones are addressed by index parity with
-// skins[0].joints instead -- that mapping is baked into the manifest as `joints`.
-//   0/1/2 pelvis,spine,chest   3/4 neck,head
-//   5-8   R clavicle>hand      9-12 L clavicle>hand
-//   14-16 R hip>foot           17-19 L hip>foot     20-22 back attachment
-const POSES = {
-  't-pose': {},
-  'relaxed': {
-    // +Z is FORWARD (the sheathed-weapon bones 20-22 sit at -Z, on the back).
-    // Elbow y must swing the forearm toward +Z: NEGATIVE on the right (forearm
-    // extends +X), POSITIVE on the left. Getting these backwards bends both arms
-    // the wrong way at the elbow.
-    6:{z:-1.18, y:-0.06}, 7:{z:-0.10, y:-0.34},        // R shoulder drops, elbow forward
-    10:{z: 1.18, y: 0.06}, 11:{z: 0.10, y: 0.34},      // L mirror
-    5:{z:-0.05}, 9:{z: 0.05},                          // clavicles settle
-    2:{x: 0.045}, 3:{x:-0.035},                        // chest forward, neck counters
-    14:{z: 0.045}, 17:{z:-0.045},                      // stance opens slightly
-    15:{x: 0.06}, 18:{x: 0.06}                         // knees soften
-  }
-};
-let currentPose = 'relaxed';
-
-// Bone lookup by GLOBAL id, using the same rule poseObject does: vertices bind to the
-// "<n>:<gid>_s" LEAF and the posable node is its parent. Node NAMES cannot be used --
-// three.js strips the colon, so "11:5" and "1:15" both become "115".
-function bonesByGid(root, joints){
-  const map = new Map();
-  root.traverse(o => {
-    if (!o.isSkinnedMesh || !o.skeleton) return;
-    o.skeleton.bones.forEach((bone, i) => {
-      const info = joints && joints[i];
-      if (!info || info.gid === null) return;
-      const node = info.leaf ? bone.parent : bone;
-      if (node && !map.has(info.gid)) map.set(info.gid, node);
-    });
-  });
-  // Sorted PARENT-FIRST. Poses are applied as world matrices expressed in each node's
-  // parent space, so an ancestor must already hold its final transform before a
-  // descendant is computed against it.
-  const depth = n => { let d = 0; for (let p = n; p; p = p.parent) d++; return d; };
-  return [...map.entries()]
-    .map(([gid, node]) => ({ gid, node, d: depth(node) }))
-    .sort((a, b) => a.d - b.d);
+// The pose driver (render/pose.js) plays the game's own motion clips on an off-screen proxy
+// and copies bone transforms out by global id; POSES and the static poseObject / repose live
+// there too. index.html only decides WHICH roots it drives.
+const pose = new PoseDriver({ defaultJoints: manifest.poseJoints || [], frame: world,
+                              onError: msg => { errEl.textContent = msg; } });
+// every root a hunter pose drives: the armour, the face and hair, and the clothing
+function hunterRoots(){
+  return Object.values(mounted).concat(Object.values(charMounted))
+                               .concat(Object.values(clothMounted));
 }
-
-// The game's own held poses, from the lobby motion lists. Rather than retarget clips onto
-// every piece (each piece binds a DIFFERENT subset of the 19 joints, so node names differ
-// per piece), play the clip once on an off-screen proxy and copy its bone transforms out
-// by global id -- the same addressing the static poses use.
-const poseCache = new Map();
-let poseMixer = null, poseProxyBones = null, poseAction = null, poseAnchor = null;
-const POSE_PAUSE = 1.2;      // seconds held on the last frame before the pose repeats
-let poseLoopTimer = null;
-let poseGround = null;   // the Y the feet rest at, so a pose cannot sink or float
-let poseBounds = null;   // the union of the WHOLE loop, so the camera is set once
-let poseCenter = null;   // the body's own centre, averaged over the loop
-const poseClock = new THREE.Clock();
-const _v = new THREE.Vector3();
-
-// Which figure the running pose drives, and the joint table its proxy is read through.
-// A Palico's global bone ids address different bones from a hunter's, so the two cannot
-// share one table -- but they CAN share one mixer, because only one figure is ever on
-// screen at a time.
-let poseFigure = 'hunter';
+// the roots a weapon hangs off -- the armour and the clothing are what supply the hand bones
+function playerRoots(){ return Object.values(mounted).concat(Object.values(clothMounted)); }
 async function playGamePose(idx){
   const entry = (manifest.poses || [])[idx];
   if (!entry) return;
-  return playPoseEntry(entry);
-}
-// a pose is just a (file, clip) pair -- lobby poses, weapon stances and Palico poses share this
-async function playPoseEntry(entry, opt){
-  poseFigure = (opt && opt.figure) || 'hunter';
-  const poseJoints = (opt && opt.joints) || manifest.poseJoints || [];
-  let gltf = poseCache.get(entry.file);
-  if (!gltf) {
-    gltf = await loader.loadAsync(entry.file);
-    // Snapshot the REST pose. The proxy is cached and reused across poses, so by the
-    // second pose its bones still hold wherever the previous clip left them -- measuring
-    // the rest hip and ground height off that gave a correction of ~0 and every pose
-    // stayed sunk through the floor.
-    gltf.userData.bind = [];
-    gltf.scene.traverse(o => {
-      if (o.isBone || o.isObject3D)
-        gltf.userData.bind.push([o, o.position.clone(), o.quaternion.clone()]);
-    });
-    poseCache.set(entry.file, gltf);
-  }
-  for (const [node, pos, quat] of gltf.userData.bind){ node.position.copy(pos); node.quaternion.copy(quat); }
-  const clip = THREE.AnimationClip.findByName(gltf.animations, entry.clip);
-  if (!clip) { err.textContent = 'pose clip missing: ' + entry.clip; return; }
-  // the proxy is never added to the scene; it exists only to be sampled
-  gltf.scene.updateMatrixWorld(true);
-  poseProxyBones = new Map(bonesByGid(gltf.scene, poseJoints).map(e => [e.gid, e.node]));
-  poseMixer = new THREE.AnimationMixer(gltf.scene);
-  // Where the pelvis sits at REST. Many of these motions carry root translation -- they
-  // are lobby animations, so the character walks, steps and turns -- and left alone the
-  // figure drifts out of frame. Anchoring gid 0 back to this each frame keeps the pose
-  // and drops the travel.
-  gltf.scene.position.set(0, 0, 0);
-  gltf.scene.updateMatrixWorld(true);
-  const hip = poseProxyBones.get(0);
-  poseAnchor = hip ? _v.setFromMatrixPosition(hip.matrixWorld).clone() : null;
-  // and the height the feet rest at. These clips carry root translation in Y as well as
-  // X/Z -- Motion[1] drops the hunter a full metre through the floor -- so pinning only
-  // the horizontal left poses sinking below the ground with the camera aimed at where
-  // they should have been. Matching the LOWEST bone rather than the pelvis keeps a crouch
-  // a crouch: the hips come down, the feet stay put.
-  poseGround = null;
-  poseProxyBones.forEach(n => {
-    n.updateWorldMatrix(true, false);
-    const y = _v.setFromMatrixPosition(n.matrixWorld).y;
-    if (poseGround === null || y < poseGround) poseGround = y;
-  });
-
-  poseAction = poseMixer.clipAction(clip);
-  if (poseLoopTimer) { clearTimeout(poseLoopTimer); poseLoopTimer = null; }
-  // Weapon stances play once, HOLD on the last frame, then restart. Looping them straight
-  // through reads as a twitch -- most are under a second -- and now that every clip ships
-  // rather than only the _loop ones, the one-shots snapping back mid-swing is worse. The
-  // lobby poses are authored as held loops and keep looping cleanly.
-  if (/poses\/weapons\//.test(entry.file || '')) {
-    poseAction.setLoop(THREE.LoopOnce);
-    poseAction.clampWhenFinished = true;
-    poseMixer.addEventListener('finished', () => {
-      const mine = poseMixer;                     // a pose change swaps the mixer out
-      poseLoopTimer = setTimeout(() => {
-        poseLoopTimer = null;
-        if (poseMixer === mine && poseAction) poseAction.reset().play();
-      }, POSE_PAUSE * 1000);
-    });
-  } else {
-    poseAction.setLoop(THREE.LoopRepeat);
-  }
-  poseAction.reset().play();
-
-  // Frame the ENTIRE loop, not the frame that happens to be showing. Framing at t=0 set
-  // the camera from one instant of a moving animation, so anything the pose reached later
-  // -- an arm thrown out, a lean, a kneel -- fell outside the shot. Walk the clip once and
-  // union every bone position, with the same pelvis anchoring the live playback uses.
-  poseBounds = new THREE.Box3();
-  // ...and aim at the BODY, not at the centre of that union: an arm thrown overhead
-  // stretches the box upward, and centring on it drops the resting figure low in frame.
-  // The centre is the average, over the loop, of each FRAME's own bone-box centre --
-  // feet to head. (Pelvis-to-head was the first attempt and it aims at the chest, which
-  // put the body a quarter of a screen-height below centre.)
-  const frameBox = new THREE.Box3(), acc = new THREE.Vector3(), fc = new THREE.Vector3();
-  // Every one of the Palico's 66 guild-card poses is a single frame, so there is nothing
-  // to walk -- sampling it 24 times would just measure t=0 over and over.
-  const STEPS = clip.duration > 0.001 ? 24 : 1;
-  let nMid = 0;
-  for (let i = 0; i < STEPS; i++){
-    poseMixer.setTime((i / STEPS) * clip.duration);
-    anchorProxy();
-    frameBox.makeEmpty();
-    poseProxyBones.forEach(n => {
-      n.updateWorldMatrix(true, false);
-      _v.setFromMatrixPosition(n.matrixWorld);
-      poseBounds.expandByPoint(_v);
-      frameBox.expandByPoint(_v);
-    });
-    if (!frameBox.isEmpty()){ acc.add(frameBox.getCenter(fc)); nMid++; }
-  }
-  poseBounds.expandByScalar(0.12);     // bones are joints, not the silhouette
-  poseCenter = nMid ? acc.multiplyScalar(1 / nMid) : null;
-  poseMixer.setTime(0);
-  poseClock.getDelta();          // drop the idle time since the clock last ran
-}
-// pin the pelvis back to its rest spot in X/Z -- these are lobby motions and many of them
-// travel, which would otherwise walk the figure out of frame
-function anchorProxy(){
-  const scn = poseMixer.getRoot();
-  scn.position.set(0, 0, 0);
-  scn.updateMatrixWorld(true);
-  const hip = poseProxyBones.get(0);
-  let lowest = null;
-  poseProxyBones.forEach(n => {
-    n.updateWorldMatrix(true, false);
-    const y = _v.setFromMatrixPosition(n.matrixWorld).y;
-    if (lowest === null || y < lowest) lowest = y;
-  });
-  let dx = 0, dz = 0;
-  if (hip && poseAnchor){
-    _v.setFromMatrixPosition(hip.matrixWorld);
-    dx = poseAnchor.x - _v.x;
-    dz = poseAnchor.z - _v.z;
-  }
-  const dy = (poseGround !== null && lowest !== null) ? poseGround - lowest : 0;
-  scn.position.set(dx, dy, dz);
-  scn.updateMatrixWorld(true);
-}
-function stopGamePose(){
-  if (poseLoopTimer) { clearTimeout(poseLoopTimer); poseLoopTimer = null; }
-  if (poseAction) poseAction.stop();
-  poseMixer = null; poseProxyBones = null; poseAction = null; poseAnchor = null;
-  poseBounds = null; poseCenter = null; poseGround = null;
-}
-const _m = new THREE.Matrix4(), _s3 = new THREE.Vector3();
-function gidBonesOf(root){
-  return root.userData.gidBones ||
-    (root.userData.gidBones = bonesByGid(root, root.userData.joints || []));
+  return pose.play(entry);
 }
 // called every frame while a game pose is playing
 function stepGamePose(){
-  if (!poseMixer || !poseProxyBones) return;
-  poseMixer.update(poseClock.getDelta());
-  anchorProxy();
-
-  // WORLD matrices, for every piece -- armour included. Copying LOCAL transforms only
-  // works when a piece carries the whole bone chain, and ONLY the body does: the helm
-  // binds 2,3,4,20,21 and the arms 2,5..12, with no pelvis or spine above them. Given
-  // local copies those pieces keep their missing ancestors at bind, so the helm hangs
-  // where the head would be in T-pose while the body bends away underneath -- which is
-  // the "flying off, arms in wrong places" symptom.
-  const roots = poseFigure === 'palico'
-    ? Object.values(otMounted)
-    : Object.values(mounted).concat(Object.values(charMounted))
-                            .concat(Object.values(clothMounted));
-  for (const root of roots){
-    for (const { gid, node } of gidBonesOf(root)){
-      const src = poseProxyBones.get(gid);
-      if (!src || !node.parent) continue;
-      node.parent.updateWorldMatrix(true, false);
-      _m.copy(node.parent.matrixWorld).invert().multiply(src.matrixWorld);
-      _m.decompose(node.position, node.quaternion, _s3);
-    }
-  }
+  pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
 }
+function repose(){ pose.repose(hunterRoots()); }
 
-function poseObject(root, joints){
-  const p = POSES[currentPose] || {};
-  const done = new Set();
-  root.traverse(o => {
-    if (!o.isSkinnedMesh || !o.skeleton) return;
-    o.skeleton.bones.forEach((bone, i) => {
-      const info = joints && joints[i];
-      if (!info || info.gid === null) return;
-      // vertices bind to the "<n>:<gid>_s" LEAF; the posable node is its parent.
-      // terminal joints (no _s twin) are themselves the node.
-      const node = info.leaf ? bone.parent : bone;
-      if (!node || done.has(node.uuid)) return;
-      done.add(node.uuid);
-      const r = p[info.gid];
-      node.rotation.set((r&&r.x)||0, (r&&r.y)||0, (r&&r.z)||0);
-    });
-  });
-}
-
-function repose(){
-  for (const g of Object.values(mounted)) poseObject(g, g.userData.joints);
-  for (const g of Object.values(charMounted)) poseObject(g, g.userData.joints);
-  for (const g of Object.values(clothMounted)) poseObject(g, g.userData.joints);
-}
-
-// MHGU splits a model into mesh GROUPS. three.js strips the brackets, so glTF
-// "Group[0]" becomes objects named Group0 / Group0_1 / Group0_2..., and the separate
-// full-figure proxy layer "Group[100]" becomes Group100. Only group 0 is real content;
-// every other group is the blocky stand-in and is never drawn. Read structurally at
-// runtime so it holds for both genders and cannot drift from the manifest.
-function meshGroupId(o){
-  for (let p = o; p; p = p.parent){
-    const m = /^Group(\d+)(?:_\d+)?$/.exec(p.name || '');
-    if (m) return parseInt(m[1], 10);
-  }
-  return 0;
-}
-
-// Model 568 arm is Champion's Wraps / Strongman's Wraps, both genders. The wrap is
-// modelled AS a bare hand with wrapping on it, so `_envskin_` here is the armor, not skin
-// underneath -- but the piece ships that hand TWICE, in Group[1] and Group[2], two
-// alternate hand poses the game draws one at a time. Both together give the doubled,
-// intersecting hands. Drop the duplicate hand in Group[2] and keep every `_sym_` wrap
-// mesh, so no armor is lost. Nothing in the game data marks this: .plpartsdisp ships on
-// helms only, so this is an authored entry.
-const HIDE_DUP_HAND = new Set(['568']);
-
+// What loadEntry reads from the UI, as live getters so each value is read when the piece is
+// built (after its GLB has loaded), exactly as the inline code did.
+const pieceCtx = {
+  pigments: PIGMENTS,
+  get wire(){ return wireOn; },
+  get showBody(){ return showBody; },
+  get poseName(){ return pose.staticPose; },
+  get furTex(){ return otFurTex(); }
+};
 async function loadPiece(id, slot){
   const key = gender + id + '_' + slot;      // gender is part of the cache key
   const entry = manifest.pieces[key];
   if (!entry) return null;
   return loadEntry(entry, { key: key, slot: slot,
-    hideDupHand: slot === 'arm' && HIDE_DUP_HAND.has(id) });
+    hideDupHand: slot === 'arm' && HIDE_DUP_HAND.has(id) }, pieceCtx);
 }
 
-// The mesh + material pipeline, shared by hunter armor, clothing and Palicos. A Palico is
-// built from the same MT Framework parts and needs every rule in here -- the Group[100]
-// proxy layer, the two meanings of the `_bm` alpha, the `_sym_` dye region, the env
-// matcap -- so it takes this path instead of a second copy that would drift from it.
-// `opt.otomo` changes only which materials count as fur/eye and where their maps come from.
-async function loadEntry(entry, opt){
-  const key = opt.key, slot = opt.slot;
-  const hideDupHand = !!opt.hideDupHand, otomo = !!opt.otomo;
-  let gltf = glbCache.get(key);
-  if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(key, gltf); }
-  // Object3D.clone() does NOT rebind skeletons: every clone keeps pointing at the
-  // ORIGINAL glb's bones, which live outside the scene graph and never get their world
-  // matrices updated - so posing one piece silently desyncs it from the others.
-  const root = skeletonClone(gltf.scene);
-  // A hide entry is [material, verts] or, for an alternate mesh group, [material, verts,
-  // group]. The group form is needed because two alternates can share BOTH name and vertex
-  // count -- o210_helm ships its 20-vert trim twice -- so a name+count key would hide the
-  // copy meant to stay. Two sets rather than one so the 2-element form stays exact.
-  const hideSet = new Set(), hideGrp = new Set();
-  for (const h of (entry.hide || []))
-    (h.length > 2 ? hideGrp : hideSet).add(h[0] + '#' + h[1] + (h.length > 2 ? '#' + h[2] : ''));
-  const jobs = [];
-  root.traverse(o => {
-    if (o.isMesh || o.isSkinnedMesh) {
-      const srcName = (o.material && o.material.name) || '';
-      // Two different things, previously conflated:
-      //   BLOB  - the Group[100] layer: a ~191-vert full-figure proxy that renders as a
-      //           blocky slab over everything. Never drawn.
-      //   SKIN  - real exposed flesh inside Group[0] (hands, midriff, thighs). Part of
-      //           the armor as authored, so it renders, but it needs the SKIN map --
-      //           not every set names it "_skin_", and those were getting the armor map.
-      const verts = o.geometry.attributes.position.count;
-      // LOD filter: `lod0` is the set of vertex counts at level 0, from the MOD mesh table
-      // (+4 field). Pieces carry extra layers at higher levels -- Gore's cape is one --
-      // and drawing them all is what makes those sets read wrong.
-      const isLod = entry.lod0 && entry.lod0.length && entry.lod0.indexOf(verts) < 0;
-      // The proxy layer is Group[100], not "any group but 0". Treating every non-zero group
-      // as the proxy hid real armour: Champion's Wraps keeps its forearm and hand meshes in
-      // Group[1] and Group[2], so its hands never rendered. Across 2,500 pieces only 7 use
-      // a group outside {0,100} at all -- 13 primitives -- so this is a narrow correction.
-      const isBlob = isLod || meshGroupId(o) >= 100 || hideSet.has(srcName + '#' + verts)
-                  || hideGrp.has(srcName + '#' + verts + '#' + meshGroupId(o))
-                  || (hideDupHand && meshGroupId(o) === 2 && /envskin/i.test(srcName));
-      // A Palico's flesh is its FUR, and it is spread across four material names --
-      // o_skin (the body, shipped inside body.arc), o_face (shipped inside the HELM),
-      // o_ear and o_tail. All four take whichever of the 7 fur patterns is selected,
-      // which is why the pattern is a texture swap and not a mesh swap.
-      const isFur = otomo && /o_(skin|face|ear|tail)/i.test(srcName);
-      // the eye's own map; `_light` is the glint, not the iris, so it takes no eye colour
-      const isOtEye = otomo && /o_eye/i.test(srcName);
-      const isSkin = otomo ? isFur : (!isBlob && /skin/i.test(srcName));
-      const file = otomo ? (isFur ? otFurTex() : entry.tex)
-                 : (isBlob || isSkin) ? (entry.skin || entry.tex)
-                                      : textureForMaterial(srcName, entry);
-      // The `_bm` alpha means two different things depending on the material variant,
-      // which is why a global alphaTest once culled most of the armour:
-      //   XfB*   the alpha is a smooth GLOSS ramp for the env matcap (Yukumo: 23% of
-      //          texels sit mid-range) -- thresholding it deletes the piece
-      //   XfBA*  the alpha is a binary CUTOUT mask (Gore: 55% near 0, 43% near 255,
-      //          only 1.4% between) -- rendering it opaque leaves solid slabs where
-      //          the armour should be cut away
-      //
-      // But the XfBA prefix alone does NOT mean the alpha is opacity. Lecturer's Footwear
-      // is XfBA with 36% of its texels mid-band -- a gloss ramp -- and a 0.5 cut punched
-      // holes through a third of the boot. Across the 2,360 pieces with an XfBA material
-      // the mid-band fraction is a smooth spread from 0 to 1, so there is no threshold
-      // that separates the two kinds; anything picking one would be a guess.
-      // What IS safe either way: discard only what is essentially transparent. A real
-      // cutout goes to zero in the regions it removes, and a gloss ramp never does.
-      const isAlphaMat = /^XfBA/.test(srcName);
-      // A Palico's XfBA alpha is a GLOSS RAMP far more often than a cutout, so the
-      // hunter's 0.5 erases the armour. Measured over the 117 Palico pieces that carry an
-      // XfBA material: the mid-band averages 33.6% of texels (a real cutout is bimodal --
-      // Gore sits at 1.4%), and 53 of them keep under 5% of their texture above a 0.5 cut,
-      // which is exactly "a lot of Palico equipment does not render".
-      //
-      // What the alpha DOES separate cleanly is zero from everything else: a==0 averages
-      // 16.5% of texels but a<=8 only 21.3%, so the authored holes sit at exactly zero and
-      // everything above 8 is ramp. Cutting just above zero drops 4% of a texture; cutting
-      // at 0.5 drops 40%. This is the rule the comment above already argued for -- discard
-      // only what is essentially transparent -- applied where it is measurable.
-      // Left at 0.5 for the hunter, whose armour is not what was measured here.
-      const alphaCut = isAlphaMat ? (otomo ? 0.03 : 0.5) : 0;
-      const mat = new THREE.MeshStandardMaterial({
-        roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
-        transparent:false, alphaTest: alphaCut });
-      // the hunter's flesh is not dyeable by pigment -- it takes the skin-tone selector.
-      // `undyeable` is the game's own flag: armorSeriesData byte +113, which is 0 on
-      // exactly two armour lines library-wide (Criminal and Hylian), both confirmed
-      // undyeable in game, and 1 on every set confirmed dyeable -- Garo included, which
-      // is what separates it from the three earlier guesses that a positive broke.
-      mat.userData.noTint = isSkin || isBlob || isOtEye || !!entry.undyeable;
-      if (isSkin) mat.userData.tintClass = otomo ? 'fur' : 'skin';
-      // the glint keeps its authored white; only the iris takes the eye colour
-      if (isOtEye && !/_light/i.test(srcName)) mat.userData.tintClass = 'oeye';
-      // `_sym_` names the dyeable region; skin and the proxy never qualify
-      mat.userData.dyeRegion = !isSkin && !isBlob && /_sym/i.test(srcName);
-      mat.userData.slot = otomo ? 'o' + slot : slot;
-      // `defaultPig` is the armor's own default pigment -- mSymbolCol from
-      // armorSeriesData (+116 male / +119 female), a direct index into the 125-colour
-      // palette. It replaced `defaultPigment`, which read ArmorColorData's five bytes as
-      // per-slot dye colours; those are per-slot BASE colours and gave Yukumo an orange
-      // hat with blue legs when the real set dyes to one dark red.
-      mat.userData.own = (entry.defaultPig !== undefined)
-        ? PIGMENTS.find(x => x.i === entry.defaultPig) : null;
-      mat.wireframe = wireOn;
-      // three.js frustum-culls a skinned mesh by its BIND-pose bounding sphere, which is
-      // wrong the moment a bone moves -- pieces pop out of existence when the camera gets
-      // close or a pose swings them outside the T-pose bounds. Skinning here is cheap and
-      // the piece count is small, so just never cull.
-      o.frustumCulled = false;
-      o.material = mat; allMats.push(mat); armorMats.push(mat);
-      // Only materials whose NAME carries an env token are env-lit. The prefix also holds
-      // an E<n> on many materials and treating THAT as the marker is wrong: it hands the
-      // matcap to 340 materials that should not have one, and on Gore GX -- black armour
-      // with a 32-45% gloss mask -- it turned the membrane magenta instead of deep red.
-      const em = /env(?:a)?(\d*)/i.exec(srcName);
-      if (em && entry.env && entry.env.length){
-        // NN indexes this piece's ordered env list where the name carries it. For the
-        // 1,701 pieces binding 2+ maps the selector is NOT reliably known -- `mNN` fits
-        // only 682 of 1,658, and m088 uses env00/env01 suffixes while m048 uses env/enva
-        // -- so anything without an explicit NN takes the first map rather than a guess.
-        const ei = Math.min(parseInt(em[1] || '0', 10) || 0, entry.env.length - 1);
-        jobs.push(getTexture(entry.env[ei]).then(t => {
-          mat.userData.u.uEnv.value = t;
-          mat.userData.u.uEnvAmt.value = envAmount;
-          mat.needsUpdate = true;
-        }));
-      }
-      applyTint(mat);
-      // The eye quads are OVERSIZED on purpose -- one mesh has to cover every eye option
-      // -- so the surround is authored transparent and only its ALPHA keeps it off screen.
-      if (isOtEye) mat.userData.u.uAlphaCut.value = 1;
-      if (isBlob) { o.visible = false; }
-      else if (isSkin) { o.userData.isBody = true; o.visible = showBody; }
-      if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
-    }
-  });
-  await Promise.all(jobs);
-  root.userData.joints = entry.joints || [];
-  // POSES is keyed by the HUNTER's global bone ids; a Palico's gids address different
-  // bones entirely, so it stays at its bind pose rather than being posed by a table that
-  // does not describe it.
-  if (!otomo) poseObject(root, root.userData.joints);
-  return root;
-}
+// loadEntry -- the mesh + material pipeline shared by hunter armor, clothing and Palicos --
+// lives in render/piece.js.
 
 // The worn HELM decides which parts of the hair to remove, and it decides it PER
 // HAIRSTYLE -- that is the game's own `.plpartsdisp` table (only helms ship one).
@@ -1943,217 +1419,16 @@ function faceHideSet(){
   return hide.size ? hide : null;
 }
 
-// A weapon carries its OWN 5-bone skeleton in weapon space, not player bone ids, so it
-// cannot share the player skeleton the way armour does. Instead it is parented to the
-// hunter's right hand (global bone 8) by copying that bone's world matrix each frame --
-// the same trick the pose proxy uses, and it works whatever piece supplies the arm.
-// The LEFT hand. Derived, not assumed: the greatsword's hand-tuned placement was inverted
-// and asked which player bone its origin had landed on -- gid 12 across stances 0/1/3 at
-// 0.101 / 0.097 / 0.073 m. The half-metre offset that tuning needed was simply the gap
-// between the two hands, i.e. the mount had been on the wrong one.
-// gid 12 is the hunter's RIGHT hand and gid 8 is the LEFT -- the opposite of what the
-// bone numbering suggests, and worth stating because it is easy to get backwards.
-// Established from the geometry, not the names: the eye mesh sits 0.121 m in +Z of the
-// head bone, so the hunter faces +Z; with +Y up, their right is therefore -X; and in
-// T-pose gid 12 is at x -0.700 while gid 8 is at x +0.693.
-const HAND_GID = 12;         // right hand: sword, greatsword, most weapons
-const HAND_GID_R = 8;        // left hand: shields, the second dagger, the bow
-// Correction between the weapon's own axes and the hand bone's. The motion lists animate
-// only the 19 player bones, so the engine attaches by a fixed convention and this is a
-// constant, not per-weapon.
-//
-// Derived from the rig, not by eye. In any two-handed stance the hunter's LEFT hand
-// (gid 12) sits further down the same grip as the right (gid 8), so the right-to-left
-// vector IS the grip axis -- and it lands on the hand bone's own local +Z at dot 0.994.
-// In weapon space the grip runs along -Z from the model origin (the greatsword's grip
-// spans z -0.689..+0.014 m while the blade runs out to +1.895), and the left hand falls
-// 0.461 m along it, comfortably inside that 0.70 m grip. Two independent facts agreeing:
-// the model ORIGIN is the right-hand mount, and weapon -Z must map to hand +Z.
-// What the rig CANNOT pin is the roll about that axis, or which end points where -- the
-// joint the engine really attaches to is player bone 13, and bone 13 is placed by nothing:
-// no model binds it across all 5,416, no motion animates it. So four orientations fit the
-// data equally and only the game settles it. Raven picked this one from the render.
-// No correction. The game parents the weapon's bone 0 straight to the joint, and bone 0
-// is at (0,0,0) in all 21 mods with an identity node in all 19 glbs -- so anything added
-// here is a fudge covering a mistake elsewhere, not part of how the game does it.
-let WEAPON_FIX = new THREE.Matrix4();
-// Slide along the weapon's own axes so the GRIP, not the model origin, lands in the hand.
-// +Z is the blade direction, so a positive shift moves the weapon UP along the handle.
-// Per weapon, because each class grips differently. pos is metres along the weapon's own
-// axes (+Z up the handle, -X away from the hunter); rot is degrees, Z being the roll about
-// the handle. A weapon with no entry falls back to the greatsword's, which is only ever a
-// starting point -- every class needs its own pass.
-// `hand` is the BONE ID, not a word -- gid 12 is the hunter's right hand, gid 8 the left,
-// and writing that as 'l'/'r' is precisely the naming that got inverted earlier.
-// Deliberately empty: which hand each class uses is game knowledge, and scoring it against
-// an invented objective (how close the weapon lands to the other hand) only looks like
-// measurement. Fill these in from the game, not from a heuristic.
-const WEAPON_PLACE = {
-};
-const WEAPON_PLACE_FALLBACK = { pos: [0, 0, 0], rot: [0, 0, 0] };
-function placementFor(key){ return WEAPON_PLACE[key] || WEAPON_PLACE_FALLBACK; }
-function mountGid(key){ const h = placementFor(key).hand; return h === 8 || h === 12 ? h : HAND_GID; }
-function placementMatrix(key){
-  const p = placementFor(key);
-  const e = new THREE.Euler(THREE.MathUtils.degToRad(p.rot[0]),
-                            THREE.MathUtils.degToRad(p.rot[1]),
-                            THREE.MathUtils.degToRad(p.rot[2]), 'XYZ');
-  return new THREE.Matrix4().makeTranslation(p.pos[0], p.pos[1], p.pos[2])
-           .multiply(new THREE.Matrix4().makeRotationFromEuler(e));
-}
-let WEAPON_GRIP = placementMatrix('w00');
-
-// Sheathed on the back, used whenever no weapon stance is picked.
-//
-// Be clear about the provenance: unlike the hand mount, this one is AUTHORED. Player-rig
-// bone 13 is the single id that nothing binds and nothing animates -- swept across all
-// 5,416 armour and character models' bone remap tables, and against w00.lmt's own track
-// table, which drives 0-12, 14-19 and the reference root and never touches it. That gap is
-// the shape of an attach point the engine drives in code, but with no model placing bone
-// 13 its transform is nowhere in romfs. (20-27 are per-piece chain bones -- 828 pieces use
-// 20, only 3 use 27 -- not a fixed mount, which also corrects an old note calling 20-22 the
-// sheathed-weapon bones.) So the numbers below are chosen to look right, not extracted.
-const SHEATH_GID = 2;                                   // chest; the mount rides the torso
-let WEAPON_SHEATH = (() => {
-  const f = new THREE.Vector3(1, -1, 0).normalize();           // 135 deg axis, flipped 180 about the weapon's X
-  const n = new THREE.Vector3(0, 0, 1);
-  const x = new THREE.Vector3().crossVectors(n, f);
-  return new THREE.Matrix4().makeBasis(x, n, f)
-           .setPosition(new THREE.Vector3(0.02, -0.02, -0.20));
-})();
-// no stance picked -> the weapon is stowed rather than held
-let weaponStowed = true;
-let weaponRoot = null, weaponOff = null, weaponKey = 'none';
-function weaponEntry(key){ return (manifest.weapons || []).find(w => w.key === key); }
-
-async function setWeapon(key){
-  if (weaponRoot) { scene.remove(weaponRoot); weaponRoot = null; }
-  if (weaponOff)  { scene.remove(weaponOff);  weaponOff  = null; }
-  weaponKey = key;
-  const e = weaponEntry(key);
-  if (!e) return;
-  await buildWeaponPart(key, e, false);
-  if (e.off) await buildWeaponPart(key, e.off, true);   // shield: SnS and Charge Blade
-}
-// one weapon piece -- the weapon itself, or the shield that rides the other hand
-async function buildWeaponPart(key, e, isOff){
-  const cacheKey = 'W' + key + (isOff ? '_off' : '');
-  let gltf = glbCache.get(cacheKey);
-  if (!gltf) { gltf = await loader.loadAsync(e.glb); glbCache.set(cacheKey, gltf); }
-  const root = skeletonClone(gltf.scene);
-  const jobs = [];
-  root.traverse(o => {
-    if (!(o.isMesh || o.isSkinnedMesh)) return;
-    const srcName = (o.material && o.material.name) || '';
-    if (meshGroupId(o) >= 100) { o.visible = false; return; }   // same proxy layer as armour
-    const mat = new THREE.MeshStandardMaterial({
-      roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
-      transparent:false, alphaTest: /^XfBA/.test(srcName) ? 0.5 : 0 });
-    mat.wireframe = wireOn;
-    mat.userData.noTint = true;          // weapons are not dyed
-    o.frustumCulled = false;
-    o.material = mat; allMats.push(mat);
-    applyTint(mat);
-    if (e.tex) jobs.push(getTexture(e.tex).then(t => { mat.map = t; mat.needsUpdate = true; }));
-    if (e.env && /env/i.test(srcName))
-      jobs.push(getTexture(e.env).then(t => {
-        mat.userData.u.uEnv.value = t;
-        mat.userData.u.uEnvAmt.value = envAmount;
-        mat.needsUpdate = true;
-      }));
-  });
-  await Promise.all(jobs);
-  // Keep the model's OWN root transform: MT Framework meshes are quantised, and the
-  // dequantisation scale lives in this node. Overwriting it with the hand matrix made the
-  // greatsword render at raw units -- taller than the hunter.
-  // The weapon rides the hunter's right hand. Measured from the models rather than
-  // guessed: gids 20-22 are NOT a weapon mount -- they sit at head height BEHIND the head
-  // (z -0.158 against the head's -0.058) in a descending chain, i.e. hair bones, which is
-  // why they appear on helm and hair pieces.
-  // So the weapon's own root bone is driven from the hand bone's world matrix, SCALE
-  // INCLUDED: that scale is the model's dequantisation, and dropping it in the decompose
-  // collapses the weapon to a sliver.
-  // "reference" is not an attachment marker either -- every armour model has one too.
-  // Drive the weapon's OWN root BONE, never the group that holds it. glTF says a skinned
-  // mesh node's transform is ignored, but three.js still multiplies it in and cancels it
-  // with bindMatrixInverse -- so moving a parent that contains BOTH the mesh nodes and the
-  // joint nodes applies the hand matrix TWICE. That double transform is what threw the
-  // weapon off the hand while every offline measurement said it was seated correctly.
-  let wskel = null;
-  root.traverse(o => { if (!wskel && o.isSkinnedMesh) wskel = o.skeleton; });
-  root.userData.bone = wskel ? weaponMountNode(wskel, root) : null;
-  root.userData.bind = new THREE.Matrix4();
-  root.userData.recenter = weaponRecenter(root);
-  scene.add(root);
-  if (isOff) weaponOff = root; else { WEAPON_GRIP = placementMatrix(key); weaponRoot = root; }
-  stepWeapon();
-}
-// The node every joint hangs from. Folding weapons -- bow, both bowguns, gunlance, switch
-// axe, hunting horn, insect glaive -- carry 2-4 bones for their moving parts, and those
-// bones are SIBLINGS under one shared parent, not a chain off bone 0. Driving bones[0]
-// therefore flew the main body to the hand and left every folding part stranded at bind,
-// which is what made the bow render as scattered pieces.
-function weaponMountNode(skel, stop){
-  const coversAll = n => skel.bones.every(b => { for (let p = b; p; p = p.parent) if (p === n) return true; return false; });
-  let node = skel.bones[0];
-  while (node.parent && node.parent !== stop && !coversAll(node)) node = node.parent;
-  return node;
-}
-
-// Bone-space bbox centre of the drawn geometry, as a matrix that moves it to the origin.
-// The stowed mount hangs the weapon off this, so every class centres on the back by itself.
-function weaponRecenter(root){
-  const mn = new THREE.Vector3( Infinity,  Infinity,  Infinity);
-  const mx = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
-  const v = new THREE.Vector3();
-  root.traverse(o => {
-    if (!o.isSkinnedMesh || !o.visible) return;
-    const pos = o.geometry.attributes.position, si = o.geometry.attributes.skinIndex;
-    const inv = o.skeleton.boneInverses;
-    for (let i = 0; i < pos.count; i++){
-      v.fromBufferAttribute(pos, i).applyMatrix4(inv[si ? si.getX(i) : 0]);
-      mn.min(v); mx.max(v);
-    }
-  });
-  if (!isFinite(mn.x)) return new THREE.Matrix4();
-  return new THREE.Matrix4().makeTranslation(
-    -(mn.x + mx.x) / 2, -(mn.y + mx.y) / 2, -(mn.z + mx.z) / 2);
-}
-
-// which player bone the weapon rides -- the hand when held, the chest when stowed
-function playerBone(gid){
-  for (const root of Object.values(mounted).concat(Object.values(clothMounted)))
-    for (const b of gidBonesOf(root)) if (b.gid === gid) return b.node;
-  return null;
-}
-function handBone(){ return playerBone(mountGid(weaponKey)); }
-
-// place the weapon on the hand, every frame, so it follows any pose
-const _wm = new THREE.Matrix4(), _wq = new THREE.Quaternion(), _ws = new THREE.Vector3();
-function stepWeapon(){
-  if (weaponOff) stepWeaponPart(weaponOff, true);
-  if (weaponRoot) stepWeaponPart(weaponRoot, false);
-}
-function stepWeaponPart(part, isOff){
-  const b = part.userData.bone;
-  if (!b) return;
-  // the shield rides the hand the weapon does NOT
-  const gid = mountGid(weaponKey), other = gid === HAND_GID ? HAND_GID_R : HAND_GID;
-  const mount = playerBone(weaponStowed ? SHEATH_GID : (isOff ? other : gid));
-  if (!mount) return;
-  mount.updateWorldMatrix(true, false);
-  // the holding group stays at identity so the mesh nodes contribute nothing
-  b.matrixAutoUpdate = false; b.matrixWorldAutoUpdate = false;
-  if (weaponStowed)
-    // stowed, the weapon is centred on the back -- so a 1.06 m sword and a 3.94 m gunlance
-    // both sit sensibly off one mount, with no per-class numbers to author
-    b.matrix.multiplyMatrices(mount.matrixWorld, WEAPON_SHEATH)
-            .multiply(part.userData.recenter);
-  else
-    b.matrix.copy(mount.matrixWorld);      // bone 0 sits on the joint, nothing added
-  b.matrixWorld.copy(b.matrix);
-  b.children.forEach(c => c.updateMatrixWorld(true));
-}
+// ---- weapon ---------------------------------------------------------------
+// The weapon rig (render/weapon.js) owns the parts of the equipped weapon, places each from
+// the ROM chain (render/mount.js: the stance clip's LMT event ids -> index -> joint and
+// transform), drives the weapon's own motion and applies the gimmick forms. The game's own
+// material bindings (docs/materials.json) and the clips' event ids (poses/weapons/events.json)
+// load once here; the per-class weapon indexes load lazily when a class is picked.
+await loadMaterialsDb();
+const WEAPON_EVENTS = await loadJson('poses/weapons/events.json');
+const weapon = new WeaponRig({ scene: world, pose, roots: playerRoots, ctx: pieceCtx,
+                               events: WEAPON_EVENTS.clips || {} });
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
 // it ships inside every armor body.arc, which is the mesh normally hidden. Showing
@@ -2165,8 +1440,8 @@ const charMounted = {};
 // scene forever. Hammering the gender toggle piled up female heads on a male body.
 const charSeq = { face: 0, hair: 0 };
 function clearChar(part){
-  for (const o of scene.children.slice())
-    if (o.userData && o.userData.charPart === part) scene.remove(o);
+  for (const o of world.children.slice())
+    if (o.userData && o.userData.charPart === part) world.remove(o);
   delete charMounted[part];
 }
 async function setChar(part, on){
@@ -2179,43 +1454,14 @@ async function setChar(part, on){
   const entry = list[Math.min(Math.max(+(sel && sel.value || 0), 0), list.length - 1)];
   if (!entry) return;
   const ck = gender + '_' + part + entry.id;
-  let gltf = glbCache.get(ck);
-  if (!gltf) { gltf = await loader.loadAsync(entry.glb); glbCache.set(ck, gltf); }
-  if (seq !== charSeq[part]) return;          // superseded while loading
-  const root = skeletonClone(gltf.scene);
-  const hideSet = new Set((entry.hide || []).map(h => h[0] + '#' + h[1]));
-  // NB: for armor, a non-zero mesh group means the proxy blob and is hidden outright.
-  // Character parts are the opposite -- their groups are REAL geometry, and which ones
-  // to drop is decided by the helm, not by the group number.
-  const hideGroups = part === 'hair' ? hairHideSet() : faceHideSet();
-  const jobs = [];
-  root.traverse(o => {
-    if (!(o.isMesh || o.isSkinnedMesh)) return;
-    const srcName = (o.material && o.material.name) || '';
-    const verts = o.geometry.attributes.position.count;
-    if (hideSet.has(srcName + '#' + verts)) { o.visible = false; return; }
-    if (hideGroups && hideGroups.has(meshGroupId(o))) { o.visible = false; return; }
-    const file = textureForMaterial(srcName, entry);
-    const mat = new THREE.MeshStandardMaterial({
-      roughness:.85, metalness:.0, side:THREE.DoubleSide, name:srcName,
-      transparent:false, alphaTest:0 });
-    // never dyed by armor pigment, but it does take the hair/eye/skin selectors
-    mat.userData.noTint = true;
-    mat.userData.tintClass = part === 'hair' ? 'hair'
-                           : /eye/i.test(srcName) ? 'eye' : 'skin';
-    mat.wireframe = wireOn;
-    o.frustumCulled = false;     // same bind-pose culling problem as the armour
-    o.material = mat; allMats.push(mat);
-    applyTint(mat);
-    if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
-  });
-  await Promise.all(jobs);
-  root.userData.joints = entry.joints || [];
-  poseObject(root, root.userData.joints);
-  if (seq !== charSeq[part]) return;
+  // the helm decides which groups to drop, read once the GLB is in (render/piece.js)
+  const root = await loadCharPart(entry, { key: ck, part,
+    superseded: () => seq !== charSeq[part],
+    hideGroups: () => part === 'hair' ? hairHideSet() : faceHideSet() }, pieceCtx);
+  if (!root || seq !== charSeq[part]) return;   // superseded while loading
   clearChar(part);                            // nothing of this part survives the swap
   root.userData.charPart = part;
-  scene.add(root); charMounted[part] = root;
+  world.add(root); charMounted[part] = root;
 }
 let rainbowOn = false;
 const CHAR_SYNC = [];
@@ -2244,10 +1490,7 @@ function applyCharColors(t){
   scene.traverse(o => {
     const m = o.material, ud = m && m.userData;
     if (!ud || !ud.tintClass || !ud.u) return;
-    const c = cols[ud.tintClass];
-    if (!c) { ud.u.uCharAmt.value = 0; return; }
-    ud.u.uCharAmt.value = 1;
-    ud.u.uChar.value.set(c);
+    setCharColor(m, cols[ud.tintClass]);
   });
 }
 function buildStyleLists(){
@@ -2281,8 +1524,8 @@ const slotSeq = { helm:0, body:0, arm:0, wst:0, leg:0 };
 // If anything ever slips out of that bookkeeping it would otherwise sit there forever,
 // and a stacked armour is not obvious until you rotate the model.
 function clearSlot(slot){
-  for (const o of scene.children.slice())
-    if (o.userData && o.userData.armorSlot === slot) scene.remove(o);
+  for (const o of world.children.slice())
+    if (o.userData && o.userData.armorSlot === slot) world.remove(o);
   delete mounted[slot];
 }
 async function setSlot(slot, token){
@@ -2295,7 +1538,7 @@ async function setSlot(slot, token){
     if (g) {
       clearSlot(slot);                        // nothing of this slot survives the swap
       g.userData.armorSlot = slot;
-      scene.add(g); mounted[slot] = g;
+      world.add(g); mounted[slot] = g;
       applyCharColors();     // the body skin this piece exposes must match the face
     }
   }
@@ -2328,10 +1571,13 @@ const CLOTH_SLOTS = ['body', 'arm', 'leg'];
 const clothSel = document.getElementById('clothing');
 clothSel.innerHTML = '<option value="">&mdash; none &mdash;</option>' +
   CLOTHING.map((id, i) => '<option value="' + id + '">Type ' + (i + 1) + '</option>').join('');
+// Type 1 is the default; none stays a choice (Raven, 2026-09-03: "Making Clothing Type 1
+// the default, but leave none an option")
+clothSel.value = CLOTHING[0];
 const clothSeq = { body:0, arm:0, leg:0 };
 function clearCloth(slot){
-  for (const o of scene.children.slice())
-    if (o.userData && o.userData.clothSlot === slot) scene.remove(o);
+  for (const o of world.children.slice())
+    if (o.userData && o.userData.clothSlot === slot) world.remove(o);
   delete clothMounted[slot];
 }
 // Clothing is loaded through loadPiece like any armor piece, which is what makes it
@@ -2357,9 +1603,9 @@ async function setClothingSlot(slot){
   clearCloth(slot);
   g.userData.clothSlot = slot;
   g.traverse(o => { if (o.isMesh && o.material) o.material.userData.slot = 'cloth'; });
-  scene.add(g);
+  world.add(g);
   clothMounted[slot] = g;
-  poseObject(g, g.userData.joints);      // land in the current pose, not bind
+  pose.poseObject(g, g.userData.joints); // land in the current pose, not bind
   applyCharColors();
 }
 async function setClothing(){
@@ -2378,18 +1624,18 @@ function frameAll(){
   // outside it and the framing cut it off. Take the posed bone positions instead.
   // A game pose is animated, so its bounds come from the whole loop (computed once when
   // the pose starts), not from the frame currently on screen.
-  if (poseBounds && !poseBounds.isEmpty()) box.copy(poseBounds);
+  if (pose.bounds && !pose.bounds.isEmpty()) box.copy(pose.bounds);
   const size = box.getSize(new THREE.Vector3());
   const c = box.getCenter(new THREE.Vector3());
   // size from the union, but aim at the body itself
-  if (poseCenter) c.copy(poseCenter);
+  if (pose.center) c.copy(pose.center);
   // fit height and width independently — a T-pose is much wider than it is deep,
   // so a bounding-sphere fit wastes most of the frame
   const vFov = THREE.MathUtils.degToRad(camera.fov);
   const distH = (size.y * 0.5) / Math.tan(vFov / 2);
   const distW = (size.x * 0.5) / Math.tan(vFov / 2) / camera.aspect;
   let dist = Math.max(distH, distW) * MARGIN + size.z * 0.5;
-  if (poseCenter){
+  if (pose.center){
     // aiming off the box centre means the far side is further away; grow the fit so the
     // whole loop still fits around the point we are actually looking at
     const reachY = Math.max(box.max.y - c.y, c.y - box.min.y) * 2;
@@ -2703,6 +1949,13 @@ async function setGender(g){
     await ps.onchange({ target: ps });
     if (seq !== genderSeq) return;
   }
+  // the male default's weapon (Raven's DefaultMale.json) -- only the untouched default
+  // carries one; a captured body never does, so a returning visitor's weapon is left alone
+  if (want === DEFAULT_MALE && want.weapon){
+    await applyWeaponFile(want.weapon);
+    if (seq !== genderSeq) return;
+  }
+  if (want === DEFAULT_MALE && want.camera) applyCameraState(want.camera);
   // only the newest run clears the flag; an interrupted one leaves it set for its successor
   if (seq === genderSeq) genderBusy = false;
 }
@@ -2732,20 +1985,21 @@ function paintPigments(){
   none.classList.add('on');
 }
 function choosePigment(rgb, el, idx){
-  pigment = rgb;
+  tint.pigment = rgb;
   pigmentIndex = (idx === undefined) ? null : idx;
   [...pigBox.children].forEach(c => c.classList.remove('on'));
   if (el) el.classList.add('on');
   armorMats.forEach(applyTint);
   saveState();
 }
-if (!DEBUG_UI) document.getElementById('debugPanel').style.display = 'none';
+// the panel is hidden in the markup so it never paints; debug mode reveals it
+document.getElementById('debugPanel').style.display = DEBUG_UI ? '' : 'none';
 if (!WEAPON_UI) document.getElementById('weaponPanel').style.display = 'none';
 
 if (PIGMENT_ENABLED) {
   paintPigments();
 } else {
-  pigment = null; pigmentIndex = null; useDefaults = false;   // the switch wins over saved state
+  tint.pigment = null; pigmentIndex = null; tint.useDefaults = false;   // the switch wins over saved state
   document.getElementById('pigmentPanel').style.display = 'none';
   document.getElementById('pigmentTuning').style.display = 'none';
 }
@@ -2783,13 +2037,16 @@ const MIX = DEFAULT_SET.pieces;
 document.getElementById('pose').onchange = async e => {
   const v = e.target.value;
   // picking a normal pose drops any stance, so the weapon returns to the back
-  const wps = document.getElementById('weaponPose');
-  if (wps) { wps.value = ''; weaponStowed = true; }
+  // picking a lobby pose sheathes the weapon: the stance is dropped and the parts rest on
+  // the body exactly where the game's own lobby idles (LMT id 2) put them
+  weaponPoseSel.value = ''; weaponDrawnSel.value = '0';
+  weapon.setStance(null); weapon.setDrawn(false);
+  await weapon.rebindMotion();
   if (v.startsWith('g:')) {
     await playGamePose(+v.slice(2));
   } else {
-    stopGamePose();
-    currentPose = v;
+    pose.stop();
+    pose.staticPose = v;
     repose();       // the animation left the bones where it stopped
   }
   saveState();
@@ -2851,7 +2108,7 @@ spinBtn.onclick = () => { spinStep = (spinStep + 1) % SPIN_STEPS.length; paintSp
 paintSpin();
 document.getElementById('maskdbg').onchange = e => {
   const v = e.target.checked ? 1 : 0;
-  armorMats.forEach(m => { if (m.userData.u) m.userData.u.uDbg.value = v; });
+  setDebug(armorMats, v);
 };
 function pushMask(){
   const s0=+document.getElementById('sat0').value/100;
@@ -2859,17 +2116,15 @@ function pushMask(){
   const v0=+document.getElementById('val0').value/100;
   const kt=+document.getElementById('keytol').value/100;
   const sb=+document.getElementById('satboost').value/100;
-  armorMats.forEach(m => { const u=m.userData.u; if(!u) return;
-    u.uSat.value.set(s0, s1); u.uVal.value.set(v0, v0+0.20);
-    u.uKeyTol.value = kt; u.uSatBoost.value = sb; });
+  setMaskWindow(armorMats, s0, s1, v0, kt, sb);
 }
 ['sat0','sat1','val0','keytol','satboost'].forEach(id =>
   document.getElementById(id).oninput = () => { pushMask(); saveState(); });
 document.getElementById('defpig').onchange = e => {
-  useDefaults = e.target.checked;
+  tint.useDefaults = e.target.checked;
   armorMats.forEach(applyTint);
   const n = armorMats.filter(m => m.userData.own).length;
-  document.getElementById('pigNote').textContent = useDefaults
+  document.getElementById('pigNote').textContent = tint.useDefaults
     ? n + ' of ' + armorMats.length + ' materials have an authored color'
     : '';
   saveState();
@@ -2878,9 +2133,10 @@ let wireOn = false;
 const wireBtn = document.getElementById('wireBtn');
 function paintWire(){
   wireBtn.classList.toggle('on', wireOn);
-  allMats.forEach(m => m.wireframe = wireOn);
+  setWire(allMats, wireOn);
 }
 wireBtn.onclick = () => { wireOn = !wireOn; paintWire(); saveState(); };
+
 
 // Hide the mouse pointer over the model -- a clean look at a set, and clean screenshots.
 let hideCursor = false;
@@ -2930,9 +2186,16 @@ document.getElementById('matdbg').onchange = e => {
 new ResizeObserver(fitRenderer).observe(viewport);
 addEventListener('resize', fitRenderer);
 fitRenderer();
+// Nothing is drawn until the start-up camera is in place (`booted`, set once the saved
+// camera or the first framing is applied below): the first frames used to show the loading
+// models through the default camera, zoomed far in, and the view then jumped (Raven,
+// 2026-09-03: "the hunter model is zoomed super far in, then the camera resets").
+let booted = false;
 renderer.setAnimationLoop(() => {
+  if (!booted) return;
   stepGamePose();
-  stepWeapon();
+  weapon.stepMotion();
+  weapon.step();
   stepDeviant(performance.now()/1000);
   if (rainbowOn) applyCharColors(performance.now()/1000);
   controls.update();
@@ -2960,39 +2223,143 @@ if (!SAVED) {
   const fs = document.getElementById('faceStyle');
   if (fs) fs.dataset.want = String(DEFAULT_SET.faceStyle);
 }
-// ---- weapon + stance selectors --------------------------------------------
-const weaponSel = document.getElementById('weapon'), weaponPoseSel = document.getElementById('weaponPose');
-weaponSel.innerHTML = '<option value="none">— none —</option>' +
-  (manifest.weapons || []).map(w =>
-    '<option value="'+w.key+'">'+w.class+' — '+w.name+'</option>').join('');
-function buildStanceList(){
-  const e = weaponEntry(weaponSel.value);
-  const list = (e && e.poses) || [];
+// ---- weapon selectors -----------------------------------------------------------------
+// Class -> Weapon (every model of the class in Smithy order, from docs/weapons/wNN.json) ->
+// Carry (drawn or sheathed) -> Stance -> Form (the class's gimmick triggers that switch
+// parts) -> Kinsect (Insect Glaive). The rig places the parts from the ROM chain; these
+// selects only say what is equipped and which clip plays.
+const weaponClassSel = document.getElementById('weaponClass'),
+      weaponModelSel = document.getElementById('weaponModel'),
+      weaponDrawnSel = document.getElementById('weaponDrawn'),
+      weaponPoseSel  = document.getElementById('weaponPose'),
+      weaponFormSel  = document.getElementById('weaponForm'),
+      kinsectSel     = document.getElementById('kinsect'),
+      arrowSel       = document.getElementById('arrow');
+weaponClassSel.innerHTML = '<option value="none">— none —</option>' +
+  weaponClasses(manifest).map(w => '<option value="' + w.key + '">' + w.class + '</option>').join('');
+const rarityTag = r => r ? ' (R' + r + ')' : '';
+// the lists that depend on the class, rebuilt after weapon.set() has loaded its index
+async function buildWeaponLists(){
+  const cj = weapon.classJson();
+  // Weapons list by RARITY, rising, the way players list them (Raven, 2026-09-03: "Weapons
+  // however, we tend to list by rarity", "the same order the Auto Sort Function would
+  // use"); armour stays in Smithy order, which is how transmogs are previewed. Within a
+  // rarity the Smithy order stands until the game's own sort comparator is read.
+  const rows = cj ? cj.weapons.filter(r => r.named && cj.models[modelIdOf(r.model)])
+                      .sort((a, b) => ((a.rarity || 0) - (b.rarity || 0)) || (a.order - b.order)) : [];
+  weaponModelSel.innerHTML = rows.map(r =>
+    '<option value="' + modelIdOf(r.model) + '">' + r.name + rarityTag(r.rarity) + '</option>').join('');
+  weaponModelSel.disabled = !rows.length;
+  if (weapon.modelId) weaponModelSel.value = weapon.modelId;
+  const list = weapon.poses();
   weaponPoseSel.innerHTML = '<option value="">— none —</option>' +
-    list.map((p,i) => '<option value="'+i+'" title="'+p.clip+'">'+p.label+'</option>').join('');
+    list.map((p, i) => '<option value="' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('');
   weaponPoseSel.disabled = !list.length;
-}
-weaponSel.onchange = async () => {
-  await setWeapon(weaponSel.value);
-  buildStanceList();
-  weaponPoseSel.value = '';
-  weaponStowed = true;
-  stepWeapon();
-  saveState();
-};
-weaponPoseSel.onchange = async () => {
-  const e = weaponEntry(weaponSel.value);
-  const p = e && e.poses && e.poses[+weaponPoseSel.value];
-  weaponStowed = !p;                    // no stance -> the weapon goes on the back
-  if (p) {
-    // a stance replaces the lobby pose; nothing in the list describes that, so show none
-    document.getElementById('pose').selectedIndex = -1;
-    await playPoseEntry(p);
-  } else {
-    stopGamePose(); repose();
+  // Stance 1, the class's drawn idle, is the default: it is what the game shows first
+  weaponPoseSel.value = list.length ? '0' : '';
+  // Explicit triggers only (Raven, 2026-09-03: the automatic choice put every bowgun
+  // attachment on at once, where the game shows at most one). The initial pick is the
+  // trigger the state logic would fire when it is in the list, else the first one.
+  const forms = weapon.formOptions();
+  // the bowguns call it Attachment and list None first (Raven, 2026-09-03)
+  document.querySelector('#weaponFormField label').textContent = weapon.formTitle();
+  weaponFormSel.innerHTML = forms.map(t => '<option value="' + t + '">' + weapon.formLabel(t) + '</option>').join('');
+  document.getElementById('weaponFormField').style.display = (forms.length && weapon.formSelectable()) ? '' : 'none';
+  weaponFormSel.value = defaultFormValue();
+  // the Bow's nocked arrow: the ROM's proof-effect placements (docs/weapons/w10.json
+  // shared.arrow.records); none by default, because which animation requests which
+  // record could not be read from the ROM -- Raven picks (2026-09-03)
+  const arrows = weapon.arrowOptions();
+  // Raven, 2026-09-03: none of the six records matches the basic draw animation -- "hide
+  // effect options for now". The records, setArrow and __view.setArrow stay for later.
+  document.getElementById('arrowField').style.display = 'none';
+  arrowSel.innerHTML = '<option value="">— none —</option>' +
+    arrows.map(k => '<option value="' + k + '">' + weapon.arrowLabel(k) + '</option>').join('');
+  arrowSel.value = '';
+  const ig = weaponClassSel.value === 'w13';
+  document.getElementById('kinsectField').style.display = ig ? '' : 'none';
+  if (ig && !kinsectSel.options.length){
+    const kj = await loadKinsects();
+    const ids = Object.keys(kj.models).sort();
+    kinsectSel.innerHTML = '<option value="">— none —</option>' +
+      ids.map(id => '<option value="' + id + '">' + ((kj.names && kj.names[id]) || ('Kinsect ' + id)) + '</option>').join('');
   }
+  if (!ig) kinsectSel.value = '';
+}
+// The Form select never offers "automatic": a restored value that is not in the list (a
+// saved null, or a scene's) falls back to the trigger the state logic would fire when it is
+// listed, else the first option -- None for the bowguns (Raven, 2026-09-03).
+function defaultFormValue(){
+  const forms = weapon.formOptions();
+  if (!forms.length) return '';
+  const auto = weapon.currentTrigger();
+  return String(forms.indexOf(auto) >= 0 ? auto : forms[0]);
+}
+function setFormValue(v){
+  weaponFormSel.value = (v === null || v === undefined) ? '' : String(v);
+  if (weaponFormSel.value === '') weaponFormSel.value = defaultFormValue();
+}
+// push the selects into the rig and play the matching hunter pose
+// Drawn shows the weapon Stance (Stance 1 unless one is picked); Sheathed shows the player
+// Pose (the first game pose unless one is picked). The Pose select keeps its choice while a
+// stance plays, so sheathing again returns to it. (Raven, 2026-09-03)
+async function applyWeaponState(){
+  const drawn = weaponDrawnSel.value === '1';
+  const list = weapon.poses();
+  if (drawn && list.length && weaponPoseSel.value === '') weaponPoseSel.value = '0';
+  const p = drawn ? list[+weaponPoseSel.value] : null;
+  weaponPoseSel.disabled = !drawn || !list.length;
+  weapon.setDrawn(drawn);
+  weapon.setStance(p || null);
+  // the select drives the bowgun attachments only; every other class takes the trigger the
+  // game's own logic fires for the clip (Raven, 2026-09-03)
+  weapon.setForm(weapon.formSelectable() && weaponFormSel.value !== '' ? +weaponFormSel.value : null);
+  weapon.setArrow(arrowSel.value || null);
+  if (weaponClassSel.value === 'w13') await weapon.setKinsect(kinsectSel.value || null);
+  else if (weapon.kinsectId) await weapon.setKinsect(null);
+  await weapon.rebindMotion();
+  if (p) await pose.play(p);
+  else await playPlayerPose();
+  weapon.step();
+}
+// the hunter's own pose from the Pose select, defaulting to the first game pose
+async function playPlayerPose(){
+  const ps = document.getElementById('pose');
+  let pv = ps.value;
+  if (!(typeof pv === 'string' && pv.startsWith('g:')) && (manifest.poses || []).length){
+    pv = 'g:0'; ps.value = pv;
+  }
+  if (typeof pv === 'string' && pv.startsWith('g:')) return playGamePose(+pv.slice(2));
+  pose.stop(); repose();
+}
+// the weapon as a save file records it: names alongside ids so the file stays readable
+function weaponFileState(){
+  const cj = weapon.classJson();
+  if (!cj || weaponClassSel.value === 'none') return null;
+  const row = rowFor(cj, weapon.modelId);
+  const p = weapon.poses()[+weaponPoseSel.value];
+  return { class: weaponClassSel.value, className: cj.name, model: weapon.modelId,
+           name: row ? row.name : null, drawn: weaponDrawnSel.value === '1',
+           stance: p ? p.label : null,
+           form: weaponFormSel.value === '' ? null : +weaponFormSel.value,
+           kinsect: kinsectSel.value || null, arrow: arrowSel.value || null };
+}
+weaponClassSel.onchange = async () => {
+  await weapon.set(weaponClassSel.value, null);
+  await buildWeaponLists();
+  await applyWeaponState();
   saveState();
 };
+weaponModelSel.onchange = async () => {
+  await weapon.set(weaponClassSel.value, weaponModelSel.value);
+  await applyWeaponState();
+  saveState();
+};
+weaponDrawnSel.onchange = async () => { await applyWeaponState(); saveState(); };
+weaponPoseSel.onchange  = async () => { await applyWeaponState(); saveState(); };
+weaponFormSel.onchange  = () => { weapon.setForm(weaponFormSel.value === '' ? null : +weaponFormSel.value); weapon.step(); saveState(); };
+arrowSel.onchange       = () => { weapon.setArrow(arrowSel.value || null); saveState(); };
+kinsectSel.onchange     = async () => { await weapon.setKinsect(kinsectSel.value || null); saveState(); };
 
 buildPoseList();
 // ---- one RGB pigment per armour piece --------------------------------------
@@ -3385,7 +2752,7 @@ function paintDeviant(){
   devBox.hidden = !devOn.checked;
   deviant.on = devOn.checked;
   deviant.a = devA.value; deviant.b = devB.value; deviant.anim = devAnim.value;
-  if (!deviant.on) { pigment = null; armorMats.forEach(applyTint); }
+  if (!deviant.on) { tint.pigment = null; armorMats.forEach(applyTint); }
 }
 devOn.onchange = () => { paintDeviant(); saveState(); };
 devAnim.onchange = () => { paintDeviant(); saveState(); };
@@ -3444,9 +2811,16 @@ if (SAVED && SAVED.deviant && PIGMENT_ENABLED) {
 }
 paintDeviant();
 buildColorLists();   // options must exist before a saved value can be assigned
-if (SAVED && SAVED.weapon && weaponEntry(SAVED.weapon)) weaponSel.value = SAVED.weapon;
-buildStanceList();
-if (SAVED && SAVED.weaponPose) weaponPoseSel.value = SAVED.weaponPose;
+// The saved weapon: {cls, model} today; older sessions held the class key alone.
+const SAVED_WEAPON = (() => {
+  const w = SAVED && SAVED.weapon;
+  if (!w) return null;
+  if (typeof w === 'string') return { cls: w, model: null };
+  return (w.cls && typeof w.cls === 'string') ? { cls: w.cls, model: w.model || null } : null;
+})();
+if (SAVED_WEAPON && [...weaponClassSel.options].some(o => o.value === SAVED_WEAPON.cls))
+  weaponClassSel.value = SAVED_WEAPON.cls;
+if (SAVED && typeof SAVED.weaponDrawn === 'boolean') weaponDrawnSel.value = SAVED.weaponDrawn ? '1' : '0';
 if (!SAVED && DEFAULT_SET.hairColor) {
   charColor.hair = DEFAULT_SET.hairColor;
   const sel = document.getElementById('hairColor'), rgb = document.getElementById('hairColorRGB');
@@ -3483,7 +2857,7 @@ if (SAVED && SAVED.hideCursor === true) { hideCursor = true; paintCursor(); }
 // restore the saved session before the first load so nothing flashes then changes
 if (SAVED) {
   if (SAVED.pose && POSES[SAVED.pose]) {
-    currentPose = SAVED.pose;
+    pose.staticPose = SAVED.pose;
     document.getElementById('pose').value = SAVED.pose;
   } else if (typeof SAVED.pose === 'string' && SAVED.pose.startsWith('g:')) {
     // a game pose: select it now, start it after the pieces are mounted
@@ -3498,7 +2872,7 @@ if (SAVED) {
   // resolves, but it is hidden and never restored.
   if (false && typeof SAVED.defpig === 'boolean') {
     document.getElementById('defpig').checked = SAVED.defpig;
-    useDefaults = SAVED.defpig;
+    tint.useDefaults = SAVED.defpig;
   }
   // A saved mask from before the histogram-derived threshold would silently reinstate the
   // old 0.06-0.30 window and undo the fix, exactly the way a stale `defpig` once put a
@@ -3529,7 +2903,9 @@ if (SAVED) {
     showBody = SAVED.body;
   }
   // set before the initial apply(), whose setSlot calls mount the clothing per slot
-  if (typeof SAVED.clothing === 'string') document.getElementById('clothing').value = SAVED.clothing;
+  // a saved "" without the marker is the old default (none), not a choice: Type 1 now
+  if (typeof SAVED.clothing === 'string' && (SAVED.clothing !== '' || SAVED.clothingExplicit))
+    document.getElementById('clothing').value = SAVED.clothing;
   if (PIGMENT_ENABLED && SAVED.pigmentIndex !== null && SAVED.pigmentIndex !== undefined) {
     const hit = PIGMENTS.find(x => x.i === SAVED.pigmentIndex);
     if (hit) choosePigment(hit.rgb, pigBox.children[SAVED.pigmentIndex + 1], hit.i);
@@ -3645,7 +3021,7 @@ function otBuildParts(){
 
 function otClear(k){
   const g = otMounted[k];
-  if (g) { scene.remove(g); delete otMounted[k]; }
+  if (g) { world.remove(g); delete otMounted[k]; }
 }
 
 async function otMount(k){
@@ -3659,12 +3035,12 @@ async function otMount(k){
   otClear(k);
   if (!entry) return;
   const key = isArmor ? ('o' + id + '_' + k) : ('o_' + k + otState[k]);
-  const g = await loadEntry(entry, { key: key, slot: k, otomo: true });
+  const g = await loadEntry(entry, { key: key, slot: k, otomo: true }, pieceCtx);
   if (seq !== otSeq[k] || !g) return;          // superseded while loading
   otClear(k);
   g.userData.otPart = k;
   g.visible = figure === 'palico';
-  scene.add(g);
+  world.add(g);
   otMounted[k] = g;
 }
 
@@ -3752,8 +3128,7 @@ function setFigure(f){
   for (const g of Object.values(mounted)) g.visible = h;
   for (const g of Object.values(charMounted)) g.visible = h;
   for (const g of Object.values(clothMounted)) g.visible = h;
-  if (weaponRoot) weaponRoot.visible = h;
-  if (weaponOff) weaponOff.visible = h;
+  weapon.setVisible(h);
   for (const g of Object.values(otMounted)) g.visible = !h;
   otApplyMasks();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
@@ -3766,12 +3141,11 @@ function setFigure(f){
 }
 // put the hunter back on whatever its own two selects ask for
 async function restoreHunterPose(){
-  const e = weaponEntry(weaponSel.value);
-  const wp = e && e.poses && e.poses[+weaponPoseSel.value];
-  if (wp) return playPoseEntry(wp);
-  const pv = document.getElementById('pose').value;
-  if (typeof pv === 'string' && pv.startsWith('g:')) return playGamePose(+pv.slice(2));
-  stopGamePose(); repose();
+  const list = weapon.poses(), drawn = weaponDrawnSel.value === '1';
+  if (drawn && list.length && weaponPoseSel.value === '') weaponPoseSel.value = '0';
+  const wp = drawn ? list[+weaponPoseSel.value] : null;
+  if (wp) return pose.play(wp);
+  return playPlayerPose();
 }
 // the tab buttons already own their onclick, so listen alongside it
 document.getElementById('tabHunter').addEventListener('click', () => setFigure('hunter'));
@@ -3867,8 +3241,8 @@ async function otPlayPose(){
   const list = (OT && OT.poses) || [];
   const v = otPoseSel.value;
   const e = v === '' ? null : list[+v];
-  if (!e) { stopGamePose(); return; }
-  await playPoseEntry(e, { figure: 'palico', joints: (OT && OT.poseJoints) || [] });
+  if (!e) { pose.stop(); return; }
+  await pose.play(e, { figure: 'palico', joints: (OT && OT.poseJoints) || [] });
 }
 otBuildPoses();
 // A first visit gets Pose 1 rather than the bind pose: the Palico models ship in a
@@ -3896,16 +3270,21 @@ if (SAVED && SAVED.slots) {
   }
 }
 await apply(startMap);
-if (weaponSel.value !== 'none') await setWeapon(weaponSel.value);
-{
-  const e = weaponEntry(weaponSel.value);
-  const wp = e && e.poses && e.poses[+weaponPoseSel.value];
-  const pv = document.getElementById('pose').value;
-  weaponStowed = !wp;
-  if (wp) await playPoseEntry(wp);
-  else if (pv.startsWith('g:')) await playGamePose(+pv.slice(2));
-  stepWeapon();
+if (weaponClassSel.value !== 'none'){
+  await weapon.set(weaponClassSel.value, SAVED_WEAPON && SAVED_WEAPON.model);
+  await buildWeaponLists();        // the model, stance, form and kinsect lists for this class
+  if (SAVED && SAVED.weaponPose !== undefined && SAVED.weaponPose !== '' &&
+      [...weaponPoseSel.options].some(o => o.value === String(SAVED.weaponPose)))
+    weaponPoseSel.value = String(SAVED.weaponPose);
+  if (SAVED && SAVED.weaponForm !== undefined && SAVED.weaponForm !== '' &&
+      [...weaponFormSel.options].some(o => o.value === String(SAVED.weaponForm)))
+    weaponFormSel.value = String(SAVED.weaponForm);
+  if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
+    kinsectSel.value = SAVED.kinsect;
+  if (SAVED && SAVED.arrow && [...arrowSel.options].some(o => o.value === String(SAVED.arrow)))
+    arrowSel.value = String(SAVED.arrow);
 }
+await applyWeaponState();          // a restored session must place and animate the weapon too
 pushMask();
 await otApply();
 // Match the figure to the tab bar, which restored its own selection before this script
@@ -3924,6 +3303,8 @@ restoring = false;      // from here on, user changes persist
 // view back mid-adjustment. A saved camera wins over the automatic framing.
 if (!applyCameraState(figCam[figure] || (SAVED && SAVED.camera)) &&
     !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
+booted = true;
+document.getElementById('loading').hidden = true;
 saveState();
 {
   let camTimer = null;
@@ -3934,79 +3315,20 @@ saveState();
   });
 }
 
-// ---- placement tool (?place=1) ---------------------------------------------
-// Every weapon's bone 0 sits at the origin, so the game mounts them all the same way --
-// but our hand bone is the gid-8 wrist, not the attach joint the engine really uses, and
-// the gap between them does not come out the same per class. So the six numbers below are
-// tuned by hand per weapon and baked into WEAPON_PLACE. Dev only; never shown to users.
-if (new URLSearchParams(location.search).has('place')) {
-  const AX = [['px','pos',0,'X',-1,1,0.005], ['py','pos',1,'Y',-1,1,0.005], ['pz','pos',2,'Z',-1,1,0.005],
-              ['rx','rot',0,'rot X',-180,180,0.5], ['ry','rot',1,'rot Y',-180,180,0.5], ['rz','rot',2,'rot Z',-180,180,0.5]];
-  const box = document.createElement('div');
-  box.style.cssText = 'position:absolute;right:10px;bottom:56px;z-index:9;width:230px;padding:10px;' +
-    'background:var(--bg2);border:1px solid var(--line);border-radius:6px;font-size:11px';
-  box.innerHTML = '<div style="margin-bottom:6px;color:var(--text-hint)">Placement — <b id="plName"></b></div>' +
-    AX.map(a => '<div class="row gap" style="align-items:center;margin:2px 0">' +
-      '<label style="width:38px">' + a[3] + '</label>' +
-      '<input type="range" id="pl_' + a[0] + '" min="' + a[4] + '" max="' + a[5] + '" step="' + a[6] + '" style="flex:1;min-width:0">' +
-      '<span id="plv_' + a[0] + '" style="width:44px;text-align:right"></span></div>').join('') +
-    '<div class="row gap" style="margin-top:8px"><button class="btn tiny" id="plCopy">Copy</button>' +
-    '<button class="btn tiny" id="plZero">Zero</button>' +
-    '<button class="btn tiny" id="plHand">Hand: L</button></div>' +
-    '<textarea id="plOut" readonly rows="2" style="width:100%;margin-top:6px;font-size:10px;' +
-    'background:var(--bg1);color:var(--text);border:1px solid var(--line);border-radius:4px"></textarea>';
-  viewport.appendChild(box);
-
-  const cur = () => {
-    const k = weaponSel.value;
-    if (!WEAPON_PLACE[k]) WEAPON_PLACE[k] = { pos: WEAPON_PLACE_FALLBACK.pos.slice(),
-                                              rot: WEAPON_PLACE_FALLBACK.rot.slice() };
-    return WEAPON_PLACE[k];
-  };
-  function line(){
-    const p = cur();
-    return '  ' + weaponSel.value + ': { pos: [' + p.pos.map(n => +n.toFixed(3)).join(', ') +
-           '], rot: [' + p.rot.map(n => +n.toFixed(1)).join(', ') +
-           '], hand: ' + mountGid(weaponSel.value) + ' },';
-  }
-  function paint(){
-    const p = cur();
-    document.getElementById('plName').textContent = weaponSel.value;
-    for (const a of AX){
-      document.getElementById('pl_' + a[0]).value = p[a[1]][a[2]];
-      document.getElementById('plv_' + a[0]).textContent = (+p[a[1]][a[2]]).toFixed(a[1] === 'pos' ? 3 : 1);
-    }
-    document.getElementById('plHand').textContent =
-      'Hand: ' + (mountGid(weaponSel.value) === 12 ? 'R (12)' : 'L (8)');
-    document.getElementById('plOut').value = line();
-  }
-  function push(){ WEAPON_GRIP = placementMatrix(weaponSel.value); stepWeapon(); paint(); }
-  for (const a of AX)
-    document.getElementById('pl_' + a[0]).oninput = e => { cur()[a[1]][a[2]] = +e.target.value; push(); };
-  document.getElementById('plZero').onclick = () => {
-    const h = cur().hand; WEAPON_PLACE[weaponSel.value] = { pos: [0,0,0], rot: [0,0,0], hand: h }; push();
-  };
-  document.getElementById('plHand').onclick = () => {
-    const p = cur(); p.hand = mountGid(weaponSel.value) === 12 ? 8 : 12; push();
-  };
-  document.getElementById('plCopy').onclick = async e => {
-    const t = line();
-    try { await navigator.clipboard.writeText(t); e.target.textContent = 'Copied'; }
-    catch { document.getElementById('plOut').select(); e.target.textContent = 'Select+copy'; }
-    setTimeout(() => { e.target.textContent = 'Copy'; }, 1400);
-  };
-  weaponSel.addEventListener('change', () => setTimeout(paint, 300));
-  paint();
-}
-
-window.__view = { camera, controls, scene, frameAll, apply, setSlot, MIX,
-  setWeaponFix: m => { WEAPON_FIX = m; stepWeapon(); },
-  setWeaponGrip: m => { WEAPON_GRIP = m; stepWeapon(); },
-  setWeaponSheath: m => { WEAPON_SHEATH = m; stepWeapon(); },
-  weaponRoot: () => weaponRoot,
-  weaponOff: () => weaponOff,
-  handBone,
-  get deviant(){return deviant}, get pigment(){return pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
+window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, MIX,
+  pose, weapon, MOUNT_ROM,
+  // the ROM chain as applied right now: the clip's ids, and per part the index, joint,
+  // record, rest scale and provenance
+  mount: () => weapon.audit(),
+  resetSlot,
+  setWeaponForm: trg => { setFormValue(trg);
+                          weapon.setForm(trg); return weapon.audit().trigger; },
+  setArrow: key => { arrowSel.value = key ? String(key) : ''; weapon.setArrow(key || null); return weapon.audit().arrow; },
+  weaponParts: () => weapon.parts_(),
+  setWeapon: async (cls, model) => { weaponClassSel.value = cls || 'none';
+                                     await weapon.set(weaponClassSel.value, model);
+                                     await buildWeaponLists(); await applyWeaponState(); return weapon.audit(); },
+  get deviant(){return deviant}, get pigment(){return tint.pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
 
 // Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
 // Chrome draws a <select>'s POPUP itself, and page CSS never reaches it -- so the
@@ -4082,7 +3404,9 @@ document.querySelectorAll('.panel-head').forEach(h => {
   };
 });
 // Start with a single panel open PER PANE. Scoping this to the document closed the
-// Palico's Equipment panel, because the hunter's is first in the markup and won.
+// Palico's Equipment panel, because the hunter's is first in the markup and won. The markup
+// now opens only Equipment in each pane, so this is a safety net and nothing moves on load
+// (Raven, 2026-09-03: the Hunter panel showed open, then clamped shut).
 (() => {
   for (const pane of document.querySelectorAll('#paneHunter, #panePalico')){
     const open = [...pane.querySelectorAll('.panel')].filter(p => p.dataset.open === 'true');
@@ -4122,7 +3446,7 @@ function currentSet(){
     keys.forEach((sl, i) => { if (st[i]) deviant[sl] = st[i]; });
   }
   return {
-    app: 'MHGU Armor Viewer', version: 2,
+    app: 'MHGU Armor Viewer', version: 3,
     gender, pieces, pigment, deviant, devAnim: devAnimOverride,
     hunter: {
       face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
@@ -4136,6 +3460,9 @@ function currentSet(){
       skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
     },
     pose: document.getElementById('pose').value,
+    // version 3: the weapon, by class and model id with their names, the carry state, the
+    // stance by label, the form override and the kinsect
+    weapon: weaponFileState(),
     camera: cameraState(),
     // The Palico, in the same shape and the same spirit as the hunter above: every id
     // carries its name and every index its label, so a shared file stays readable and a
@@ -4336,89 +3663,252 @@ document.getElementById('importFile').addEventListener('change', function(){
   reader.readAsText(file);
 });
 
+// A file's weapon block -- {class, model, drawn, stance, form, kinsect, arrow} -- onto the
+// rig and the selects; null clears the weapon. Shared by Open and the male default.
+async function applyWeaponFile(w){
+  const cls = (w && [...weaponClassSel.options].some(o => o.value === w.class)) ? w.class : 'none';
+  weaponClassSel.value = cls;
+  await weapon.set(cls, w ? w.model : null);
+  await buildWeaponLists();
+  if (w && cls !== 'none'){
+    weaponDrawnSel.value = w.drawn === false ? '0' : '1';
+    const si = weapon.poses().findIndex(p => p.label === w.stance);
+    weaponPoseSel.value = si >= 0 ? String(si) : '';
+    setFormValue(w.form);
+    if (w.kinsect && [...kinsectSel.options].some(o => o.value === w.kinsect)) kinsectSel.value = w.kinsect;
+    arrowSel.value = (w.arrow && [...arrowSel.options].some(o => o.value === String(w.arrow))) ? String(w.arrow) : '';
+  }
+  await applyWeaponState();
+}
 async function loadSet(text, btn){
-  {
-    try {
-      const d = JSON.parse(text);
-      if (!d || !d.pieces) throw new Error('not a set');
-      // setGender is a no-op when it already matches, and it rebuilds the lists itself
-      if (d.gender === 'm' || d.gender === 'f') await setGender(d.gender);
-      const h = d.hunter || {};
-      const setIdx = (id, v) => {
-        const sel = document.getElementById(id);
-        if (v !== undefined && v !== null && v < sel.options.length) sel.value = String(v);
-      };
-      buildStyleLists();
-      setIdx('faceStyle', h.faceStyle); setIdx('hairStyle', h.hairStyle);
-      document.getElementById('face').checked = h.face !== null && h.face !== undefined ? true : !!h.face;
-      document.getElementById('hair').checked = h.hair !== null && h.hair !== undefined ? true : !!h.hair;
-      if (typeof h.body === 'boolean') { document.getElementById('body').checked = h.body; showBody = h.body; }
-      // matched by LABEL, so the file does not depend on CLOTHING's ordering
-      clothSel.value = '';
-      if (h.clothing){
-        const hit = [...clothSel.options].find(o => o.textContent === h.clothing);
-        if (hit) clothSel.value = hit.value;
-      }
-      for (const [selId, part] of CHAR_PARTS){
-        const v = h[selId];
-        const sel = document.getElementById(selId), rgb = document.getElementById(selId + 'RGB');
-        if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
-          charColor[part] = v; sel.value = 'rgb'; rgb.value = v;
-        } else {
-          const i = CHAR_COLORS.findIndex(c => c[0] === v);
-          charColor[part] = i < 0 ? null : i;
-          sel.value = i < 0 ? '' : String(i);
-        }
-      }
-      CHAR_SYNC.forEach(f => f());
-      const psel = document.getElementById('pose');
-      if (d.pose && POSES[d.pose]) {
-        stopGamePose(); currentPose = d.pose; psel.value = d.pose;
-      } else if (typeof d.pose === 'string' && d.pose.startsWith('g:') &&
-                 [...psel.options].some(o => o.value === d.pose)) {
-        psel.value = d.pose; await playGamePose(+d.pose.slice(2));
-      }
-      applyDevAnimOverrides(d.devAnim);
-      applySlotDev(SLOTS.concat(['cloth']).map(sl => (d.deviant || {})[sl] || null));
-      // pigment is absent from version 1 files -- leave the current colours alone then
-      if (d.pigment){
-        for (const slot of SLOTS){
-          const hex = d.pigment[slot];
-          const on = typeof hex === 'string' && /^#[0-9a-f]{6}$/i.test(hex);
-          document.getElementById('pgOn_' + slot).checked = on;
-          if (on) document.getElementById('pg_' + slot).value = hex;
-        }
-        // re-check "All" only when the set really is one colour throughout
-        const vals = SLOTS.map(sl => d.pigment[sl]);
-        const uniform = vals.every(v => typeof v === 'string' && v === vals[0]);
-        const allCbEl = document.getElementById('pgOn_all');
-        allCbEl.checked = uniform;
-        if (uniform) document.getElementById('pg_all').value = vals[0];
-        readSlotPigments();
-      }
-      const map = {};
-      for (const slot of SLOTS){
-        const p = d.pieces[slot];
-        const id = p && (typeof p === 'string' ? p : p.id);
-        map[slot] = tokenFor(slot, id);
-      }
-      await refreshChar();
-      await apply(map);
-      await applyOtomoSet(d.otomo);
-      applyCharColors();
-      // Opening a set is a load, not an incidental UI change, so it may frame -- but
-      // only when the file carries no camera of its own.
-      if (!applyCameraState(d.camera)) frameAll();
-      saveState();
-    } catch (_) {
-      const orig = btn.textContent;
-      btn.textContent = 'Invalid file!';
-      setTimeout(() => btn.textContent = orig, 2000);
+  try {
+    const d = JSON.parse(text);
+    if (!d || !d.pieces) throw new Error('not a set');
+    await applySet(d);
+  } catch (e) {
+    console.error('loadSet', e);
+    if (!btn) throw e;                 // the harness has no button; let the caller see it
+    const orig = btn.textContent;
+    btn.textContent = 'Invalid file!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }
+}
+// What Reset restores for a hunter: Raven's ResetMaleHunter.json / ResetFemaleHunter.json
+// (2026-09-03), identical but for the gender -- a clean slate: every slot on the Chakra
+// "none", no pigments or Deviant pulses, face and hair Type 1, clothing Type 1, no colour
+// overrides, pose g:0, no weapon, and this camera. The first-visit sets (DEFAULT_SET,
+// DEFAULT_MALE) are examples and stay as they are. The files' Palico block equals the
+// Palico default and is not applied by a hunter reset.
+const RESET_HUNTER = {
+  app: 'MHGU Armor Viewer', version: 3,
+  pieces: { helm: 'chakra', body: 'chakra', arm: 'chakra', wst: 'chakra', leg: 'chakra' },
+  pigment: { helm: null, body: null, arm: null, wst: null, leg: null },
+  deviant: {}, devAnim: {},
+  hunter: { face: 'Type 1', hair: 'Type 1', body: true, faceStyle: 0, hairStyle: 0,
+            clothing: 'Type 1', skinColor: null, eyeColor: null, hairColor: null },
+  pose: 'g:0', weapon: null,
+  camera: { p: [-0.0159, 0.403, 3.2224], t: [-0.137, -0.3196, -0.0258] }
+};
+// What Reset restores for the Palico: the otomo block of Raven's ResetPalico.json
+// (2026-09-03) -- no gear, no pigments or pulses, every option Normal / Type 1, no colour
+// overrides, Pose 1, and this camera. DEFAULT_OTOMO stays the first-visit example.
+const RESET_PALICO = {
+  pieces: { helm: null, body: null }, pigment: { helm: null, body: null }, deviant: {},
+  palico: { ear: 'Normal', eye: 'Normal', tail: 'Normal', fur: 'Type 1', clothing: 'Type 1',
+            furColor: null, eyeColor: null, earStyle: 0, eyeStyle: 0, tailStyle: 0, furStyle: 0 },
+  pose: 'Pose 1',
+  camera: { p: [0.5488, 0.3305, 1.823], t: [-0.0121, -0.0219, -0.0666] }
+};
+// Reset: the defaults for the slot on screen -- the male hunter, the female hunter or the
+// Palico (Raven, 2026-09-03: "a Reset button that restores all defaults for that slot").
+async function resetSlot(){
+  if (figure === 'palico'){
+    await applyOtomoSet(RESET_PALICO);
+    applyCameraState(RESET_PALICO.camera);
+    saveState();
+    return;
+  }
+  await applySet(Object.assign({}, RESET_HUNTER, { gender }));
+}
+document.getElementById('resetBtn').onclick = async () => {
+  const what = figure === 'palico' ? 'the Palico' : (gender === 'm' ? 'the male hunter' : 'the female hunter');
+  if (!confirm('Reset ' + what + ' to the defaults? The current look is replaced.')) return;
+  await resetSlot();
+};
+// A parsed set onto the page -- the body of Open. Reset feeds it a slot's default.
+async function applySet(d){
+  // setGender is a no-op when it already matches, and it rebuilds the lists itself
+  if (d.gender === 'm' || d.gender === 'f') await setGender(d.gender);
+  const h = d.hunter || {};
+  const setIdx = (id, v) => {
+    const sel = document.getElementById(id);
+    if (v !== undefined && v !== null && v < sel.options.length) sel.value = String(v);
+  };
+  buildStyleLists();
+  setIdx('faceStyle', h.faceStyle); setIdx('hairStyle', h.hairStyle);
+  document.getElementById('face').checked = h.face !== null && h.face !== undefined ? true : !!h.face;
+  document.getElementById('hair').checked = h.hair !== null && h.hair !== undefined ? true : !!h.hair;
+  if (typeof h.body === 'boolean') { document.getElementById('body').checked = h.body; showBody = h.body; }
+  // matched by LABEL, so the file does not depend on CLOTHING's ordering
+  clothSel.value = '';
+  if (h.clothing){
+    const hit = [...clothSel.options].find(o => o.textContent === h.clothing);
+    if (hit) clothSel.value = hit.value;
+  }
+  for (const [selId, part] of CHAR_PARTS){
+    const v = h[selId];
+    const sel = document.getElementById(selId), rgb = document.getElementById(selId + 'RGB');
+    if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
+      charColor[part] = v; sel.value = 'rgb'; rgb.value = v;
+    } else {
+      const i = CHAR_COLORS.findIndex(c => c[0] === v);
+      charColor[part] = i < 0 ? null : i;
+      sel.value = i < 0 ? '' : String(i);
     }
   }
+  CHAR_SYNC.forEach(f => f());
+  const psel = document.getElementById('pose');
+  if (d.pose && POSES[d.pose]) {
+    pose.stop(); pose.staticPose = d.pose; psel.value = d.pose;
+  } else if (typeof d.pose === 'string' && d.pose.startsWith('g:') &&
+             [...psel.options].some(o => o.value === d.pose)) {
+    psel.value = d.pose; await playGamePose(+d.pose.slice(2));
+  }
+  applyDevAnimOverrides(d.devAnim);
+  applySlotDev(SLOTS.concat(['cloth']).map(sl => (d.deviant || {})[sl] || null));
+  // pigment is absent from version 1 files -- leave the current colours alone then
+  if (d.pigment){
+    for (const slot of SLOTS){
+      const hex = d.pigment[slot];
+      const on = typeof hex === 'string' && /^#[0-9a-f]{6}$/i.test(hex);
+      document.getElementById('pgOn_' + slot).checked = on;
+      if (on) document.getElementById('pg_' + slot).value = hex;
+    }
+    // re-check "All" only when the set really is one colour throughout
+    const vals = SLOTS.map(sl => d.pigment[sl]);
+    const uniform = vals.every(v => typeof v === 'string' && v === vals[0]);
+    const allCbEl = document.getElementById('pgOn_all');
+    allCbEl.checked = uniform;
+    if (uniform) document.getElementById('pg_all').value = vals[0];
+    readSlotPigments();
+  }
+  const map = {};
+  for (const slot of SLOTS){
+    const p = d.pieces[slot];
+    const id = p && (typeof p === 'string' ? p : p.id);
+    map[slot] = tokenFor(slot, id);
+  }
+  await refreshChar();
+  await apply(map);
+  await applyOtomoSet(d.otomo);
+  applyCharColors();
+  // version 3 files carry the weapon; a file without one clears it
+  await applyWeaponFile((d.weapon && typeof d.weapon === 'object') ? d.weapon : null);
+  // Opening a set is a load, not an incidental UI change, so it may frame -- but
+  // only when the file carries no camera of its own.
+  if (!applyCameraState(d.camera)) frameAll();
+  saveState();
 }
 
 document.getElementById('fitBtn').onclick = () => frameAll();
+
+// ---- scene harness (dev only) ----------------------------------------------------------
+// `?clean&scene=<name>[&run=<label>][&shot]` applies one of dev/scenes.json's fixed scenes
+// on top of its defaults, through the same handlers the UI uses, frames it, and exposes
+// __view.shot() which renders one frame and POSTs the PNG to dev/serve.py. Fields this
+// build does not understand are ignored, so one scene file drives the old and new viewer.
+async function runScene(name){
+  const doc = await (await fetch('dev/scenes.json?v=' + Date.now())).json();
+  if (!doc.scenes[name]) throw new Error('unknown scene: ' + name);
+  const sc = Object.assign({}, doc.defaults, doc.scenes[name]);
+  if (sc.figure === 'palico'){
+    setFigure('palico');
+    await new Promise(r => setTimeout(r, 500));
+  } else {
+    // a hunter scene after a Palico one: bring the hunter (and its weapon) back first, or
+    // the Palico stays in view and the weapon stays hidden (seen in the 2026-09-03 sweep)
+    if (figure !== 'hunter') setFigure('hunter');
+    if (sc.gender && sc.gender !== gender) await setGender(sc.gender);
+    // A static scene must not inherit the startup pose: stop it BEFORE the pieces load, and
+    // remount face/hair, so chain bones (20+) sit at bind rather than wherever the loop was.
+    const clsEarly = sc.weapon && sc.weapon.cls;
+    const heldEarly = !!(clsEarly && [...weaponClassSel.options].some(o => o.value === clsEarly))
+                      && sc.drawn !== false && sc.stance !== null;
+    if (!heldEarly && !(sc.pose && sc.pose.startsWith('g:'))){
+      pose.stop(); pose.staticPose = 'relaxed';
+      await refreshChar();
+    }
+    if (sc.pieces) await apply(sc.pieces);
+    for (const sl of SLOTS){
+      const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
+      const hex = sc.pigment && sc.pigment[sl];
+      if (cb) cb.checked = !!hex;
+      if (col && hex) col.value = hex;
+    }
+    applySlotDev(DEV_SLOTS.map(sl => (sc.deviant && SLOTS.includes(sl)) ? sc.deviant : null));
+    readSlotPigments();
+    const cls = sc.weapon && sc.weapon.cls;
+    weaponClassSel.value = (cls && [...weaponClassSel.options].some(o => o.value === cls)) ? cls : 'none';
+    await weapon.set(weaponClassSel.value, sc.weapon && sc.weapon.model);
+    await buildWeaponLists();
+    const held = weaponClassSel.value !== 'none' && sc.drawn !== false && sc.stance !== null;
+    weaponDrawnSel.value = held ? '1' : '0';
+    weaponPoseSel.value = held ? String(sc.stance || 0) : '';
+    setFormValue(sc.form);
+    if (sc.kinsect && [...kinsectSel.options].some(o => o.value === sc.kinsect)) kinsectSel.value = sc.kinsect;
+    arrowSel.value = (sc.arrow && [...arrowSel.options].some(o => o.value === String(sc.arrow))) ? String(sc.arrow) : '';
+    await applyWeaponState();
+    if (!held){
+      if (sc.pose && sc.pose.startsWith('g:')) await playGamePose(+sc.pose.slice(2));
+      else { pose.stop(); pose.staticPose = 'relaxed'; repose(); }
+    }
+  }
+  frameAll();
+  const ang = { front: 0, back: Math.PI, left: Math.PI / 2, right: -Math.PI / 2 }[sc.camera] || 0;
+  if (ang){
+    const t = controls.target.clone(), p = camera.position.clone().sub(t);
+    p.applyAxisAngle(new THREE.Vector3(0, 1, 0), ang);
+    camera.position.copy(t).add(p); camera.lookAt(t); controls.update();
+  }
+  window.__scene = { name, spec: sc, ready: true };
+  return sc;
+}
+// runScene is exposed so a loaded page can step through scenes without reloading the hunter
+// (Raven, 2026-09-03: "Wouldn't it be faster to simply swap weapons"); shot(run, name) then
+// names the file explicitly.
+window.__view.runScene = async function(name){ const sc = await runScene(name); window.__scene = { name, sc }; return sc; };
+window.__view.shot = async function(run, nameArg, atArg){
+  const q = new URLSearchParams(location.search);
+  run = run || q.get('run') || 'default';
+  const name = nameArg || (window.__scene && window.__scene.name) || SCENE || 'shot';
+  // Deterministic frame: pin a one-shot stance to its last frame and a loop to its first,
+  // sync the weapon's own motion to that, put the headlight where the render loop would,
+  // then render synchronously.
+  const act = pose.action;
+  if (act && pose.mixer){
+    const clip = act.getClip();
+    act.enabled = true; act.paused = false; act.timeScale = 0;
+    // a third argument picks the frame (seconds into the stance) instead
+    act.time = (typeof atArg === 'number') ? Math.min(Math.max(0, atArg), Math.max(0, clip.duration - 1e-3))
+             : (act.loop === THREE.LoopOnce ? Math.max(0, clip.duration - 1e-3) : 0);
+    pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
+  }
+  stepDeviant(0.5); weapon.stepMotion(); weapon.step();
+  controls.update(); head.position.copy(camera.position);
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL('image/png');
+  const res = await fetch('/shot?run=' + encodeURIComponent(run) + '&name=' + encodeURIComponent(name),
+                          { method: 'POST', body: url });
+  const out = await res.json();
+  out.mount = weapon.audit();
+  window.__shot = out;
+  return out;
+};
+if (SCENE){
+  runScene(SCENE).then(async () => {
+    if (new URLSearchParams(location.search).has('shot')) await window.__view.shot();
+  }).catch(e => { window.__sceneError = String(e && e.stack || e); errEl.textContent = 'SCENE: ' + e; });
+}
 
 window.__ready = true;
 </script>

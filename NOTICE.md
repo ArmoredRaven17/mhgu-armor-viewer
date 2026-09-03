@@ -20,7 +20,9 @@ game and are shown for reference only.
   https://threejs.org
 - **Pillow** — texture conversion during the build. https://python-pillow.org
 - **MHGU-Modding wiki** — RTHKKona and contributors, for documenting the model and
-  texture extraction route this project followed.
+  texture extraction route this project followed, and for the `weapon<NN>BaseData` field
+  layout, which confirmed the model-id and sound-id columns this project reads.
+  Ported there from GReinoso96 and Aradi147's XXModding.
   https://github.com/RTHKKona/MHGU-Modding/wiki
 
 ## Assets
