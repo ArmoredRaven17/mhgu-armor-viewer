@@ -32,6 +32,36 @@ export function stateFor(m){
   return (DB && m && DB.state && m.s !== undefined) ? (DB.state[m.s] || null) : null;
 }
 
+// specFor(ref, materialName) -> everything material.js decides from: the maps, the render
+// state, the feature set, the two constant blocks and the flag bits -- or null when the
+// database has no entry (the exporter's Scene_Material placeholder, a hash-keyed orphan).
+export function specFor(ref, name){
+  const e = entryFor(ref);
+  const m = e && e.mats && e.mats[name];
+  if (!m) return null;
+  const tex = e.tex || [];
+  const pick = i => (i && tex[i - 1]) || null;
+  const t = m.t || {};
+  return { name, entry: e, m,
+           albedo: pick(t.albedo), spec: pick(t.spec), sphere: pick(t.sphere),
+           specIsAlbedo: !!(t.spec && t.spec === t.albedo),
+           state: (DB.state && DB.state[m.s]) || null, feat: (DB.feat && DB.feat[m.f]) || null,
+           cbm: (DB.cbm && DB.cbm[m.c]) || null, glob: (DB.glob && DB.glob[m.g]) || null,
+           flags: m.flags || 0,
+           // bit 20 of the 32-bit feature word is the alpha TEST switch: it agrees with the
+           // artists' XfBA / "A" suffix on 23,950 of 24,542 materials, the Palico eyes and the
+           // face makeup carry it, and the 2,819 materials with the Alpha feature but without
+           // it (Nerscylla's mail among them) are drawn whole in game (Raven, 2026-09-03)
+           fb: parseInt(m.fb || '0', 16) >>> 0,
+           alphaTest: !!(parseInt(m.fb || '0', 16) & 0x00100000),
+           pigment: !!(m.flags & 0x20),                       // the dyeable region
+           override: !!(m.flags & 0x40) && !(m.flags & 0x20) }; // skin / fur / face colour
+}
+// the database key of a shipped piece glb: models/m001_helm.glb -> m001_helm
+export function refForPiece(glbPath){
+  return (glbPath || '').replace(/^.*\//, '').replace(/\.glb$/i, '');
+}
+
 // texturesFor(ref, materialName) -> { albedo, mask, sphere, mat, entry } (pool paths or null)
 // A material the MRL does not name (the exporter's placeholder, or a hash-keyed orphan)
 // falls back to the table's first map, which is the piece's own _BM in every file seen.

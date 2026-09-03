@@ -34094,6 +34094,9 @@
    "rarityMax": 6,
    "lod0": [
     22,
+    92,
+    187,
+    198,
     937
    ],
    "defaultPig": 31
@@ -34203,6 +34206,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    58,
+    93,
     391
    ],
    "defaultPig": 31
@@ -34409,6 +34414,7 @@
    "rarityMax": 6,
    "lod0": [
     22,
+    92,
     147,
     263,
     1045
@@ -34521,6 +34527,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    214,
+    218,
     533
    ],
    "defaultPig": 31
@@ -45724,6 +45732,8 @@
    "rarityMax": 9,
    "lod0": [
     22,
+    92,
+    223,
     582,
     705
    ],
@@ -45835,6 +45845,8 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    121,
+    208,
     297
    ],
    "defaultPig": 42
@@ -46032,6 +46044,7 @@
    "rarityMax": 9,
    "lod0": [
     22,
+    90,
     260,
     626,
     633
@@ -61729,6 +61742,7 @@
    "rarityMax": 9,
    "lod0": [
     22,
+    92,
     150,
     205,
     1031
@@ -62024,6 +62038,9 @@
    "rarityMax": 9,
    "lod0": [
     22,
+    92,
+    204,
+    373,
     855
    ],
    "defaultPig": 31
@@ -97475,6 +97492,9 @@
    "rarity": 9,
    "lod0": [
     23,
+    86,
+    92,
+    185,
     1089
    ],
    "defaultPig": 31
@@ -97582,6 +97602,8 @@
    "skin": "tex/40f4b0ec8a446943.png",
    "rarity": 9,
    "lod0": [
+    170,
+    193,
     418
    ],
    "defaultPig": 31
@@ -188531,6 +188553,7 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    202,
     327
    ],
    "defaultPig": 31
@@ -188642,6 +188665,9 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    100,
+    117,
+    161,
     286,
     809
    ],
@@ -188697,6 +188723,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    40,
+    224,
     818
    ],
    "defaultPig": 31
@@ -188751,6 +188779,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    160,
+    265,
     336
    ],
    "defaultPig": 31
@@ -188842,6 +188872,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    162,
+    175,
     314
    ],
    "defaultPig": 31
@@ -188954,6 +188986,7 @@
    "rarityMax": 6,
    "lod0": [
     32,
+    92,
     229,
     344,
     700
@@ -189066,6 +189099,8 @@
    "rarity": 3,
    "rarityMax": 6,
    "lod0": [
+    160,
+    192,
     327
    ],
    "defaultPig": 31
@@ -200302,6 +200337,9 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    92,
+    125,
+    402,
     434
    ],
    "defaultPig": 42
@@ -200430,6 +200468,8 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    149,
+    253,
     272
    ],
    "defaultPig": 42
@@ -200634,6 +200674,7 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    92,
     181,
     308,
     357,
@@ -200691,6 +200732,7 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    474,
     730
    ],
    "defaultPig": 42
@@ -200745,6 +200787,7 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    177,
     179,
     295
    ],
@@ -216701,6 +216744,7 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    100,
     115,
     179,
     284,
@@ -216997,6 +217041,7 @@
    "rarityMax": 9,
    "lod0": [
     34,
+    92,
     225,
     350,
     747
@@ -217053,6 +217098,8 @@
    "rarity": 6,
    "rarityMax": 9,
    "lod0": [
+    233,
+    256,
     916
    ],
    "defaultPig": 31
@@ -252458,6 +252505,8 @@
    "headMask": 33279,
    "rarity": 9,
    "lod0": [
+    133,
+    143,
     658
    ],
    "defaultPig": 31
@@ -252569,6 +252618,9 @@
    "rarity": 9,
    "lod0": [
     32,
+    83,
+    92,
+    191,
     1126
    ],
    "defaultPig": 31
@@ -252676,6 +252728,8 @@
    "skin": "tex/620377db2eaa47bd.png",
    "rarity": 9,
    "lod0": [
+    114,
+    189,
     311
    ],
    "defaultPig": 31
@@ -375439,7 +375493,7 @@
     "env": [
      "tex/e2444bf87b34b85f.png"
     ],
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "pd": "fffefffd"
    },
@@ -377485,7 +377539,7 @@
     "env": [
      "tex/5c5f889cb7568ecf.png"
     ],
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "pd": "fffefffd"
    },
@@ -377597,7 +377651,7 @@
      ]
     ],
     "tex": "tex/afa209ca3e82cc58.png",
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "pd": "fffefffd"
    },
@@ -383667,7 +383721,7 @@
     "env": [
      "tex/038253cf11b3c86a.png"
     ],
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "defaultPig": 48,
     "pd": "fffefffd"
@@ -383963,7 +384017,7 @@
     ],
     "hide": [],
     "tex": "tex/0c6a7a2135ef12ac.png",
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "defaultPig": 57,
     "pd": "fffefffd"
@@ -384235,7 +384289,7 @@
     "env": [
      "tex/5c5f889cb7568ecf.png"
     ],
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "pd": "fffafffd"
    },
@@ -384327,7 +384381,7 @@
     "env": [
      "tex/5c5f889cb7568ecf.png"
     ],
-    "name": "―",
+    "name": "\u2015",
     "rarity": 3,
     "defaultPig": 85,
     "pd": [
@@ -384749,7 +384803,7 @@
     ],
     "hide": [],
     "tex": "tex/50e3053e73038b9c.png",
-    "name": "―",
+    "name": "\u2015",
     "rarity": 7,
     "pd": "fffafffd"
    },
@@ -388105,7 +388159,7 @@
     "env": [
      "tex/e2444bf87b34b85f.png"
     ],
-    "name": "― / @",
+    "name": "\u2015 / @",
     "rarity": 7,
     "defaultPig": 123,
     "pd": "fffefffd"
@@ -388538,7 +388592,7 @@
      ]
     ],
     "tex": "tex/ae24e6fce8db6139.png",
-    "name": "―",
+    "name": "\u2015",
     "rarity": 3,
     "pd": "fffefffd"
    },
@@ -388774,7 +388828,7 @@
      "tex/6d89e87401c07e02.png",
      "tex/ff0f23c15741b737.png"
     ],
-    "name": "― / @",
+    "name": "\u2015 / @",
     "rarity": 3,
     "pd": "fffefffd"
    },
@@ -393186,14 +393240,14 @@
      "series": 248,
      "model": "179",
      "r": 3,
-     "name": "スピリッツネコ兜",
+     "name": "\u30b9\u30d4\u30ea\u30c3\u30c4\u30cd\u30b3\u515c",
      "jp": 1
     },
     {
      "series": 265,
      "model": "170",
      "r": 7,
-     "name": "おめかしきりみちゃん",
+     "name": "\u304a\u3081\u304b\u3057\u304d\u308a\u307f\u3061\u3083\u3093",
      "set": 1,
      "jp": 1
     },
@@ -393201,21 +393255,21 @@
      "series": 266,
      "model": "178",
      "r": 7,
-     "name": "ニャルキリーヘッド",
+     "name": "\u30cb\u30e3\u30eb\u30ad\u30ea\u30fc\u30d8\u30c3\u30c9",
      "jp": 1
     },
     {
      "series": 281,
      "model": "179",
      "r": 7,
-     "name": "スピリッツＳネコ兜",
+     "name": "\u30b9\u30d4\u30ea\u30c3\u30c4\uff33\u30cd\u30b3\u515c",
      "jp": 1
     },
     {
      "series": 512,
      "model": "206",
      "r": 7,
-     "name": "ぐでたまっぽい服",
+     "name": "\u3050\u3067\u305f\u307e\u3063\u307d\u3044\u670d",
      "set": 1,
      "jp": 1
     }
@@ -396285,42 +396339,42 @@
      "series": 248,
      "model": "179",
      "r": 3,
-     "name": "スピリッツネコ鎧",
+     "name": "\u30b9\u30d4\u30ea\u30c3\u30c4\u30cd\u30b3\u93a7",
      "jp": 1
     },
     {
      "series": 265,
      "model": "170",
      "r": 7,
-     "name": "おめかしきりみちゃん",
+     "name": "\u304a\u3081\u304b\u3057\u304d\u308a\u307f\u3061\u3083\u3093",
      "jp": 1
     },
     {
      "series": 266,
      "model": "178",
      "r": 7,
-     "name": "ニャルキリースーツ",
+     "name": "\u30cb\u30e3\u30eb\u30ad\u30ea\u30fc\u30b9\u30fc\u30c4",
      "jp": 1
     },
     {
      "series": 281,
      "model": "179",
      "r": 7,
-     "name": "スピリッツＳネコ鎧",
+     "name": "\u30b9\u30d4\u30ea\u30c3\u30c4\uff33\u30cd\u30b3\u93a7",
      "jp": 1
     },
     {
      "series": 512,
      "model": "206",
      "r": 7,
-     "name": "ぐでたまっぽい服",
+     "name": "\u3050\u3067\u305f\u307e\u3063\u307d\u3044\u670d",
      "jp": 1
     },
     {
      "series": 518,
      "model": "206",
      "r": 10,
-     "name": "ぐでたまっぽい服Ｘ",
+     "name": "\u3050\u3067\u305f\u307e\u3063\u307d\u3044\u670d\uff38",
      "jp": 1
     }
    ]

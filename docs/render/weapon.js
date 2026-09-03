@@ -15,7 +15,7 @@
 import * as THREE from 'three';
 import { loader, loadGlb, getTexture, weaponMotCache } from './assets.js';
 import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
-import { createMaterial, setEnvTexture, allMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, allMats } from './material.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
 // Whether a weapon clip's bone-0 (root) track moves the part relative to its joint. Off:
@@ -23,7 +23,7 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
 import { loadClass, loadKinsects, defaultModel, modelIdOf } from './weapons-index.js';
-import { texturesFor, refForGlb, entryFor, stateFor } from './materials-db.js';
+import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -203,35 +203,22 @@ export class WeaponRig {
       // needs them or the mesh draws black
       if (o.geometry && !o.geometry.attributes.normal) o.geometry.computeVertexNormals();
       o.frustumCulled = false;
-      // The maps come from the game's own material file: tAlbedoMap and tSphereMap bindings
-      // resolved through materials.json, not from the material's name -- and so does the
-      // BLEND STATE (state.blend, from the MFX blend-state record the MRL names).
-      const tx = texturesFor(ref, srcName);
-      const st = tx && tx.mat ? stateFor(tx.mat) : null;
-      if (st && st.blend === 'add'){
-        // Additive materials are the glow parts, drawn unlit and added over what is behind:
-        // the Charge Blade's phial box (part 24, XfB_0__m30_gaxe064_add_) is a 12-vertex box
-        // whose texel is black, so it adds nothing until its material animation lights it
-        // (triggers 28/29). Lit and opaque it was the "black mass" on the drawn sword, and lit
-        // with the matcap it still left a grey box (Raven, 2026-09-03). No matcap, no lights.
-        const mat = new THREE.MeshBasicMaterial({ name: srcName, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-                                                  transparent: true, depthWrite: false, wireframe: !!this.ctx.wire });
-        o.material = mat; o.renderOrder = 20;
-        if (tx.albedo) jobs.push(getTexture(tx.albedo).then(t => { mat.map = t; mat.needsUpdate = true; }));
-        return;
-      }
+      // The whole material comes from the game's own material file resolved through
+      // materials.json (material.js lists what it decides); a placeholder the database does
+      // not carry falls back to the table's first map and the name rules.
+      const rom = specFor(ref, srcName);
+      const tx = rom || texturesFor(ref, srcName);
       const mat = createMaterial({
-        srcName, alphaCut: /^XfBA/.test(srcName) ? 0.5 : 0,
+        srcName, rom, alphaCut: rom ? 0 : (/^XfBA/.test(srcName) ? 0.5 : 0),
         noTint: true,          // weapons are not dyed
         wire: this.ctx.wire });
       o.material = mat; allMats.push(mat);
-      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t => { mat.map = t; mat.needsUpdate = true; }));
-      if (tx && tx.sphere) jobs.push(getTexture(tx.sphere).then(t => setEnvTexture(mat, t)));
-      // Alpha-blended materials draw after the opaque ones without writing depth. Cull and
-      // depth bias stay for Phase 3.
-      if (st && (st.blend === 'blend' || st.blend === 'alpha')){
-        mat.transparent = true; mat.depthWrite = false; o.renderOrder = 10;
-      }
+      if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
+      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
+      if (rom){
+        if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere) jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
+        if (rom.spec && !rom.specIsAlbedo) jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
+      } else if (tx && tx.sphere) jobs.push(getTexture(tx.sphere).then(t => setEnvTexture(mat, t)));
     });
     await Promise.all(jobs);
     // Drive the weapon's OWN root BONE, never the group that holds it. glTF says a skinned

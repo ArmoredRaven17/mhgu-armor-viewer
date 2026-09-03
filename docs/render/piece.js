@@ -4,7 +4,8 @@
 // the static pose) arrives through `opt` and `ctx`.
 import { loadGlb, getTexture } from './assets.js';
 import { skeletonClone, meshGroupId } from './skeleton.js';
-import { createMaterial, setEnvTexture, allMats, armorMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, allMats, armorMats } from './material.js';
+import { specFor, refForPiece } from './materials-db.js';
 import { poseObject } from './pose.js';
 
 // A harvested piece IS one slot of one set, so its texture is known from the key --
@@ -61,9 +62,12 @@ export async function loadEntry(entry, opt, ctx){
   for (const h of (entry.hide || []))
     (h.length > 2 ? hideGrp : hideSet).add(h[0] + '#' + h[1] + (h.length > 2 ? '#' + h[2] : ''));
   const jobs = [];
+  const ref = refForPiece(entry.glb);
   root.traverse(o => {
     if (o.isMesh || o.isSkinnedMesh) {
       const srcName = (o.material && o.material.name) || '';
+      // the game's own material file for this material (null for the exporter's placeholders)
+      const rom = specFor(ref, srcName);
       // Two different things, previously conflated:
       //   BLOB  - the Group[100] layer: a ~191-vert full-figure proxy that renders as a
       //           blocky slab over everything. Never drawn.
@@ -89,10 +93,14 @@ export async function loadEntry(entry, opt, ctx){
       const isFur = otomo && /o_(skin|face|ear|tail)/i.test(srcName);
       // the eye's own map; `_light` is the glint, not the iris, so it takes no eye colour
       const isOtEye = otomo && /o_eye/i.test(srcName);
-      const isSkin = otomo ? isFur : (!isBlob && /skin/i.test(srcName));
-      const file = otomo ? (isFur ? ctx.furTex : entry.tex)
-                 : (isBlob || isSkin) ? (entry.skin || entry.tex)
-                                      : textureForMaterial(srcName, entry);
+      // The colour-override class is the ROM's flag 0x40 (without the pigment bit): the
+      // hunter's exposed flesh, whatever the material is called -- 1,553 of them are named
+      // skin, 7 are not, and 6 named skin are plain materials to the game.
+      const isSkin = otomo ? isFur : (!isBlob && (rom ? rom.override : /skin/i.test(srcName)));
+      // the map is the MRL's tAlbedoMap binding; the name lookups stay for the placeholders
+      const file = otomo ? (isFur ? ctx.furTex : (rom && rom.albedo) || entry.tex)
+                 : (rom && rom.albedo) || ((isBlob || isSkin) ? (entry.skin || entry.tex)
+                                                              : textureForMaterial(srcName, entry));
       // The `_bm` alpha means two different things depending on the material variant,
       // which is why a global alphaTest once culled most of the armour:
       //   XfB*   the alpha is a smooth GLOSS ramp for the env matcap (Yukumo: 23% of
@@ -121,6 +129,8 @@ export async function loadEntry(entry, opt, ctx){
       // at 0.5 drops 40%. This is the rule the comment above already argued for -- discard
       // only what is essentially transparent -- applied where it is measurable.
       // Left at 0.5 for the hunter, whose armour is not what was measured here.
+      // The ROM's transparency feature decides the cutout now (material.js); this name rule
+      // is the fallback for a material the database does not carry.
       const alphaCut = isAlphaMat ? (otomo ? 0.03 : 0.5) : 0;
       // the hunter's flesh is not dyeable by pigment -- it takes the skin-tone selector.
       // `undyeable` is the game's own flag: armorSeriesData byte +113, which is 0 on
@@ -132,7 +142,7 @@ export async function loadEntry(entry, opt, ctx){
       // the glint keeps its authored white; only the iris takes the eye colour
       if (isOtEye && !/_light/i.test(srcName)) tintClass = 'oeye';
       const mat = createMaterial({
-        srcName, alphaCut,
+        srcName, rom, alphaCut,
         noTint: isSkin || isBlob || isOtEye || !!entry.undyeable,
         tintClass,
         // `_sym_` names the dyeable region; skin and the proxy never qualify
@@ -152,11 +162,22 @@ export async function loadEntry(entry, opt, ctx){
       // the piece count is small, so just never cull.
       o.frustumCulled = false;
       o.material = mat; allMats.push(mat); armorMats.push(mat);
-      // Only materials whose NAME carries an env token are env-lit. The prefix also holds
-      // an E<n> on many materials and treating THAT as the marker is wrong: it hands the
-      // matcap to 340 materials that should not have one, and on Gore GX -- black armour
-      // with a 32-45% gloss mask -- it turned the membrane magenta instead of deep red.
-      const em = /env(?:a)?(\d*)/i.exec(srcName);
+      if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
+      // The sphere map is the material's tSphereMap binding where its feature set says
+      // SphereMap (2,130 materials carry the feature without an env token in their name);
+      // the separate specular map, where bound, supplies the gloss.
+      if (rom){
+        if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere)
+          jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
+        if (rom.spec && !rom.specIsAlbedo)
+          jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
+      }
+      // Without a database entry, only materials whose NAME carries an env token are
+      // env-lit. The prefix also holds an E<n> on many materials and treating THAT as the
+      // marker is wrong: it hands the matcap to 340 materials that should not have one, and
+      // on Gore GX -- black armour with a 32-45% gloss mask -- it turned the membrane
+      // magenta instead of deep red.
+      const em = rom ? null : /env(?:a)?(\d*)/i.exec(srcName);
       if (em && entry.env && entry.env.length){
         // NN indexes this piece's ordered env list where the name carries it. For the
         // 1,701 pieces binding 2+ maps the selector is NOT reliably known -- `mNN` fits
@@ -170,7 +191,7 @@ export async function loadEntry(entry, opt, ctx){
       if (isOtEye) mat.userData.u.uAlphaCut.value = 1;
       if (isBlob) { o.visible = false; }
       else if (isSkin) { o.userData.isBody = true; o.visible = ctx.showBody; }
-      if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
+      if (file) jobs.push(getTexture(file).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
     }
   });
   await Promise.all(jobs);
@@ -199,15 +220,17 @@ export async function loadCharPart(entry, opt, ctx){
   // to drop is decided by the helm, not by the group number.
   const hideGroups = opt.hideGroups ? opt.hideGroups() : null;
   const jobs = [];
+  const ref = refForPiece(entry.glb);
   root.traverse(o => {
     if (!(o.isMesh || o.isSkinnedMesh)) return;
     const srcName = (o.material && o.material.name) || '';
     const verts = o.geometry.attributes.position.count;
     if (hideSet.has(srcName + '#' + verts)) { o.visible = false; return; }
     if (hideGroups && hideGroups.has(meshGroupId(o))) { o.visible = false; return; }
-    const file = textureForMaterial(srcName, entry);
+    const rom = specFor(ref, srcName);
+    const file = (rom && rom.albedo) || textureForMaterial(srcName, entry);
     const mat = createMaterial({
-      srcName, alphaCut: 0,
+      srcName, rom, alphaCut: 0,
       // never dyed by armor pigment, but it does take the hair/eye/skin selectors
       noTint: true,
       tintClass: opt.part === 'hair' ? 'hair'
@@ -215,7 +238,12 @@ export async function loadCharPart(entry, opt, ctx){
       wire: ctx.wire });
     o.frustumCulled = false;     // same bind-pose culling problem as the armour
     o.material = mat; allMats.push(mat);
-    if (file) jobs.push(getTexture(file).then(t => { mat.map = t; mat.needsUpdate = true; }));
+    if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
+    if (rom){
+      if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere) jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
+      if (rom.spec && !rom.specIsAlbedo) jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
+    }
+    if (file) jobs.push(getTexture(file).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
   });
   await Promise.all(jobs);
   root.userData.joints = entry.joints || [];

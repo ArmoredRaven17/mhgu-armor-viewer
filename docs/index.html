@@ -510,7 +510,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div id="viewport"></div>
       <div id="loading">Loading...</div>
           <div id="hud">loading&hellip;</div>
-      <p id="renderNote">Some armors may not render correctly at this time or some oddities may happen</p>
+      <p id="renderNote">Some models may not render correctly at this time or some oddities may happen</p>
       <div id="err"></div>
       <div id="bar">
         <button id="fitBtn" class="btn tiny" title="Frame the whole figure">Fit to View</button>
@@ -945,7 +945,7 @@ import * as THREE from 'three';
 import { createStage } from './render/stage.js';
 import { initAssets, loadJson, getTexture } from './render/assets.js';
 import { playerBone } from './render/skeleton.js';
-import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow }
+import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow, setAlphaOverride }
   from './render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
@@ -3321,6 +3321,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   // record, rest scale and provenance
   mount: () => weapon.audit(),
   resetSlot,
+  setAlphaOverride,    // null = the ROM's alpha threshold, a number forces it on every cutout
   setWeaponForm: trg => { setFormValue(trg);
                           weapon.setForm(trg); return weapon.audit().trigger; },
   setArrow: key => { arrowSel.value = key ? String(key) : ''; weapon.setArrow(key || null); return weapon.audit().arrow; },
