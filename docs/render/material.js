@@ -66,6 +66,21 @@ const ALPHA_EPS = 1 / 512;
 // Raven's comparison knob: null = the ROM threshold on every cutout material, a number
 // forces that threshold on all of them (0.5 was the old hunter rule)
 let alphaOverride = null;
+// The ROM's depth bias (RSMeshBiasN, -32 a step) is in depth-buffer units, whose real size
+// depends on the projection: with this viewer's near plane a unit at the model is far larger
+// than in the game, so the Shadow Shades (bias -512) drew their arms through the head once
+// the camera backed off (Raven, 2026-09-03: "the part that should be hidden by the head
+// model is visible"). The page re-expresses a step as a fixed push in metres each frame
+// (setBiasUnitsPerStep, from the camera distance and near plane); until it does, a step is
+// the raw 32 units.
+const biasMats = new Set();
+let biasUnitsPerStep = 32;
+export function setBiasUnitsPerStep(v){
+  if (!(v > 0) || Math.abs(v - biasUnitsPerStep) < biasUnitsPerStep * 0.05) return false;
+  biasUnitsPerStep = v;
+  for (const m of biasMats) m.polygonOffsetUnits = m.userData.romBias / 32 * v;
+  return true;
+}
 export function setAlphaOverride(v){
   alphaOverride = (v === null || v === undefined || v === '') ? null : +v;
   for (const m of allMats) if (m.userData.cutout) m.alphaTest = alphaOverride === null ? m.userData.romCut : alphaOverride;
@@ -291,11 +306,14 @@ export function createMaterial(spec){
     if (cb) mat.opacity = cb.transparency;
     if (ft && ft.transp) texAlpha = true;
   }
-  // depth bias: RSMeshBiasN pulls the layer toward the camera by the ROM's value in depth
-  // units, constant only -- three.js's units are the depth buffer's smallest step, the same
-  // unit the game's value is in
+  // depth bias: RSMeshBiasN pulls the layer toward the camera, constant only (no slope
+  // term: that put a black sliver on the Lecturer's boots), scaled per step as above
   if (st && st.bias){
-    mat.polygonOffset = true; mat.polygonOffsetFactor = 0; mat.polygonOffsetUnits = st.bias;
+    mat.polygonOffset = true; mat.polygonOffsetFactor = 0;
+    mat.userData.romBias = st.bias;
+    mat.polygonOffsetUnits = st.bias / 32 * biasUnitsPerStep;
+    biasMats.add(mat);
+    mat.addEventListener('dispose', () => biasMats.delete(mat));
   }
   // albedo tint, emission, shininess
   if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);

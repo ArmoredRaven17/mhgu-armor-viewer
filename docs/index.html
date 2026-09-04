@@ -1017,7 +1017,8 @@ import * as THREE from 'three';
 import { createStage } from './render/stage.js';
 import { initAssets, loadJson, getTexture } from './render/assets.js';
 import { playerBone } from './render/skeleton.js';
-import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow, setAlphaOverride }
+import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow, setAlphaOverride,
+         setBiasUnitsPerStep }
   from './render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
@@ -1722,6 +1723,17 @@ function frameAll(){
   camera.updateProjectionMatrix(); controls.update();
 }
 
+// The ROM's depth bias steps as a fixed push at the model: one step (32 units) is
+// BIAS_STEP_M, whatever the zoom. A depth-buffer step at distance d is d^2 / near / 2^24 (a
+// 24-bit buffer), so the units per step follow the camera every frame; the setter ignores
+// changes under 5%. 0.5 mm a step beats coplanar z-fighting by orders of magnitude and keeps
+// the Shadow Shades' 16 steps (8 mm) inside the head.
+const BIAS_STEP_M = 0.0005;
+function updateDepthBias(){
+  const dist = camera.position.distanceTo(controls.target);
+  const lsb = dist * dist / camera.near / 16777216;
+  if (lsb > 0) setBiasUnitsPerStep(BIAS_STEP_M / lsb);
+}
 function refresh(){
   const objs = Object.values(mounted);
   const box = new THREE.Box3(); objs.forEach(o => box.expandByObject(o));
@@ -2385,6 +2397,7 @@ renderer.setAnimationLoop(() => {
   stepGamePose();
   weapon.stepMotion();
   weapon.step();
+  updateDepthBias();
   paintAnim();
   stepDeviant(performance.now()/1000);
   if (rainbowOn) applyCharColors(performance.now()/1000);
@@ -3737,7 +3750,7 @@ saveState();
 
 window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, MIX,
   pose, weapon, MOUNT_ROM,
-  setGender, switchHunter,
+  setGender, switchHunter, updateDepthBias,
   hunters: () => ({ names: HUNTERS.map(h => h.name), genders: HUNTERS.map(h => h.set ? h.set.gender : null), index: hunterIndex }),
   // the ROM chain as applied right now: the clip's ids, and per part the index, joint,
   // record, rest scale and provenance
