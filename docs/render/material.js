@@ -150,7 +150,10 @@ export function applyTint(mat){
                  ' uniform float uAlphaCut;' +
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform float uF0;' +
                  ' uniform float uDark;' +
-                 ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 ); void main() {')
+                 ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 );' +
+                 ' vec3 mhguSrgbOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }' +
+                 ' vec3 mhguSrgbEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }' +
+                 ' void main() {')
         .replace('#include <map_fragment>',
           `#ifdef USE_MAP
              vec2 mapUv = vMapUv;
@@ -224,10 +227,13 @@ export function applyTint(mat){
            #endif
            totalEmissiveRadiance *= 1.0 - uDark;`)
         // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
-        // Sample it with the view-space normal and add it on top of the lit color.
-        .replace('#include <dithering_fragment>',
-          `#include <dithering_fragment>
-           if ( uEnvAmt > 0.0 ) {
+        // Sample it with the view-space normal and screen it over the lit colour. The screen
+        // has always run on the sRGB-ENCODED colour -- it sat after <colorspace_fragment>,
+        // on the canvas -- so it runs here on an explicit encode and is decoded again: the
+        // same pixels on the canvas, and right in a linear render target too, where three's
+        // own <colorspace_fragment> is the identity (Raven, 2026-09-04: post-processing).
+        .replace('#include <colorspace_fragment>',
+          `if ( uEnvAmt > 0.0 ) {
              vec3 vn = normalize( normal );
              vec2 muv = vn.xy * 0.5 + 0.5;
              vec3 env = texture2D( uEnv, muv ).rgb;
@@ -239,8 +245,11 @@ export function applyTint(mat){
              float fres = uF0 + ( 1.0 - uF0 ) * pow( 1.0 - clamp( vn.z, 0.0, 1.0 ), 5.0 );
              // SCREEN blend, not additive -- a + b*(1-a) cannot exceed 1, so bright
              // armor keeps its detail instead of clipping to white.
-             gl_FragColor.rgb += env * g * uEnvAmt * fres * ( 1.0 - gl_FragColor.rgb );
-           }`);
+             vec3 enc = mhguSrgbOetf( gl_FragColor.rgb );
+             enc += env * g * uEnvAmt * fres * ( 1.0 - enc );
+             gl_FragColor.rgb = mhguSrgbEotf( enc );
+           }
+           #include <colorspace_fragment>`);
     };
     mat.needsUpdate = true;
   }
