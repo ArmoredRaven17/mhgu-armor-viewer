@@ -176,6 +176,9 @@ header #bar .btn.tiny{margin-right:0}
 #bar .ico{display:inline-flex;align-items:center;justify-content:center;width:32px;padding:3px 0}
 #bar .ico svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;
   stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* the Record button is bright red in both states, the dot and the stop square
+   (Raven, 2026-09-04) */
+#clipBtn svg{color:#ff2a2a}
 #viewport canvas{display:block;width:100%;height:100%}
 /* Scoped to the render area on purpose: #bar and the overlays are SIBLINGS of #viewport,
    so the toolbar keeps its pointer and stays usable while the cursor is hidden. */
@@ -323,12 +326,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .modal-card h3{margin:16px 0 6px;font-size:14px;color:var(--text-dim)}
 .modal-card code{font-size:12px;opacity:.85}
 .modal-card p{line-height:1.55;font-size:13px}
-.modal-card a{color:var(--accent-hover)}
+.modal-card a{color:color-mix(in srgb, hsl(from var(--accent) calc(h + 180) 75% 60%) 50%, var(--text))}
 .modal-card .muted{color:var(--text-dim);font-size:13px;opacity:.75}
 /* Backdrop override, above the swatches so it is seen. Chroma chips sit on the two key buttons so
    the colour is visible on the control that sets it. */
 .stage-h{margin:0 0 4px;font-size:14px}
 .stage-row{margin-bottom:15px}
+/* the Lighting panel (Raven, 2026-09-04: "Add these settings to a panel under animations") */
+.light-row{display:flex;gap:4px;flex-wrap:wrap}
+.light-row .btn{flex:1 1 30%}
+.light-row .btn.on{border-color:var(--accent-hover);background:#ffffff26}
 .stage-row .btn{position:relative;padding-left:26px}
 .stage-row .btn::before{content:"";position:absolute;left:8px;top:50%;width:10px;height:10px;
   margin-top:-5px;border-radius:2px;border:1px solid #0006;background:var(--chip,transparent)}
@@ -341,7 +348,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
    other apps; the id stays `themeModal` so the shared theme script needs no change. */
 /* The links modal is wider (560px); the family sizes the THEME card at 460 so a swatch
    comes out the same size here as in every other app. Scoped so the links modal is untouched. */
-#themeModal .modal-card{width:min(460px,90vw)}
 .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:15px}
 .swatch{aspect-ratio:1;border-radius:8px;border:2px solid transparent;cursor:pointer;position:relative;overflow:hidden;padding:0}
 .swatch.sel{border-color:#fff}
@@ -472,6 +478,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
             <div class="field"><label for="devAnim">Animation</label>
               <select id="devAnim">
                 <option value="fade">Fade A &harr; B</option>
+                <option value="fastfade">Fast Fade A &harr; B</option>
                 <option value="pulse">Pulse to B</option>
               </select>
             </div>
@@ -509,6 +516,30 @@ input[type=range]{width:100%;accent-color:var(--accent)}
               <button id="chainClear" class="btn tiny" title="Empty the chain">Clear</button>
             </div>
             <ol id="chainList" class="chain"></ol>
+          </div>
+        </div>
+      </section>
+      <section class="panel" id="lightPanel" data-open="false">
+        <button class="panel-head">Lighting <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <p class="hint">The rig stays with you as the figure turns, so turning it moves it through the light. Angle 0 lights the side you see, 180 the far side.</p>
+          <div class="row light-row" id="lightRow">
+            <button class="btn tiny" data-light="studio" title="The default rig: a cool key, blue rim, soft fill">Studio</button>
+            <button class="btn tiny" data-light="warm" title="Amber key and rim, warm fill">Warm</button>
+            <button class="btn tiny" data-light="cool" title="Blue-white key, strong blue rim">Cool</button>
+            <button class="btn tiny" data-light="even" title="Flat, near-shadowless light on purpose: for checking dye colours">Even</button>
+            <button class="btn tiny" data-light="rim" title="Dark, with a strong rim: for silhouettes">Rim</button>
+            <button class="btn tiny" data-light="dusk" title="A low amber sun with a blue sky fill">Dusk</button>
+          </div>
+          <div class="field"><label for="lKeyAz">Key light angle</label><input id="lKeyAz" type="range" min="0" max="360" step="1" title="Where the key light comes from, around the figure as you see it: 0 from your side, 90 from the right, 180 from behind it"></div>
+          <div class="field"><label for="lKeyEl">Key light height</label><input id="lKeyEl" type="range" min="-30" max="89" step="1" title="How high the key light sits, from below the figure to overhead"></div>
+          <div class="field"><label for="lKey">Key</label><div class="row gap"><input id="lKey" type="range" min="0" max="4" step="0.05" title="Key light strength"><input id="lKeyCol" type="color" class="rgb-input" title="Key light colour"></div></div>
+          <div class="field"><label for="lRim">Rim</label><input id="lRim" type="range" min="0" max="3" step="0.05" title="Rim light strength"></div>
+          <div class="field"><label for="lFill">Fill</label><input id="lFill" type="range" min="0" max="2" step="0.05" title="Fill light strength"></div>
+          <div class="field"><label for="lAmb">Ambient</label><input id="lAmb" type="range" min="0" max="2" step="0.05" title="Ambient light strength"></div>
+          <div class="row gap" style="flex-direction:column;align-items:flex-start">
+            <label class="chk" title="A light on the camera: lights whatever faces you, from any angle"><input type="checkbox" id="lHead">Headlight</label>
+            <label class="chk" title="Turns the key light slowly around the figure"><input type="checkbox" id="lSpin">Orbit the key light</label>
           </div>
         </div>
       </section>
@@ -616,8 +647,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <p class="hint">Overrides the render background so the model can be keyed out.</p>
     <div class="row gap stage-row">
       <button id="stgTheme" class="btn accent" style="flex:1">Theme</button>
-      <button id="stgGreen" class="btn accent" style="flex:1">Digital Green</button>
-      <button id="stgBlue"  class="btn accent" style="flex:1">Digital Blue</button>
+      <button id="stgGreen" class="btn accent" style="flex:1">D. Green</button>
+      <button id="stgBlue"  class="btn accent" style="flex:1">D. Blue</button>
     </div>
     <h3 class="stage-h">Theme</h3>
     <div id="swatches" class="swatches"></div>
@@ -1015,7 +1046,7 @@ import { createStage } from './render/stage.js';
 import { initAssets, loadJson, getTexture } from './render/assets.js';
 import { playerBone } from './render/skeleton.js';
 import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow, setAlphaOverride,
-         setBiasUnitsPerStep }
+         setBiasUnitsPerStep, setRegionDark }
   from './render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
@@ -1052,6 +1083,134 @@ const { renderer, scene, camera, controls } = stage;
 // mirror); `scene` keeps the lights
 const world = stage.world;
 const head = stage.lights.head;     // the headlight; the render loop keeps it on the camera
+
+// Lighting presets (Raven, 2026-09-04: "Let's do presets to start"). Each is the whole
+// six-light rig: the hemisphere's sky and ground, the key, rim and fill (colour, intensity
+// and position), the ambient, and the headlight's intensity for when the headlight is on.
+// Rebalanced the same day after Raven: "turning the model doesn't change where the lighting
+// applies". The first cut was a balanced studio -- a key front-right, a rim of similar weight
+// behind-left, a light riding on the camera, a high ambient floor -- so every angle saw much
+// the same light. Now the key carries the scene, the rim is a rim, the floor is low and the
+// headlight is off unless asked for; lit side to far side is about 2:1 in Studio. Even is flat
+// on purpose,
+// for reading dye colours. The sphere-map sheen still follows the camera: the game samples
+// it by the view-space normal, so that part is right as it is.
+const LIGHT_PRESETS = {
+  studio: { hemi: [0xbfd4ff, 0x30281f, 0.8], key: [0xffffff, 3.0, [3, 5, 4]], rim: [0x88aaff, 0.9, [-4, 3, -5]],
+            fill: [0xffffff, 0.35, [0, -3, 2]], ambient: [0xffffff, 0.25], head: 0.9 },
+  warm:   { hemi: [0xffe3c2, 0x3a2a1c, 0.7], key: [0xffd9a8, 3.1, [4, 4, 3]], rim: [0xff9a5a, 0.8, [-4, 3, -5]],
+            fill: [0xffe9d0, 0.3, [0, -3, 2]], ambient: [0xffe6cc, 0.25], head: 0.8 },
+  cool:   { hemi: [0xc9dcff, 0x1e2430, 0.8], key: [0xdbe8ff, 2.9, [3, 5, 4]], rim: [0x9ec6ff, 1.2, [-5, 3, -4]],
+            fill: [0xd8e6ff, 0.3, [0, -3, 2]], ambient: [0xdde8ff, 0.25], head: 0.9 },
+  even:   { hemi: [0xffffff, 0xffffff, 1.2], key: [0xffffff, 1.2, [0, 5, 5]], rim: [0xffffff, 0.8, [0, 3, -5]],
+            fill: [0xffffff, 0.8, [0, -3, 2]], ambient: [0xffffff, 1.2], head: 0.6 },
+  rim:    { hemi: [0x8fa8d0, 0x101418, 0.4], key: [0xffffff, 0.8, [3, 5, 4]], rim: [0xbfd8ff, 2.6, [-4, 3, -5]],
+            fill: [0xffffff, 0.15, [0, -3, 2]], ambient: [0xffffff, 0.15], head: 0.3 },
+  dusk:   { hemi: [0x6f7fb0, 0x2a1a12, 0.6], key: [0xffb070, 2.6, [5, 2, 2]], rim: [0x6f8cff, 0.9, [-4, 2, -5]],
+            fill: [0xffc9a0, 0.25, [0, -3, 2]], ambient: [0xa88c78, 0.25], head: 0.6 }
+};
+// The rig the panel's sliders edit (Raven, 2026-09-04: "Can we add more dynamic lighting"):
+// the key light's direction as an angle around the figure and a height, its strength and
+// colour, the rim / fill / ambient strengths, the headlight, and a slow orbit for the key.
+// A preset fills the rig in and lights the buttons; touching a slider makes it "custom"
+// (no button lit). The rim and fill keep the preset's colours and positions; only the key
+// moves. Saved with the state, preset name and rig both, so a custom rig survives a reload.
+const KEY_RADIUS = 7;
+// The rig is fixed to the VIEW, not the world (Raven, 2026-09-04: "turning the model doesn't
+// change where the lighting applies"; then, with a red key: "rotating the model, the back
+// remained lit despite doing a full 180"). Orbiting is how the figure is turned, and Raven
+// expects a turntable: the lights stay where they are around the viewer and the figure turns
+// through them, so a key at 40 degrees lights the front from the front view and the back
+// from the back view. World-fixed lights (the first cut, twice) turn WITH the figure, so the
+// lit regions on it never change however it is turned. So the key, rim and fill live in a
+// group whose yaw follows the camera's around the orbit target; the hemisphere keeps the
+// world's up and the headlight rides on the camera as before.
+const lightRigGroup = new THREE.Group(); lightRigGroup.name = 'lightRig';
+scene.add(lightRigGroup);
+lightRigGroup.add(stage.lights.key, stage.lights.rim, stage.lights.fill);
+function trackLights(){
+  lightRigGroup.rotation.y = Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z);
+}
+let lightingName = 'studio';
+let lightRig = null;
+let lightSpinAt = 0;
+function rigFromPreset(P){
+  const [x, y, z] = P.key[2], len = Math.hypot(x, y, z) || 1;
+  return { preset: P, az: (THREE.MathUtils.radToDeg(Math.atan2(x, z)) + 360) % 360,
+           el: THREE.MathUtils.radToDeg(Math.asin(y / len)),
+           key: P.key[1], keyColor: '#' + P.key[0].toString(16).padStart(6, '0'),
+           rim: P.rim[1], fill: P.fill[1], ambient: P.ambient[1], head: false, spin: false };
+}
+function keyPosition(){
+  const az = THREE.MathUtils.degToRad(lightRig.az + lightSpinAt), el = THREE.MathUtils.degToRad(lightRig.el);
+  stage.lights.key.position.set(KEY_RADIUS * Math.cos(el) * Math.sin(az), KEY_RADIUS * Math.sin(el), KEY_RADIUS * Math.cos(el) * Math.cos(az));
+}
+function applyRig(){
+  const P = lightRig.preset, L = stage.lights;
+  L.hemi.color.setHex(P.hemi[0]); L.hemi.groundColor.setHex(P.hemi[1]); L.hemi.intensity = P.hemi[2];
+  for (const k of ['rim', 'fill']){ L[k].color.setHex(P[k][0]); L[k].position.set(P[k][2][0], P[k][2][1], P[k][2][2]); }
+  L.ambient.color.setHex(P.ambient[0]);
+  L.key.color.set(lightRig.keyColor); L.key.intensity = lightRig.key;
+  L.rim.intensity = lightRig.rim; L.fill.intensity = lightRig.fill; L.ambient.intensity = lightRig.ambient;
+  L.head.intensity = lightRig.head ? P.head : 0;
+  keyPosition();
+  document.querySelectorAll('#lightRow .btn').forEach(b => b.classList.toggle('on', b.dataset.light === lightingName));
+  const set = (id, v) => { const e = document.getElementById(id); if (e && document.activeElement !== e) e.value = v; };
+  set('lKeyAz', Math.round(lightRig.az)); set('lKeyEl', Math.round(lightRig.el)); set('lKey', lightRig.key); set('lKeyCol', lightRig.keyColor);
+  set('lRim', lightRig.rim); set('lFill', lightRig.fill); set('lAmb', lightRig.ambient);
+  document.getElementById('lHead').checked = lightRig.head; document.getElementById('lSpin').checked = lightRig.spin;
+}
+function applyLighting(name){
+  lightingName = LIGHT_PRESETS[name] ? name : 'studio';
+  lightRig = rigFromPreset(LIGHT_PRESETS[lightingName]);
+  lightSpinAt = 0;
+  applyRig();
+}
+// a slider edit keeps the preset's colours and positions but the rig is now the user's
+function rigEdit(){
+  lightingName = 'custom';
+  lightRig.az = +document.getElementById('lKeyAz').value; lightRig.el = +document.getElementById('lKeyEl').value;
+  lightRig.key = +document.getElementById('lKey').value; lightRig.keyColor = document.getElementById('lKeyCol').value;
+  lightRig.rim = +document.getElementById('lRim').value; lightRig.fill = +document.getElementById('lFill').value;
+  lightRig.ambient = +document.getElementById('lAmb').value;
+  lightRig.head = document.getElementById('lHead').checked; lightRig.spin = document.getElementById('lSpin').checked;
+  applyRig();
+}
+// the orbit: a slow turn of the key light around the figure, one lap in 12 s. Timed on its
+// own clock, so a stalled frame (a hidden tab) cannot fling it round
+let lightPrev = 0;
+function stepLighting(){
+  const now = performance.now();
+  const dt = lightPrev ? Math.min((now - lightPrev) / 1000, 0.1) : 0;
+  lightPrev = now;
+  if (!lightRig || !lightRig.spin) return;
+  lightSpinAt = (lightSpinAt + dt * 30) % 360;
+  keyPosition();
+}
+// what the save keeps, and what a restored save gives back
+function lightingSaveState(){
+  if (!lightRig) return {};
+  const r = Object.assign({}, lightRig); delete r.preset;
+  return { lighting: lightingName, lightRig: Object.assign(r, { base: presetNameOf(lightRig.preset) }) };
+}
+function presetNameOf(P){ for (const k in LIGHT_PRESETS) if (LIGHT_PRESETS[k] === P) return k; return 'studio'; }
+function restoreLighting(saved){
+  if (saved && saved.lightRig && typeof saved.lightRig === 'object'){
+    const r = saved.lightRig, base = LIGHT_PRESETS[r.base] || LIGHT_PRESETS.studio;
+    lightRig = Object.assign(rigFromPreset(base), {
+      az: +r.az || 0, el: Number.isFinite(+r.el) ? +r.el : 45, key: Number.isFinite(+r.key) ? +r.key : base.key[1],
+      keyColor: /^#[0-9a-f]{6}$/i.test(r.keyColor) ? r.keyColor : rigFromPreset(base).keyColor,
+      rim: Number.isFinite(+r.rim) ? +r.rim : base.rim[1], fill: Number.isFinite(+r.fill) ? +r.fill : base.fill[1],
+      ambient: Number.isFinite(+r.ambient) ? +r.ambient : base.ambient[1], head: r.head === true, spin: !!r.spin });
+    lightingName = LIGHT_PRESETS[saved.lighting] ? saved.lighting : 'custom';
+    applyRig();
+  } else applyLighting(saved && saved.lighting);
+}
+document.querySelectorAll('#lightRow .btn').forEach(b => b.onclick = () => { applyLighting(b.dataset.light); saveState(); });
+for (const id of ['lKeyAz', 'lKeyEl', 'lKey', 'lKeyCol', 'lRim', 'lFill', 'lAmb']){
+  const e = document.getElementById(id); e.oninput = rigEdit; e.onchange = () => { rigEdit(); saveState(); };
+}
+for (const id of ['lHead', 'lSpin']) document.getElementById(id).onchange = () => { rigEdit(); saveState(); };
 const fitRenderer = stage.fit;
 initAssets(renderer);
 
@@ -1148,7 +1307,7 @@ function saveState(){
       charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair,
                    fur: charColor.fur, oeye: charColor.oeye },
       otomo: otCapture(),
-      orbitLocked, spinStep, wireOn, hideCursor,
+      orbitLocked, spinStep, wireOn, hideCursor, ...lightingSaveState(),
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, arrow: arrowSel.value,
@@ -1274,7 +1433,7 @@ const WEAPON_UI = true;
 // the LOW byte. Confirmed from the RGB565->RGBA converter at 0x5daad4, which puts the 565
 // red bits into bits 7-3, green into 15-11, blue into 23-19. Reading it as 0xAARRGGBB
 // instead swaps red and blue and produces plausible-looking but wrong pairs.
-// 4th field is the animation: 'fade' (slow A <-> B) or 'pulse' (rests on A, brief trip
+// 4th field is the animation: 'fade' (slow A <-> B), 'fastfade' (the same, twice as fast) or 'pulse' (rests on A, brief trip
 // to B). Assignment is Raven's, from the game. Each row's dropdown in the picker overrides
 // it at runtime and the choice persists.
 const DEVIANTS = [
@@ -1332,7 +1491,9 @@ function deviantMix(t, anim){
     const d = u - 0.72;
     return Math.exp(-(d * d) / 0.0045);
   }
-  const P = 5.0;                      // slow, symmetric A <-> B
+  // 'fastfade': the same swing at twice the speed (Raven, 2026-09-04: "make a third
+  // timing that is twice as fast")
+  const P = anim === 'fastfade' ? 2.5 : 5.0;   // slow, symmetric A <-> B
   return 0.5 - 0.5 * Math.cos((t / P) * Math.PI * 2);
 }
 
@@ -2410,11 +2571,13 @@ renderer.setAnimationLoop(() => {
   weapon.step();
   updateDepthBias();
   paintAnim();
+  stepLighting();
   stepDeviant(performance.now()/1000);
   if (rainbowOn) applyCharColors(performance.now()/1000);
   controls.update();
-  head.position.copy(camera.position);
+  trackLights(); head.position.copy(camera.position);
   renderer.render(scene, camera);
+  recFrame();
 });
 
 // the game's poses go in their own group, after the two authored stances
@@ -3002,6 +3165,7 @@ const slotDeviant = { helm:null, body:null, arm:null, wst:null, leg:null, cloth:
 const DEV_SLOTS = SLOTS.concat(['cloth'], OT_PIG);
 const ANIM_OPTS = a =>
   '<option value="fade"' + (a === 'fade' ? ' selected' : '') + '>Fade</option>' +
+  '<option value="fastfade"' + (a === 'fastfade' ? ' selected' : '') + '>Fast Fade</option>' +
   '<option value="pulse"' + (a === 'pulse' ? ' selected' : '') + '>Pulse</option>';
 document.getElementById('pigDevList').innerHTML =
   '<h3 class="stage-h">Deviant pigments</h3>' +
@@ -3168,7 +3332,7 @@ function applyDevAnimOverrides(o){
   if (!o) return;
   for (const [nm, a] of Object.entries(o)){
     const i = DEVIANTS.findIndex(x => x[0] === nm);
-    if (i < 0 || (a !== 'fade' && a !== 'pulse')) continue;
+    if (i < 0 || (a !== 'fade' && a !== 'pulse' && a !== 'fastfade')) continue;
     DEVIANTS[i][3] = a; devAnimOverride[nm] = a;
     const selEl = document.querySelector('select.devanim[data-dev="' + i + '"]');
     if (selEl) selEl.value = a;
@@ -3210,7 +3374,30 @@ const _dcA=new THREE.Color(), _dcB=new THREE.Color(), _dcM=new THREE.Color();
 // Per slot, because a Deviant pigment is assigned per armour piece. Overwrites that slot's
 // entry in slotPigment each frame; readSlotPigments sets the resting colour, this animates
 // it. A slot whose row is unticked is skipped, so unticking stops the animation too.
+// The Esurient set's dye region glows and fades in game whatever pigment is on it (Raven,
+// 2026-09-03: "a pigment area that, similar to Deviant armors, has a fade like effect";
+// 2026-09-04: "give Esurient armors the fade effect for the time being"). The ROM gives
+// the region a constant emission (0.7 grey on the body, 0.5 on the arms) and nothing
+// else -- no animation resource, no series flag -- so what pulses it is still unread
+// (build/notes/phase3.md). APPROX, per Raven's direction the same day ("Switch it to Fade
+// again, make a third timing that is twice as fast. Have this pigment be <pigment> fade to
+// black"): the region -- its pigment when one is on, its plain texture otherwise, glow
+// included -- fades to black and back on the fast fade (2.5 s). It ran as an emission swell
+// on the fade, then the pulse, first. Keyed to the model's own material names, so no other
+// set is touched.
+// Every Esurient set (Raven, 2026-09-04: "ensure all Esurient armors have the fade effect"):
+// 149 / 150 (Blademaster / Gunner), 278 / 279 (R), 398 / 399 (Z, whose glow materials are
+// named _syme_ for the male and _symemi_ for the female pieces), 475 (XR, one model for
+// both). Each glow material carries its own emission constant from the ROM (0.8 helm,
+// 0.7 body, 0.5 limbs, 0.1 on the Z bodies, 0 on a few R and XR pieces) as its emissive
+// colour, so the fade scales that level rather than replacing it.
+const ESURIENT_SYM = /_[mf]_[a-z]+(149|150|278|279|398|399|475)_sym(e|emi)?_$/;
+function stepEsurient(t){
+  const k = deviantMix(t, 'fastfade');
+  for (const m of armorMats) if (ESURIENT_SYM.test(m.name)) setRegionDark(m, k);
+}
 function stepDeviant(t){
+  stepEsurient(t);
   let any = false;
   for (const sl of DEV_SLOTS){
     const d = slotDeviant[sl];
@@ -3292,6 +3479,7 @@ paintOrbitLock();
 if (SAVED && SAVED.spinStep > 0 && SAVED.spinStep < SPIN_STEPS.length) { spinStep = SAVED.spinStep; paintSpin(); }
 if (SAVED && SAVED.wireOn === true) { wireOn = true; paintWire(); }
 if (SAVED && SAVED.hideCursor === true) { hideCursor = true; paintCursor(); }
+restoreLighting(SAVED);                       // the studio rig unless a preset or a custom rig was saved
 
 // restore the saved session before the first load so nothing flashes then changes
 if (SAVED) {
@@ -3761,7 +3949,8 @@ saveState();
 
 window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, MIX,
   pose, weapon, MOUNT_ROM,
-  setGender, switchHunter, updateDepthBias,
+  setGender, switchHunter, updateDepthBias, recFrame, applyLighting, LIGHT_PRESETS, stepLighting,
+  lightRig: () => Object.assign({ name: lightingName }, lightRig, { preset: undefined }),
   hunters: () => ({ names: HUNTERS.map(h => h.name), genders: HUNTERS.map(h => h.set ? h.set.gender : null), index: hunterIndex }),
   // the ROM chain as applied right now: the clip's ids, and per part the index, joint,
   // record, rest scale and provenance
@@ -4240,12 +4429,11 @@ document.getElementById('shotBtn').onclick = () => {
   const btn = document.getElementById('shotBtn'), el = renderer.domElement;
   const prev = renderer.getPixelRatio();
   const cap = 4096 / Math.max(el.clientWidth, el.clientHeight, 1);
-  // not while a clip is recording: resizing the drawing buffer ends the captured stream
-  const ratio = recorder ? prev : Math.max(prev, Math.min(prev * 2, cap));
+  const ratio = Math.max(prev, Math.min(prev * 2, cap));
   let url;
   try {
     if (ratio !== prev) renderer.setPixelRatio(ratio);
-    head.position.copy(camera.position);
+    trackLights(); head.position.copy(camera.position);
     renderer.render(scene, camera);
     url = el.toDataURL('image/png');
   } finally {
@@ -4265,45 +4453,74 @@ document.getElementById('shotBtn').onclick = () => {
 // window is doing. Anything longer is a screen recorder's job, which the chroma backdrops
 // and the hideable controls are already there for; this one stops itself at CLIP_MAX so a
 // forgotten recording cannot fill memory.
-// Neither VP9 nor VP8 keeps the canvas's alpha through MediaRecorder -- both come back
-// opaque -- so a clip of the transparent canvas would be black mush where a screenshot is
-// cleanly cut out. For the length of a recording the SCENE takes the backdrop the page is
-// painting behind it: the flat chroma colour when a chroma backdrop is on, which is what
-// makes a clip keyable, and the stage colour otherwise, which is what the viewer sees.
-function backdropColor(){
-  const el = document.querySelector('.content');
-  const css = el ? getComputedStyle(el).backgroundColor : '';
-  try { return new THREE.Color(css); } catch (e) { return new THREE.Color(0x0e1013); }
-}
+// The recorder does not stream the WebGL canvas itself: streamed directly, the H.264 writer
+// produced no frames at all in testing while the same frames drawn into a 2D canvas encoded
+// fine, so every frame the loop renders is copied into recCanvas and THAT is what the
+// recorder streams. Two things come free with the copy. The backdrop: no encoder keeps the
+// canvas's alpha (VP9, VP8 and H.264 all come back opaque), so a clip of the transparent
+// canvas would be black mush where a screenshot is cleanly cut out -- the copy paints the
+// backdrop the page is painting behind the model first, the flat chroma colour when a
+// chroma backdrop is on (which is what makes a clip keyable) and the stage colour
+// otherwise. And the size: H.264 wants even dimensions, and the copy's size is fixed for the
+// length of the clip whatever the drawing buffer does.
 const CLIP_TIP = 'Record a clip of the render area';
+const recCanvas = document.createElement('canvas');
+let recCtx = null, recBackdrop = '#000';
+function recFrame(){
+  if (!recorder || !recCtx) return;
+  recCtx.fillStyle = recBackdrop;
+  recCtx.fillRect(0, 0, recCanvas.width, recCanvas.height);
+  recCtx.drawImage(renderer.domElement, 0, 0, recCanvas.width, recCanvas.height);
+}
 const CLIP_MAX = 30;
-const CLIP_TYPE = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+// MP4 with H.264 wherever the browser can write it (Chrome 126 and later): it plays where a
+// WebM does not -- phones, Discord, the Windows viewer (Raven, 2026-09-04: "are we able to
+// make mp4"). WebM stays as the fallback, and the file's extension follows the container.
+const CLIP_TYPE = ['video/mp4;codecs=avc1.64001F', 'video/mp4;codecs=avc1', 'video/mp4',
+                   'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
   .find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || '';
+const CLIP_EXT = CLIP_TYPE.startsWith('video/mp4') ? 'mp4' : 'webm';
 let recorder = null, recTimer = null, recStart = 0;
 {
   const btn = document.getElementById('clipBtn');
-  if (!CLIP_TYPE || !renderer.domElement.captureStream){
+  if (!CLIP_TYPE || !recCanvas.captureStream){
     btn.hidden = true;                       // no recorder in this browser: no dead button
   } else {
     const rest = () => {
       clearInterval(recTimer); recTimer = null; recorder = null;
-      scene.background = null;               // back to the transparent canvas
       setIcon(btn, 'rec'); setLabel(btn, 'Record', CLIP_TIP); btn.classList.remove('on');
     };
     btn.onclick = () => {
       if (recorder){ recorder.stop(); return; }
       const chunks = [];
+      const el = renderer.domElement;
+      recCanvas.width = Math.max(2, el.width & ~1); recCanvas.height = Math.max(2, el.height & ~1);
+      recCtx = recCanvas.getContext('2d');
+      const content = document.querySelector('.content');
+      recBackdrop = content ? getComputedStyle(content).backgroundColor : '#000';
       // 60 frames a second: the render loop draws on every animation frame, and a stance is
       // authored at 60, so the clip carries the animation as the viewer plays it
-      recorder = new MediaRecorder(renderer.domElement.captureStream(60),
+      recorder = new MediaRecorder(recCanvas.captureStream(60),
                                    { mimeType: CLIP_TYPE, videoBitsPerSecond: 16e6 });
       recorder.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
       recorder.onstop = () => {
-        saveBlob(new Blob(chunks, { type: CLIP_TYPE.split(';')[0] }), captureName('webm'));
+        const blob = new Blob(chunks, { type: CLIP_TYPE.split(';')[0] });
+        // A recording with no frames behind it (the tab hidden, the loop paused) comes back
+        // as a few header bytes, and the MP4 writer as nothing at all: say so instead of
+        // saving an empty file.
+        if (blob.size < 2048){
+          rest();
+          setLabel(btn, 'Nothing recorded', 'The render area produced no frames: keep the tab visible while recording');
+          setTimeout(() => setLabel(btn, 'Record', CLIP_TIP), 2500);
+          return;
+        }
+        saveBlob(blob, captureName(CLIP_EXT));
         rest();
       };
-      scene.background = backdropColor();
-      recorder.start();
+      // a timeslice, so the muxer gets its data as it goes: the MP4 writer handed back an
+      // empty file when everything arrived at stop
+      recorder.start(250);
+      recFrame();
       recStart = performance.now();
       setIcon(btn, 'stop'); btn.classList.add('on');
       const tick = () => {
@@ -4398,7 +4615,7 @@ window.__view.shot = async function(run, nameArg, atArg){
     pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
   }
   stepDeviant(0.5); weapon.stepMotion(); weapon.step();
-  controls.update(); head.position.copy(camera.position);
+  controls.update(); trackLights(); head.position.copy(camera.position);
   renderer.render(scene, camera);
   const url = renderer.domElement.toDataURL('image/png');
   const res = await fetch('/shot?run=' + encodeURIComponent(run) + '&name=' + encodeURIComponent(name),

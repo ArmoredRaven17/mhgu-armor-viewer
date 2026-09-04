@@ -132,7 +132,10 @@ export function applyTint(mat){
       // materials) instead of the mesh's UVs
       uViewUv: { value: 0 },
       // Schlick's F0 for the sphere map (fFresnelSchlickRGB)
-      uF0: { value: 1 }
+      uF0: { value: 1 },
+      // 0..1: how far the dye region (and the material's glow) is pulled toward black.
+      // The Esurient animation drives it (setRegionDark); nothing else touches it.
+      uDark: { value: 0 }
     };
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, mat.userData.u);
@@ -146,6 +149,7 @@ export function applyTint(mat){
                  ' uniform vec3 uChar; uniform float uCharAmt; uniform float uRegion;' +
                  ' uniform float uAlphaCut;' +
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform float uF0;' +
+                 ' uniform float uDark;' +
                  ' float gGloss = 0.0; void main() {')
         .replace('#include <map_fragment>',
           `#ifdef USE_MAP
@@ -200,9 +204,16 @@ export function applyTint(mat){
              }
                diffuseColor.rgb *= base;
              }
+             // the region fades toward black by uDark (the Esurient animation); on a region
+             // material dye is 1 everywhere, so the whole material goes with it
+             diffuseColor.rgb *= 1.0 - uDark * dye;
              // hand the sampled alpha to alphaTest / blending where the map is a real cutout
              diffuseColor.a *= mix( 1.0, texel.a, uAlphaCut );
            #endif`)
+        // the glow goes to black with the region
+        .replace('#include <emissivemap_fragment>',
+          `#include <emissivemap_fragment>
+           totalEmissiveRadiance *= 1.0 - uDark;`)
         // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
         // Sample it with the view-space normal and add it on top of the lit color.
         .replace('#include <dithering_fragment>',
@@ -241,6 +252,13 @@ export function applyTint(mat){
   u.uEnvAmt.value = envStrength(mat);
 }
 export const setTint = applyTint;
+
+// How far a material's dye region and glow sit toward black, 0 (its colour) to 1 (black).
+// Written every frame by the Esurient animation in index.html.
+export function setRegionDark(mat, k){
+  const u = mat.userData.u;
+  if (u) u.uDark.value = k;
+}
 
 // The sphere map's weight: nothing without a map; with the ROM's material, the reflective
 // colour scales it (fReflectiveColor); without one, the old rule -- an env token in the name.
