@@ -1206,6 +1206,24 @@ function restoreLighting(saved){
     applyRig();
   } else applyLighting(saved && saved.lighting);
 }
+// The set file's shape (Save / Save As, and each hunter slot's bank, since a slot banks
+// currentSet): the preset by name and the rig spelled out, so a shared file reads plainly
+// (Raven, 2026-09-04: "I want it to be stored by slot and to the JSON"). A file or a slot
+// without one keeps the rig on screen, as a slot without a camera keeps the view.
+function lightingFileState(){
+  if (!lightRig) return null;
+  return { preset: lightingName, base: presetNameOf(lightRig.preset),
+           keyAngle: Math.round(lightRig.az * 10) / 10, keyHeight: Math.round(lightRig.el * 10) / 10,
+           key: lightRig.key, keyColor: lightRig.keyColor, rim: lightRig.rim, fill: lightRig.fill,
+           ambient: lightRig.ambient, headlight: !!lightRig.head, orbit: !!lightRig.spin };
+}
+function applyLightingFile(l){
+  if (!l || typeof l !== 'object') return;
+  if (l.keyAngle === undefined && LIGHT_PRESETS[l.preset]){ applyLighting(l.preset); return; }   // a preset alone
+  restoreLighting({ lighting: l.preset, lightRig: {
+    base: l.base, az: l.keyAngle, el: l.keyHeight, key: l.key, keyColor: l.keyColor, rim: l.rim, fill: l.fill,
+    ambient: l.ambient, head: l.headlight === true, spin: l.orbit === true } });
+}
 document.querySelectorAll('#lightRow .btn').forEach(b => b.onclick = () => { applyLighting(b.dataset.light); saveState(); });
 for (const id of ['lKeyAz', 'lKeyEl', 'lKey', 'lKeyCol', 'lRim', 'lFill', 'lAmb']){
   const e = document.getElementById(id); e.oninput = rigEdit; e.onchange = () => { rigEdit(); saveState(); };
@@ -3949,7 +3967,7 @@ saveState();
 
 window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, MIX,
   pose, weapon, MOUNT_ROM,
-  setGender, switchHunter, updateDepthBias, recFrame, applyLighting, LIGHT_PRESETS, stepLighting,
+  setGender, switchHunter, updateDepthBias, recFrame, applyLighting, LIGHT_PRESETS, stepLighting, currentSet, applySet,
   lightRig: () => Object.assign({ name: lightingName }, lightRig, { preset: undefined }),
   hunters: () => ({ names: HUNTERS.map(h => h.name), genders: HUNTERS.map(h => h.set ? h.set.gender : null), index: hunterIndex }),
   // the ROM chain as applied right now: the clip's ids, and per part the index, joint,
@@ -4047,6 +4065,7 @@ function currentSet(){
     // stance by label, the form override and the kinsect
     weapon: weaponFileState(),
     camera: cameraState(),
+    lighting: lightingFileState(),
     // The Palico, in the same shape and the same spirit as the hunter above: every id
     // carries its name and every index its label, so a shared file stays readable and a
     // reordered list cannot silently change what it means.
@@ -4281,7 +4300,8 @@ async function loadSet(text, btn){
 // "none", no pigments or Deviant pulses, face and hair Type 1, clothing Type 1, no colour
 // overrides, pose g:0, no weapon, and this camera. The first-visit sets (DEFAULT_SET,
 // DEFAULT_MALE) are examples and stay as they are. The files' Palico block equals the
-// Palico default and is not applied by a hunter reset.
+// Palico default and is not applied by a hunter reset. Lighting: Studio -- the files predate
+// the Lighting panel, and a reset puts the rig back as it does the camera (2026-09-04).
 const RESET_HUNTER = {
   app: 'MHGU Armor Viewer', version: 3,
   pieces: { helm: 'chakra', body: 'chakra', arm: 'chakra', wst: 'chakra', leg: 'chakra' },
@@ -4289,7 +4309,7 @@ const RESET_HUNTER = {
   deviant: {}, devAnim: {},
   hunter: { face: 'Type 1', hair: 'Type 1', body: true, faceStyle: 0, hairStyle: 0,
             clothing: 'Type 1', skinColor: null, eyeColor: null, hairColor: null },
-  pose: 'g:0', weapon: null,
+  pose: 'g:0', weapon: null, lighting: { preset: 'studio' },
   camera: { p: [-0.0159, 0.403, 3.2224], t: [-0.137, -0.3196, -0.0258] }
 };
 // What Reset restores for the Palico: the otomo block of Raven's ResetPalico.json
@@ -4393,6 +4413,8 @@ async function applySet(d, opt){
   await applyWeaponFile((d.weapon && typeof d.weapon === 'object') ? d.weapon : null);
   // Opening a set is a load, not an incidental UI change, so it may frame -- but
   // only when the file carries no camera of its own.
+  // the rig, where the file or the slot carries one (2026-09-04); without, it stays as it is
+  applyLightingFile(d.lighting);
   if (opt.camera !== false && !applyCameraState(d.camera)) frameAll();
   saveState();
 }
