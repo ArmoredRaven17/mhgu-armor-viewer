@@ -389,7 +389,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <section class="panel" id="huntersPanel" data-open="false">
         <button class="panel-head">Hunters <span class="chev">&#9662;</span></button>
         <div class="panel-body">
-          <p class="hint">Each hunter keeps its own body, gear, pigments, pose and weapon</p>
+          <p class="hint">Each hunter keeps its own body, gear, pigments, pose, weapon and camera</p>
           <ol id="hunterList" class="chain hunters"></ol>
           <div class="row">
             <button id="hunterNew" class="btn tiny" title="A new hunter, starting as a copy of this one">New</button>
@@ -2047,9 +2047,11 @@ genderSel.onchange = () => setGender(genderSel.value).then(saveState);
 // current Male/Female slots. Add a panel to display the list of hunter slots." A slot is a
 // named hunter: { name, set }, where set is a version-3 set object -- exactly what Save
 // writes and Open reads -- so a slot is applied with applySet and banked with currentSet.
-// Each hunter keeps its own weapon (Raven: "Per hunter"). The Palico and the camera are
-// not part of a switch: the Palico is its own figure, and only Fit to View, Open and Reset
-// move the camera. The hunter on screen is banked into its slot by every save.
+// Each hunter keeps its own weapon (Raven: "Per hunter") and its own camera (Raven,
+// 2026-09-03: "I want the camera selected for that slot to be saved, in case someone has a
+// particular angle for the pose/stance they selected"): a switch restores the view the slot
+// was left with. The Palico is not part of a switch, being its own figure. The hunter on
+// screen is banked into its slot, camera included, by every save.
 const HUNTERS = [];
 let hunterIndex = 0, hunterBusy = false, hunterRenaming = false;
 const hunterList = document.getElementById('hunterList');
@@ -2113,13 +2115,15 @@ function paintHunters(){
 async function switchHunter(k, opt){
   opt = opt || {};
   if (!HUNTERS[k] || (k === hunterIndex && !opt.force) || hunterBusy) return;
+  if (!opt.noBank) bankHunter();     // before the busy flag goes up: the bank skips while busy
   hunterBusy = true;
   try {
-    if (!opt.noBank) bankHunter();
     const from = HUNTERS[hunterIndex], to = HUNTERS[k];
     if (to.inheritWeapon){ to.set.weapon = (from && from.set && from.set.weapon) || null; delete to.inheritWeapon; }
     hunterIndex = k; paintHunters();
-    await applySet(to.set, { camera: !!to.fresh, otomo: false });
+    // the slot's own view when it has one; a slot without (one seeded from the old
+    // per-gender memory, never shown yet) keeps the view on screen
+    await applySet(to.set, { camera: !!(to.set && to.set.camera), otomo: false });
     delete to.fresh;
   } finally { hunterBusy = false; }
   saveState();

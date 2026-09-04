@@ -66,10 +66,16 @@ function recomposedJoint(world, frame, out){
 // Bowgun attachments, as the game names them (Raven, 2026-09-03): the Heavy Bowgun's
 // triggers 36 / 17 / 16 are None / Shield / Power Barrel, the Light Bowgun's 36 / 18 / 19
 // are None / Long Barrel / Silencer. The select is titled Attachment and lists None first.
+// 49 / 50 switch the same barrel and shield parts (1 and 2) plus a second variant part on
+// the special models whose display type has them (the Skeletal and Cosmic Cannon, the
+// Goldcannon, which has no 16 / 17 at all); which player state fires them is not read yet
 const FORM_NAMES = {
-  w04: [[36, 'None'], [17, 'Shield'], [16, 'Power Barrel']],
+  w04: [[36, 'None'], [17, 'Shield'], [16, 'Power Barrel'], [50, 'Shield (alt)'], [49, 'Power Barrel (alt)']],
   w06: [[36, 'None'], [18, 'Long Barrel'], [19, 'Silencer']],
 };
+// triggers the game fires by itself from the player's state: 0 at rest, 1 drawn, 2 display,
+// 3 hold -- never an attachment, so never offered in the select
+const STATE_TRIGGERS = new Set([0, 1, 2, 3]);
 
 export class WeaponRig {
   constructor(opt){
@@ -127,6 +133,14 @@ export class WeaponRig {
     // the model's own motion/gimmick group (ROM: pl_wNN.plweplist mGmkMotNo, shipped as
     // models[id].g); the class value is only the fallback for a model the list lacks
     this.motGroup = (m && m.g !== undefined) ? m.g : ((cj.shared.motGroup && cj.shared.motGroup.value) || 0);
+    // the PART table (`.plgmktype` group) is picked by the list's mDispType, shipped as
+    // models[id].disp, not by the motion group: across every class the display type's
+    // trigger list names exactly the parts the model carries (the Skeletal Cannon's 3-5, the
+    // Loyal Thunder's 3, the Goldcannon's 3-5 ...) while the motion group's often names parts
+    // the model has not got. Read off the motion group, those extra parts never switched and
+    // every variant showed at once (Raven, 2026-09-03: "some have attachments that render
+    // oddly").
+    this.gmkGroup = (m && m.disp !== undefined) ? m.disp : 0;
     if (!m) return;
     const built = [];
     const jobs = [this.buildPart('main', m.main.glb, m.main.mats, built)];
@@ -607,9 +621,9 @@ export class WeaponRig {
   // accumulate, so the viewer rebuilds the state the way the game reaches it: every part on,
   // trigger 0, then the current trigger. The model's gimmick group is the motion group.
   formOptions(){
-    const g = this.gmk() && this.gmk()[String(this.motGroup)];
+    const g = this.gmk() && this.gmk()[String(this.gmkGroup)];
     if (!g) return [];
-    const trgs = g.filter(r => (r.on && r.on.length) || (r.off && r.off.length)).map(r => r.trg);
+    const trgs = g.filter(r => ((r.on && r.on.length) || (r.off && r.off.length)) && !STATE_TRIGGERS.has(r.trg)).map(r => r.trg);
     // the named attachments first, in the game's order; anything unnamed keeps the list order
     const named = (FORM_NAMES[this.cls] || []).map(e => e[0]).filter(t => trgs.includes(t));
     return named.concat(trgs.filter(t => !named.includes(t)));
@@ -634,10 +648,14 @@ export class WeaponRig {
     const trg = this.currentTrigger(ids, mounts);
     if (trg === this._appliedTrg) return;
     this._appliedTrg = trg;
-    const g = this.gmk() && this.gmk()[String(this.motGroup)];
+    const g = this.gmk() && this.gmk()[String(this.gmkGroup)];
     const recs = [];
     if (g){
+      // the game's order: 0 at rest, 1 once drawn, then the mode or attachment trigger --
+      // each accumulates on the last (a drawn special bowgun deploys its part 3 on trigger 1
+      // and keeps it under the attachment trigger)
       const r0 = g.find(r => r.trg === 0); if (r0) recs.push(r0);
+      if (this.drawn && trg !== 1){ const r1 = g.find(r => r.trg === 1); if (r1) recs.push(r1); }
       if (trg !== 0){ const r = g.find(r => r.trg === trg); if (r) recs.push(r); }
     }
     for (const kind of ['main', 'second']){
@@ -669,7 +687,7 @@ export class WeaponRig {
     return { cls: this.cls, model: this.modelId, kinsect: this.kinsectId, arrow: this.arrowKey,
              playerOrder: MT_ORDER[this.playerOrder], drawn: this.drawn,
              stance: this.stance ? this.stance.clip : null, ids: Array.from(ids).sort((a, b) => a - b),
-             synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, parts };
+             synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, gmkGroup: this.gmkGroup, parts };
   }
   // every mesh part and whether it is drawn
   parts_(){
