@@ -256,20 +256,10 @@ header #bar .btn.tiny{margin-right:0}
   width:100%;min-width:0;max-width:100%;text-overflow:ellipsis;
 }
 
-/* A select opened as an in-page LIST rather than a native popup -- see the comment on
-   openAsList(). Being page-rendered is the whole point: it takes the scrollbar above. */
-/* clamp, not min(): a viewport that reports 0 height -- a background tab does -- makes
-   min(62vh, 560px) evaluate to 0 and the list collapses to nothing. clamp keeps a floor. */
-/* max-width:none matters: the slot selects carry max-width:100% to keep long names from
-   forcing the sidebar wide, and once this is position:fixed that 100% resolves against
-   the VIEWPORT instead of the panel -- which collapses the list to the width of its own
-   scrollbar wherever the viewport reports 0. The explicit width set in openAsList wins. */
-select.aslist{position:fixed;z-index:70;overflow-y:auto;max-width:none;
-  max-height:clamp(240px,62vh,560px);
-  background:var(--bg2);border:1px solid var(--accent);border-radius:8px;
-  padding:2px;box-shadow:0 10px 28px #000a}
-select.aslist option{padding:5px 8px}
-select.aslist optgroup{padding-top:2px}
+/* no focus ring on selects: a select just picked stays focused, and the ring around it
+   read as a stray highlight (Raven, 2026-09-04: "We don't need the highlight around the
+   box") -- Chrome keeps :focus-visible on after its popup closes, so it goes outright */
+select:focus{outline:none}
 .field input[type=text]::placeholder{color:var(--text-hint);opacity:1}
 input[type=range]{width:100%;accent-color:var(--accent)}
 
@@ -3770,67 +3760,14 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
                                      await buildWeaponLists(); await applyWeaponState(); return weapon.audit(); },
   get deviant(){return deviant}, get pigment(){return tint.pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
 
+// The long lists (equipment, poses) use the browser's own popup like every other select
+// (Raven, 2026-09-04: "I want the drop down in Equipment to behave like the drop downs in
+// other panels"). An in-page listbox stood in for it for a while, for the sake of a styled
+// scrollbar -- Chrome draws the native popup itself and page CSS never reaches it -- but
+// it could not be made to look and act like a dropdown.
+
 // Collapsible sidebar panels, matching the sibling apps -- but as an ACCORDION:
-// Chrome draws a <select>'s POPUP itself, and page CSS never reaches it -- so the
-// dropdown keeps a hairline scrollbar no matter how wide ::-webkit-scrollbar is, which is
-// exactly what Raven kept seeing on both the deployed and the local build. A select
-// rendered IN PAGE does take it (a `size` listbox measured 23px against the same rules).
-//
-// So on open, the long lists become an in-page listbox positioned where the popup would
-// have been, and go back to a normal closed select as soon as a choice is made or focus
-// leaves. Same element, same options, same change handlers -- only the rendering differs.
-function openAsList(sel){
-  if (sel.dataset.aslist) return;
-  const r = sel.getBoundingClientRect();
-  sel.dataset.aslist = '1';
-  sel.dataset.prevSize = sel.size;
-  sel.size = 14;
-  sel.classList.add('aslist');
-  sel.style.left = r.left + 'px';
-  sel.style.width = r.width + 'px';
-  // open downwards, or upwards when there is more room above
-  const below = window.innerHeight - r.bottom;
-  if (below < 240 && r.top > below) { sel.style.bottom = (window.innerHeight - r.top) + 'px'; sel.style.top = ''; }
-  else { sel.style.top = r.bottom + 'px'; sel.style.bottom = ''; }
-  // Keep the current choice in view, which the native popup does for free. `offsetTop` on
-  // an <option> reads 0 in Chrome, so estimate from the row index instead -- optgroup
-  // headers make rows slightly uneven, which only costs a row or two of accuracy.
-  const i = sel.selectedIndex;
-  if (i > 0){
-    const row = sel.scrollHeight / Math.max(sel.options.length, 1);
-    sel.scrollTop = Math.max(0, (i * row) - sel.clientHeight / 2);
-  }
-}
-function closeAsList(sel){
-  if (!sel.dataset.aslist) return;
-  delete sel.dataset.aslist;
-  sel.size = +sel.dataset.prevSize || 0;
-  sel.classList.remove('aslist');
-  sel.style.left = sel.style.top = sel.style.bottom = sel.style.width = '';
-}
-function asListify(sel){
-  if (!sel || sel.dataset.aslistWired) return;
-  sel.dataset.aslistWired = '1';
-  sel.addEventListener('mousedown', e => {
-    if (sel.dataset.aslist) return;       // a click on an option must select it
-    e.preventDefault();                   // suppress the native popup
-    openAsList(sel);
-    sel.focus();
-  });
-  sel.addEventListener('change', () => closeAsList(sel));
-  sel.addEventListener('blur', () => closeAsList(sel));
-  sel.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAsList(sel); sel.blur(); } });
-}
-// the long ones: equipment on both figures, and the pose list
-for (const sel of document.querySelectorAll('select[data-slot], select[data-otslot], #pose, #otPose'))
-  asListify(sel);
-// Capture phase, so a scroll ANYWHERE closes the list -- it is position:fixed and would
-// otherwise be left behind by the sidebar. But that includes scrolling the list ITSELF,
-// which closed it on the first drag and made it unusable. Only outside scrolls count.
-window.addEventListener('scroll', e => {
-  for (const sel of document.querySelectorAll('select.aslist'))
-    if (e.target !== sel) closeAsList(sel);
-}, true);
+
 
 // opening one closes the rest, so the sidebar never grows past the viewport.
 // Clicking the open panel still closes it, leaving all of them shut.
