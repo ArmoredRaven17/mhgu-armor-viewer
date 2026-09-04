@@ -80,6 +80,8 @@ export class PoseDriver {
     this.figure = 'hunter';
     this.mixer = null; this.proxyBones = null; this.action = null; this.anchor = null;
     this.loopTimer = null;
+    this.loopMode = null;     // (entry) => 'once' | 'repeat' | null: the caller's rule, else the per-file default
+    this.onFinished = null;   // called when a one-shot action reaches its end (the stance chain)
     this.ground = null;   // the Y the feet rest at, so a pose cannot sink or float
     this.bounds = null;   // the union of the WHOLE loop, so the camera is set once
     this.center = null;   // the body's own centre, averaged over the loop
@@ -133,23 +135,28 @@ export class PoseDriver {
 
     this.action = this.mixer.clipAction(clip);
     if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
-    // Weapon stances play once, HOLD on the last frame, then restart. Looping them straight
-    // through reads as a twitch -- most are under a second -- and now that every clip ships
-    // rather than only the _loop ones, the one-shots snapping back mid-swing is worse. The
-    // lobby poses are authored as held loops and keep looping cleanly.
-    if (/poses\/weapons\//.test(entry.file || '')) {
+    // Loop mode: the caller's rule first (index.html's Loop button, the stance chain), else
+    // the per-file default. Weapon stances play once and HOLD on the last frame: looping
+    // them straight through reads as a twitch -- most are under a second -- and now that
+    // every clip ships rather than only the _loop ones, the one-shots snapping back
+    // mid-swing is worse. The lobby poses are authored as held loops and keep looping.
+    const mode = this.loopMode ? this.loopMode(entry) : null;
+    const once = mode ? mode === 'once' : /poses\/weapons\//.test(entry.file || '');
+    if (once) {
       this.action.setLoop(THREE.LoopOnce);
       this.action.clampWhenFinished = true;
-      if (POSE_LOOP) this.mixer.addEventListener('finished', () => {
-        const mine = this.mixer;                    // a pose change swaps the mixer out
-        this.loopTimer = setTimeout(() => {
-          this.loopTimer = null;
-          if (this.mixer === mine && this.action) this.action.reset().play();
-        }, POSE_PAUSE * 1000);
-      });
     } else {
       this.action.setLoop(THREE.LoopRepeat);
     }
+    const mine = this.mixer;                    // a pose change swaps the mixer out
+    this.mixer.addEventListener('finished', () => {
+      if (this.mixer !== mine) return;
+      if (this.onFinished) this.onFinished();
+      if (POSE_LOOP) this.loopTimer = setTimeout(() => {
+        this.loopTimer = null;
+        if (this.mixer === mine && this.action) this.action.reset().play();
+      }, POSE_PAUSE * 1000);
+    });
     this.action.reset().play();
 
     // Frame the ENTIRE loop, not the frame that happens to be showing. Framing at t=0 set
@@ -220,7 +227,11 @@ export class PoseDriver {
   // figure this pose drives
   step(roots){
     if (!this.mixer || !this.proxyBones) return;
-    this.mixer.update(this.clock.getDelta());
+    // The clock keeps running while the tab is hidden or the loop stalls; fed raw, that
+    // first delta back can exceed a one-shot's length and finish it on the spot (Play from
+    // the last frame did exactly that in the harness). A tenth of a second is the most one
+    // frame is allowed to advance, the same clamp the weapon's own motion uses.
+    this.mixer.update(Math.min(this.clock.getDelta(), 0.1));
     this.anchorProxy();
 
     // WORLD matrices, for every piece -- armour included. Copying LOCAL transforms only

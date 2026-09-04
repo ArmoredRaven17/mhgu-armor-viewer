@@ -8,8 +8,12 @@
 //   blend state  BSSolid opaque; BSBlendAlpha transparent, no depth write, drawn after the
 //                opaque parts; BSAddAlpha additive and unlit (the glow parts)
 //   cull         RSMesh back -> front faces only; RSMeshCN -> both; RSMeshCF -> back faces
-//   depth bias   RSMeshBiasN (-32 N) -> polygon offset toward the camera (decal layers such
-//                as the Charge Blade 064 shield face)
+//   depth bias   RSMeshBiasN (-32 N) -> a constant polygon offset of that many depth units
+//                toward the camera, no slope term (decal layers such as the Charge Blade 064
+//                shield face and the Lecturer's Footwear cuff band). A slope-scaled offset
+//                pushed the cuff band through the boot shell at grazing angles (Raven,
+//                2026-09-03: "a little bit of the black material ... peek out"); the constant
+//                offset at the ROM's value shows none.
 //   alpha        the alpha TEST is bit 20 of the material's feature word (with FTransparency
 //                Alpha): discard texels at or below fAlphaClipThreshold, 0.0 on every material
 //                seen, so only the exact-zero holes go. The Alpha feature without that bit
@@ -59,9 +63,6 @@ const SIDE = { back: THREE.FrontSide, none: THREE.DoubleSide, front: THREE.BackS
 // The game discards a <= fAlphaClipThreshold; three.js discards a < alphaTest, so the
 // threshold moves up by less than one 8-bit step: exactly the zero texels go.
 const ALPHA_EPS = 1 / 512;
-// polygonOffsetUnits per RSMeshBias step (the ROM gives the sign and the steps; the scale
-// is the viewer's)
-const BIAS_UNITS = 2;
 // Raven's comparison knob: null = the ROM threshold on every cutout material, a number
 // forces that threshold on all of them (0.5 was the old hunter rule)
 let alphaOverride = null;
@@ -290,10 +291,11 @@ export function createMaterial(spec){
     if (cb) mat.opacity = cb.transparency;
     if (ft && ft.transp) texAlpha = true;
   }
-  // depth bias: RSMeshBiasN pulls the layer toward the camera
+  // depth bias: RSMeshBiasN pulls the layer toward the camera by the ROM's value in depth
+  // units, constant only -- three.js's units are the depth buffer's smallest step, the same
+  // unit the game's value is in
   if (st && st.bias){
-    const n = -st.bias / 32;
-    mat.polygonOffset = true; mat.polygonOffsetFactor = -n; mat.polygonOffsetUnits = -n * BIAS_UNITS;
+    mat.polygonOffset = true; mat.polygonOffsetFactor = 0; mat.polygonOffsetUnits = st.bias;
   }
   // albedo tint, emission, shininess
   if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);

@@ -131,6 +131,35 @@ body{font-family:'MHFU',"Segoe UI",system-ui,sans-serif;background:var(--bg);col
 #bar button{white-space:nowrap}
 #bar .sep{width:1px;height:20px;background:var(--line);margin:0 3px}
 #bar .btn.on{border-color:var(--accent-hover);background:#ffffff26}
+/* the Animation panel: Loop, frame stepping, the scrubber and a frame readout. Greyed
+   out until an animation is playing, so the panel never has to hide or move. */
+#anim{display:flex;flex-direction:column;gap:6px}
+#anim .row{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}   /* Raven: centred */
+#anim .btn.on{border-color:var(--accent-hover);background:#ffffff26}
+#animPlay{min-width:var(--play-w,58px)}   /* one width for "Play" and "Pause" (Raven) */
+#anim input[type=range]{width:100%;margin:0}
+#anim.idle .transport .btn,#anim.idle .transport input{opacity:.4;pointer-events:none}
+#anim .transport{display:flex;flex-direction:column;gap:6px}
+#anim .chain-head{font-size:13px;font-weight:600;color:var(--text-dim);margin-top:6px}
+#anim .row.pick{justify-content:flex-start;flex-wrap:nowrap}
+#anim .row.pick select{flex:1 1 auto;min-width:0}
+#anim .row.pick .btn{flex:0 0 auto}
+#animFrame{font-size:12px;color:var(--text-hint);text-align:center}   /* under the scrubber, centred (Raven) */
+/* the chain, listed in order under its buttons (Raven); the playing link is lit, the x removes */
+.chain{list-style:none;margin:2px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.chain li{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;background:#ffffff14}
+.chain li.on{border-color:var(--accent-hover);background:#ffffff26}
+.chain li.off .lab{opacity:.45}
+/* the hunter slots: click a row to switch to that hunter; the one on screen is lit */
+.chain.hunters li{cursor:pointer}
+.chain.hunters li.on{cursor:default}
+.chain.hunters .tag{font-size:11px;color:var(--text-hint)}
+.chain.hunters input{flex:1 1 auto;min-width:0;font:inherit;font-size:12px;padding:1px 4px;background:#00000033;color:var(--text);border:1px solid var(--line);border-radius:4px}
+.chain li .n{color:var(--text-hint);min-width:1.4em}
+.chain li .lab{flex:1 1 auto}
+.chain li .x{cursor:pointer;color:var(--text-hint);padding:0 4px}
+.chain li .x:hover{color:var(--text)}
+.chain-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
 /* Toggled off, the toolbar MOVES into the header rather than disappearing, so the
    controls stay reachable while the render area is left clear. It is the same element,
    so `#bar .sep` and `#bar .btn.on` keep applying -- which is why the whole bar moves
@@ -357,10 +386,18 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </div>
 
       <div id="paneHunter">
-      <div class="row gap">
-        <button id="gM" class="btn accent" style="flex:1">Male</button>
-        <button id="gF" class="btn accent" style="flex:1">Female</button>
-      </div>
+      <section class="panel" id="huntersPanel" data-open="false">
+        <button class="panel-head">Hunters <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <p class="hint">Each hunter keeps its own body, gear, pigments, pose and weapon</p>
+          <ol id="hunterList" class="chain hunters"></ol>
+          <div class="row">
+            <button id="hunterNew" class="btn tiny" title="A new hunter, starting as a copy of this one">New</button>
+            <button id="hunterRename" class="btn tiny" title="Rename this hunter">Rename</button>
+            <button id="hunterDelete" class="btn tiny" title="Delete this hunter">Delete</button>
+          </div>
+        </div>
+      </section>
 
       <section class="panel" data-open="true">
         <button class="panel-head">Equipment <span class="chev">&#9662;</span></button>
@@ -382,6 +419,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <section class="panel" data-open="false">
         <button class="panel-head">Hunter <span class="chev">&#9662;</span></button>
         <div class="panel-body">
+          <div class="field"><label for="genderSel">Gender</label><select id="genderSel">
+            <option value="f">Female</option>
+            <option value="m">Male</option></select></div>
           <label class="chk"><input type="checkbox" id="face" checked>Face</label>
           <div class="field"><select id="faceStyle"></select></div>
           <div class="field"><label for="eyeColor">Eye Color</label><div class="row gap"><select id="eyeColor"></select><input type="color" id="eyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
@@ -411,6 +451,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
         </div>
       </section>
+
 
       <span id="pigmentPanel">
       <section class="panel" data-open="false">
@@ -445,6 +486,37 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </section>
       </span>
 
+
+      <section class="panel" id="animPanel" data-open="false">
+        <button class="panel-head">Animation <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div id="anim" class="idle">
+            <div class="transport">
+              <input id="animScrub" type="range" min="0" max="1" step="1" value="0" title="Scrub through the frames">
+              <div id="animFrame" class="hint">no animation playing</div>
+              <div class="row">
+                <button id="animFirst" class="btn tiny" title="First frame">|&lt;</button>
+                <button id="animPrev" class="btn tiny" title="Previous frame">&lt;</button>
+                <button id="animPlay" class="btn tiny" title="Play or pause">Pause</button>
+                <button id="animNext" class="btn tiny" title="Next frame">&gt;</button>
+                <button id="animLast" class="btn tiny" title="Last frame">&gt;|</button>
+              </div>
+              <div class="row">
+                <button id="animLoop" class="btn tiny" title="Repeat the animation instead of holding its last frame">Loop</button>
+              </div>
+            </div>
+            <div class="chain-head">Chain</div>
+            <div class="row pick"><select id="chainPoseSel" title="A hunter pose to add"></select><button id="chainPrevPose" class="btn tiny" title="Play this pose now (sheathed)">Preview</button><button id="chainAddPose" class="btn tiny" title="Add this pose to the chain">Add</button></div>
+            <div class="row pick"><select id="chainStanceSel" title="A weapon stance to add"></select><button id="chainPrevStance" class="btn tiny" title="Play this stance now (drawn)">Preview</button><button id="chainAddStance" class="btn tiny" title="Add this stance to the chain">Add</button></div>
+            <div class="row">
+              <button id="chainPlay" class="btn tiny" title="Play the chain back to back">Play chain</button>
+              <button id="chainLoop" class="btn tiny" title="Repeat the chain when it ends">Loop</button>
+              <button id="chainClear" class="btn tiny" title="Empty the chain">Clear</button>
+            </div>
+            <ol id="chainList" class="chain"></ol>
+          </div>
+        </div>
+      </section>
 
       <span id="debugPanel" style="display:none">   <!-- shown only in debug mode; hidden from the first paint (Raven, 2026-09-03) -->
       <section class="panel" data-open="false">
@@ -1060,7 +1132,7 @@ function saveState(){
       gender, slots, hunterType, pigmentIndex, camera: cameraState(),
       // one camera per figure, so the Palico's view survives a reload too
       cameras: Object.assign({}, figCam, { [figure]: cameraState() }),
-      byGender: Object.assign({}, GENDER_STATE, { [gender]: captureGender() }),
+      ...hunterSaveState(),          // the hunter slots, the one on screen banked first
       pose: document.getElementById('pose').value,
       body: document.getElementById('body').checked,
       clothing: document.getElementById('clothing').value,
@@ -1079,6 +1151,7 @@ function saveState(){
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, arrow: arrowSel.value,
+      ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
       slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
@@ -1104,10 +1177,9 @@ const DEFAULT_SET = {
   pose: "g:53",
   camera: { p:[0.696, 0.2017, 2.8853], t:[-0.0002, -0.237, -0.052] }
 };
-// The male hunter's first-visit set. The female is what loads; this is seeded straight
-// into GENDER_STATE.m so switching bodies finds him already dressed, in exactly the shape
-// captureGender() produces. Camera is deliberately absent -- it is global by design, and
-// only Fit to View moves it, so a per-gender camera would fight that.
+// The male hunter's first-visit set. The female is what loads; this becomes the second
+// hunter slot on a first visit (see the hunter slots below), in the shape captureGender()
+// produces, converted to a set by genderStateToSet.
 // The Palico a first-time visitor meets -- Raven's own, mirroring "Default Palico.json".
 // Same rule as the hunter defaults: applied ONLY when there is no saved session, so a
 // returning visitor is never overwritten.
@@ -1836,14 +1908,11 @@ document.getElementById('htype').onchange = e => {
 };
 
 // ---- gender -------------------------------------------------------------
-// Each gender keeps its own look. The face and hair lists are per-gender to begin with,
-// and plenty of armour ships for one body and not the other, so carrying one set of
-// choices across the switch loses work every time. Held here rather than in the slots
-// themselves so the ACTIVE gender is still the single source of truth for rendering.
-const GENDER_STATE = { m: null, f: null };
-if (!SAVED) GENDER_STATE.m = DEFAULT_MALE;   // dressed and waiting behind the gender toggle
-if (SAVED && SAVED.byGender)
-  for (const g of ['m', 'f']) if (SAVED.byGender[g]) GENDER_STATE[g] = SAVED.byGender[g];
+// Gender is a property of the hunter on screen (Raven, 2026-09-03: "Instead of having Male
+// and Female buttons, I want to make those options in the Hunter Panel"): changing it
+// carries the current look across to the other body -- the face and hair lists are
+// per-gender and plenty of armour ships for one body only, so what has no counterpart
+// falls back. Keeping a separate look per gender is what the hunter SLOTS are for now.
 function captureGender(){
   const slots = {};
   SLOTS.forEach(sl => slots[sl] = document.querySelector('select[data-slot="'+sl+'"]').value);
@@ -1885,19 +1954,22 @@ function applyCharColorState(cc){
 // fixes the second; skipping the capture while one is in flight fixes the first, because
 // the in-flight call already recorded the departing body correctly.
 let genderSeq = 0, genderBusy = false;
+// A running chain survives the switch: the weapon is shared by both bodies, so once the new
+// body is dressed and posed the chain picks up at the link it was on (Raven, 2026-09-03).
 async function setGender(g){
+  const resume = chainRunning ? chainPos : -1;
+  const seq = genderSeq + 1;
+  await setGenderBody(g);
+  if (resume >= 0 && seq === genderSeq && gender === g && figure === 'hunter') chainPlayFrom(resume);
+}
+async function setGenderBody(g){
   if (g === gender) return;
   const seq = ++genderSeq;
-  if (!genderBusy) GENDER_STATE[gender] = captureGender();   // remember this body
-  const prev = GENDER_STATE[gender] || captureGender();
+  const want = captureGender();          // the current look, carried across to the other body
   genderBusy = true;
   gender = g;
   for (const k of Object.keys(OPT_CACHE)) delete OPT_CACHE[k];
-  document.getElementById('gM').classList.toggle('on', g === 'm');
-  document.getElementById('gF').classList.toggle('on', g === 'f');
-  // first time on this body there is nothing stored, so carry the current look across --
-  // the old behaviour, and a better starting point than an empty hunter
-  const want = GENDER_STATE[g] || prev;
+  genderSel.value = g;
   // the Type choice is part of a body's settings too, and it has to land BEFORE the lists
   // are rebuilt since optionsFor filters on it
   if (want.hunterType === 'b' || want.hunterType === 'g' || want.hunterType === 'all'){
@@ -1949,21 +2021,138 @@ async function setGender(g){
     await ps.onchange({ target: ps });
     if (seq !== genderSeq) return;
   }
-  // the male default's weapon (Raven's DefaultMale.json) -- only the untouched default
-  // carries one; a captured body never does, so a returning visitor's weapon is left alone
-  if (want === DEFAULT_MALE && want.weapon){
-    await applyWeaponFile(want.weapon);
-    if (seq !== genderSeq) return;
-  }
-  if (want === DEFAULT_MALE && want.camera) applyCameraState(want.camera);
   // only the newest run clears the flag; an interrupted one leaves it set for its successor
   if (seq === genderSeq) genderBusy = false;
 }
 document.getElementById('htype').value = hunterType;
 rebuildSelects('');
-document.getElementById(gender === 'f' ? 'gF' : 'gM').classList.add('on');
-document.getElementById('gM').onclick = () => setGender('m').then(saveState);
-document.getElementById('gF').onclick = () => setGender('f').then(saveState);
+const genderSel = document.getElementById('genderSel');
+genderSel.value = gender;
+genderSel.onchange = () => setGender(genderSel.value).then(saveState);
+
+// ---- hunter slots -----------------------------------------------------------------------
+// Raven, 2026-09-03: "allow people to select a hunter slot, which will be based on the
+// current Male/Female slots. Add a panel to display the list of hunter slots." A slot is a
+// named hunter: { name, set }, where set is a version-3 set object -- exactly what Save
+// writes and Open reads -- so a slot is applied with applySet and banked with currentSet.
+// Each hunter keeps its own weapon (Raven: "Per hunter"). The Palico and the camera are
+// not part of a switch: the Palico is its own figure, and only Fit to View, Open and Reset
+// move the camera. The hunter on screen is banked into its slot by every save.
+const HUNTERS = [];
+let hunterIndex = 0, hunterBusy = false, hunterRenaming = false;
+const hunterList = document.getElementById('hunterList');
+const escHtml = t => String(t).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+// a body as captureGender() records it (the old per-gender memory, DEFAULT_MALE) as a set
+function genderStateToSet(g, st){
+  const pieces = {}, pigment = {}, deviant = {};
+  SLOTS.forEach((sl, i) => {
+    const id = st.slots && st.slots[sl];
+    pieces[sl] = id && id !== 'none' ? id : null;
+    const pg = st.slotPig && st.slotPig[i];
+    pigment[sl] = pg && pg[0] && typeof pg[1] === 'string' ? pg[1] : null;
+  });
+  SLOTS.concat(['cloth']).forEach((sl, i) => { const v = st.slotDev && st.slotDev[i]; if (v) deviant[sl] = v; });
+  const col = v => typeof v === 'string' ? v : (typeof v === 'number' && CHAR_COLORS[v] ? CHAR_COLORS[v][0] : null);
+  const cc = st.charColor || {};
+  const ci = CLOTHING.indexOf(st.clothing);
+  return { app: 'MHGU Armor Viewer', version: 3, gender: g, pieces, pigment, deviant, devAnim: {},
+    hunter: { face: st.face === false ? null : 'Type ' + ((+st.faceStyle || 0) + 1),
+              hair: st.hair === false ? null : 'Type ' + ((+st.hairStyle || 0) + 1),
+              body: st.body !== false, faceStyle: +st.faceStyle || 0, hairStyle: +st.hairStyle || 0,
+              clothing: ci >= 0 ? 'Type ' + (ci + 1) : (st.clothing || null),
+              skinColor: col(cc.skin), eyeColor: col(cc.eye), hairColor: col(cc.hair) },
+    pose: st.pose || 'g:0', weapon: st.weapon || null, camera: st.camera || null };
+}
+const validHunter = h => h && typeof h === 'object' && typeof h.name === 'string' && h.set && typeof h.set === 'object' && h.set.pieces;
+if (SAVED && Array.isArray(SAVED.hunters) && SAVED.hunters.some(validHunter)){
+  for (const h of SAVED.hunters) if (validHunter(h))
+    HUNTERS.push({ name: h.name.slice(0, 40), set: h.set, inheritWeapon: !!h.inheritWeapon, fresh: !!h.fresh });
+  hunterIndex = Number.isInteger(SAVED.hunter) && HUNTERS[SAVED.hunter] ? SAVED.hunter : 0;
+} else {
+  // the first slots come from what the page shows and what the other body kept (the old
+  // per-gender memory), or on a first visit from the two default hunters. A body that never
+  // had a weapon of its own takes the weapon of the hunter it is first switched from.
+  HUNTERS.push({ name: 'Hunter 1', set: null });     // banked from the page once it is dressed
+  const other = gender === 'm' ? 'f' : 'm';
+  const kept = SAVED && SAVED.byGender && SAVED.byGender[other];
+  if (kept) HUNTERS.push({ name: 'Hunter 2', set: genderStateToSet(other, kept), inheritWeapon: true });
+  else if (!SAVED) HUNTERS.push(other === 'm'
+    ? { name: 'Hunter 2', set: genderStateToSet('m', DEFAULT_MALE), fresh: true }
+    : { name: 'Hunter 2', set: Object.assign({}, DEFAULT_SET), fresh: true });
+}
+function bankHunter(){ if (!hunterBusy && HUNTERS[hunterIndex]) HUNTERS[hunterIndex].set = currentSet(); }
+// what saveState writes: the slots with the one on screen freshly banked. A hoisted
+// function, so saveState can name it from higher up
+function hunterSaveState(){
+  try {
+    bankHunter();
+    if (!hunterRenaming) paintHunters();
+    return { hunters: HUNTERS.map(h => ({ name: h.name, set: h.set, inheritWeapon: h.inheritWeapon || undefined, fresh: h.fresh || undefined })),
+             hunter: hunterIndex };
+  } catch (_) { return {}; }
+}
+function paintHunters(){
+  hunterList.innerHTML = HUNTERS.map((h, i) =>
+    '<li class="' + (i === hunterIndex ? 'on' : '') + '" data-k="' + i + '" title="' + (i === hunterIndex ? 'The hunter on screen' : 'Switch to this hunter') + '">' +
+    '<span class="n">' + (i + 1) + '.</span><span class="lab">' + escHtml(h.name) + '</span>' +
+    '<span class="tag">' + ((h.set ? h.set.gender : gender) === 'm' ? 'Male' : 'Female') + '</span></li>').join('');
+  document.getElementById('hunterDelete').disabled = HUNTERS.length < 2;
+}
+async function switchHunter(k, opt){
+  opt = opt || {};
+  if (!HUNTERS[k] || (k === hunterIndex && !opt.force) || hunterBusy) return;
+  hunterBusy = true;
+  try {
+    if (!opt.noBank) bankHunter();
+    const from = HUNTERS[hunterIndex], to = HUNTERS[k];
+    if (to.inheritWeapon){ to.set.weapon = (from && from.set && from.set.weapon) || null; delete to.inheritWeapon; }
+    hunterIndex = k; paintHunters();
+    await applySet(to.set, { camera: !!to.fresh, otomo: false });
+    delete to.fresh;
+  } finally { hunterBusy = false; }
+  saveState();
+}
+function freeHunterName(){
+  for (let n = 1; ; n++){ const nm = 'Hunter ' + n; if (!HUNTERS.some(h => h.name === nm)) return nm; }
+}
+hunterList.onclick = e => {
+  const li = e.target && e.target.closest ? e.target.closest('li') : null;
+  if (!li || hunterRenaming) return;
+  switchHunter(+li.dataset.k);
+};
+document.getElementById('hunterNew').onclick = () => {
+  if (hunterBusy) return;
+  bankHunter();
+  HUNTERS.push({ name: freeHunterName(), set: currentSet() });   // a copy of the hunter on screen
+  hunterIndex = HUNTERS.length - 1;
+  paintHunters(); saveState();
+};
+document.getElementById('hunterRename').onclick = () => {
+  const li = hunterList.querySelector('li.on'); if (!li || hunterRenaming) return;
+  const lab = li.querySelector('.lab'), h = HUNTERS[hunterIndex];
+  const inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 40; inp.value = h.name;
+  hunterRenaming = true;
+  lab.replaceWith(inp); inp.focus(); inp.select();
+  let done = false;
+  const finish = keep => {
+    if (done) return; done = true; hunterRenaming = false;
+    const v = inp.value.trim();
+    if (keep && v) h.name = v.slice(0, 40);
+    paintHunters(); saveState();
+  };
+  inp.onkeydown = ev => { if (ev.key === 'Enter') finish(true); else if (ev.key === 'Escape') finish(false); };
+  inp.onblur = () => finish(true);
+};
+document.getElementById('hunterDelete').onclick = async () => {
+  if (HUNTERS.length < 2 || hunterBusy) return;
+  const h = HUNTERS[hunterIndex];
+  if (!confirm('Delete ' + h.name + '? Its look and weapon are lost.')) return;
+  HUNTERS.splice(hunterIndex, 1);
+  const next = Math.min(hunterIndex, HUNTERS.length - 1);
+  hunterIndex = -1;
+  await switchHunter(next, { noBank: true, force: true });
+};
+paintHunters();
 
 // ---- pigment ------------------------------------------------------------
 const pigBox = document.getElementById('pig');
@@ -2196,6 +2385,7 @@ renderer.setAnimationLoop(() => {
   stepGamePose();
   weapon.stepMotion();
   weapon.step();
+  paintAnim();
   stepDeviant(performance.now()/1000);
   if (rainbowOn) applyCharColors(performance.now()/1000);
   controls.update();
@@ -2285,6 +2475,7 @@ async function buildWeaponLists(){
       ids.map(id => '<option value="' + id + '">' + ((kj.names && kj.names[id]) || ('Kinsect ' + id)) + '</option>').join('');
   }
   if (!ig) kinsectSel.value = '';
+  paintChain();          // the chain keeps its links; stances of another class show muted
 }
 // The Form select never offers "automatic": a restored value that is not in the list (a
 // saved null, or a scene's) falls back to the trigger the state logic would fire when it is
@@ -2304,6 +2495,7 @@ function setFormValue(v){
 // Pose (the first game pose unless one is picked). The Pose select keeps its choice while a
 // stance plays, so sheathing again returns to it. (Raven, 2026-09-03)
 async function applyWeaponState(){
+  if (!chainDriving) chainStop();          // anything but the chain itself starting a pose ends the chain
   const drawn = weaponDrawnSel.value === '1';
   const list = weapon.poses();
   if (drawn && list.length && weaponPoseSel.value === '') weaponPoseSel.value = '0';
@@ -2324,6 +2516,7 @@ async function applyWeaponState(){
 }
 // the hunter's own pose from the Pose select, defaulting to the first game pose
 async function playPlayerPose(){
+  if (!chainDriving) chainStop();
   const ps = document.getElementById('pose');
   let pv = ps.value;
   if (!(typeof pv === 'string' && pv.startsWith('g:')) && (manifest.poses || []).length){
@@ -2357,6 +2550,228 @@ weaponModelSel.onchange = async () => {
 };
 weaponDrawnSel.onchange = async () => { await applyWeaponState(); saveState(); };
 weaponPoseSel.onchange  = async () => { await applyWeaponState(); saveState(); };
+
+// ---- animation controls -------------------------------------------------------------
+// Raven, 2026-09-03: "Basic controls like Looping or not, being able to step through frame
+// by frame, chain stances together." The LMT motions run at 60 frames a second: (frames - 1)
+// over the clip length is 59.5 on the Heavy Bowgun's clips (37 frames over 0.617 s, 363 over
+// 6.05 s), so a frame step is 1/60 s. The transport drives the pose driver's action; the
+// weapon's own motion follows that action's time as it always has.
+const FRAME = 1 / 60;
+const animBar = document.getElementById('anim'), animScrub = document.getElementById('animScrub'),
+      animFrameEl = document.getElementById('animFrame'), animPlayBtn = document.getElementById('animPlay'),
+      animLoopBtn = document.getElementById('animLoop');
+// null = each animation's own default (stances hold their last frame, the lobby poses loop);
+// true or false once Loop has been pressed, and it then applies to every animation
+let animLoopPref = null;
+// A chain plays each one-shot stance once so the next can start as it ends. A `_loop`
+// stance is a short cycle -- the drawn idle is a single frame -- so played once it is gone
+// before it is seen (Raven, 2026-09-03: "Play Chain only loops the last stance added"):
+// inside a chain a loop stance, or a hunter pose (the lobby poses are held loops), keeps
+// cycling for CHAIN_HOLD seconds, then the chain moves on; as the LAST link of a chain that
+// does not repeat it keeps looping, the held state the sequence lands in (a `_start` into
+// its `_loop`: "some appear to be a sequence broken up").
+const CHAIN_HOLD = 3;
+const isLoopClip = entry => /_loop$/.test((entry && entry.clip) || '');
+const isStanceEntry = entry => /poses\/weapons\//.test((entry && entry.file) || '');
+const holdsInChain = entry => isLoopClip(entry) || !isStanceEntry(entry);
+pose.loopMode = entry => chainRunning
+  ? (holdsInChain(entry) ? 'repeat' : 'once')
+  : (animLoopPref === null ? null : (animLoopPref ? 'repeat' : 'once'));
+const clipDur = act => Math.max(0, act.getClip().duration - 1e-3);
+function setLoop(on){
+  animLoopPref = on;
+  const act = pose.action;
+  if (!act) return;
+  act.loop = on ? THREE.LoopRepeat : THREE.LoopOnce;
+  act.clampWhenFinished = !on; act.repetitions = Infinity;
+  if (on && (act.paused || !act.isRunning())){
+    if (act.time >= clipDur(act)) act.time = 0;
+    act.paused = false; act.enabled = true; act.play();
+  }
+}
+animLoopBtn.onclick = () => setLoop(!(pose.action ? pose.action.loop === THREE.LoopRepeat : !!animLoopPref));
+function seek(t){
+  const act = pose.action; if (!act) return;
+  act.paused = true; act.enabled = true;
+  act.time = Math.min(Math.max(0, t), clipDur(act));
+}
+document.getElementById('animFirst').onclick = () => seek(0);
+document.getElementById('animLast').onclick  = () => { if (pose.action) seek(clipDur(pose.action)); };
+document.getElementById('animPrev').onclick  = () => { if (pose.action) seek((Math.round(pose.action.time / FRAME) - 1) * FRAME); };
+document.getElementById('animNext').onclick  = () => { if (pose.action) seek((Math.round(pose.action.time / FRAME) + 1) * FRAME); };
+animPlayBtn.onclick = () => {
+  const act = pose.action; if (!act) return;
+  if (act.paused || !act.isRunning()){
+    if (act.loop === THREE.LoopOnce && act.time >= clipDur(act)) act.reset();
+    act.paused = false; act.enabled = true; act.play();
+  } else act.paused = true;
+};
+animScrub.oninput = () => seek(+animScrub.value * FRAME);
+// the Play button keeps the width of its wider label, so the row never shifts as it toggles
+{
+  const keep = animPlayBtn.textContent; animPlayBtn.textContent = 'Pause';
+  const w = Math.ceil(animPlayBtn.getBoundingClientRect().width);
+  if (w) animPlayBtn.style.setProperty('--play-w', w + 'px');
+  animPlayBtn.textContent = keep;
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {
+    const t = animPlayBtn.textContent; animPlayBtn.textContent = 'Pause';
+    const w2 = Math.ceil(animPlayBtn.getBoundingClientRect().width);
+    if (w2) animPlayBtn.style.setProperty('--play-w', w2 + 'px');
+    animPlayBtn.textContent = t;
+  });
+}
+let animLast = '', animTick = 0;
+function paintAnim(){
+  if ((++animTick % 60) === 0) syncChainSelects();     // the chain's pickers follow the Pose and Stance lists
+  const act = pose.action;
+  animBar.classList.toggle('idle', !act);
+  if (!act) { if (animLast !== ''){ animLast = ''; animFrameEl.textContent = 'no animation playing'; } return; }
+  const dur = clipDur(act), total = Math.round(dur / FRAME), cur = Math.min(total, Math.round(act.time / FRAME));
+  const playing = !act.paused && act.isRunning();
+  const key = cur + '/' + total + (playing ? 'p' : 's') + (act.loop === THREE.LoopRepeat ? 'L' : '');
+  if (key === animLast) return;
+  animLast = key;
+  animFrameEl.textContent = 'frame ' + cur + ' of ' + total + '  (' + (cur / 60).toFixed(2) + ' s)';
+  animScrub.max = String(total); animScrub.value = String(cur);
+  animPlayBtn.textContent = playing ? 'Pause' : 'Play';
+  animLoopBtn.classList.toggle('on', act.loop === THREE.LoopRepeat);
+}
+// The chain: hunter poses and weapon stances played back to back (Raven, 2026-09-03: "This
+// way people can chain stances into poses or vice versa"). A link is { kind: 'pose', value:
+// 'g:N', label } or { kind: 'stance', cls, clsName, clip, label }; a pose link sheathes the
+// weapon, a stance link draws it. The Animation panel carries copies of the Pose and Stance
+// selects to pick from; the x on a row removes it.
+// Raven, 2026-09-03: "Ensure Chain Animation sequences persist when switching between male,
+// female and palico." The chain is never emptied by the viewer, only by Clear: a stance link
+// names its class and clip rather than an index into the current list, so the stance list
+// rebuilding (a class change, Reset, Open, the male default's weapon) keeps it, and a link
+// whose class is not the one equipped shows muted and is skipped when the chain plays. A
+// chain that is running when the body or the figure switches resumes at the same link once
+// the switch is done (the Palico takes the pose system while it is on screen, so the
+// hunter's chain waits for the Hunter tab).
+const chain = [];
+let chainPos = -1, chainRunning = false, chainLoop = false, chainDriving = false, chainTimer = null;
+let chainResume = -1;      // the link to resume at when the hunter comes back on screen
+// the index of a stance link in the CURRENT class's list, or -1 when it belongs to another
+function chainStanceIndex(el){
+  if (el.kind !== 'stance' || el.cls !== weaponClassSel.value) return -1;
+  return weapon.poses().findIndex(p => p.clip === el.clip);
+}
+const chainPlayable = el => el.kind === 'pose' || chainStanceIndex(el) >= 0;
+const chainList = document.getElementById('chainList');
+const chainPoseSel = document.getElementById('chainPoseSel'), chainStanceSel = document.getElementById('chainStanceSel');
+let chainSelSig = '';
+function syncChainSelects(){
+  const poseOpts = [...document.getElementById('pose').options].filter(o => o.value.startsWith('g:'));
+  const stanceOpts = [...weaponPoseSel.options].filter(o => o.value !== '');
+  const sig = poseOpts.length + ':' + stanceOpts.length + ':' + (stanceOpts[0] ? stanceOpts[0].title : '');
+  if (sig === chainSelSig) return;
+  chainSelSig = sig;
+  chainPoseSel.innerHTML = poseOpts.map(o => '<option value="' + o.value + '">' + o.text + '</option>').join('');
+  chainStanceSel.innerHTML = stanceOpts.map(o => '<option value="' + o.value + '" title="' + o.title + '">' + o.text + '</option>').join('');
+  chainStanceSel.disabled = !stanceOpts.length; document.getElementById('chainAddStance').disabled = !stanceOpts.length;
+}
+function chainLabel(el){
+  if (el.kind === 'pose'){ const o = [...chainPoseSel.options].find(o => o.value === el.value); return o ? o.text : (el.label || el.value); }
+  return chainPlayable(el) ? el.label : el.label + ' (' + (el.clsName || el.cls) + ')';
+}
+function paintChain(){
+  syncChainSelects();
+  chainList.innerHTML = chain.map((el, k) => {
+    const off = !chainPlayable(el);
+    return '<li class="' + (k === chainPos ? 'on' : '') + (off ? ' off' : '') + '"' +
+      (off ? ' title="A stance of another weapon class: it plays when that class is equipped"' : '') + '>' +
+      '<span class="n">' + (k + 1) + '.</span><span class="lab">' + chainLabel(el) + '</span>' +
+      '<span class="x" data-k="' + k + '" title="Remove from the chain">&times;</span></li>';
+  }).join('');
+  document.getElementById('chainLoop').classList.toggle('on', chainLoop);
+}
+function chainClearTimer(){ if (chainTimer){ clearTimeout(chainTimer); chainTimer = null; } }
+function chainReset(){ chainClearTimer(); chain.length = 0; chainPos = -1; chainRunning = false; paintChain(); }
+function chainStop(){ chainClearTimer(); if (!chainRunning && chainPos < 0) return; chainRunning = false; chainPos = -1; paintChain(); }
+async function chainPlayFrom(k){
+  chainClearTimer();
+  if (!chain.some(chainPlayable)){ chainStop(); return; }      // nothing of this class to play
+  if (k >= chain.length){ if (chainLoop && chain.length) k = 0; else { chainStop(); return; } }
+  const el = chain[k];
+  if (!chainPlayable(el)){ chainPos = k; chainRunning = true; return chainPlayFrom(k + 1); }   // another class's stance: skipped
+  chainPos = k; chainRunning = true; paintChain();
+  if (el.kind === 'pose'){
+    weaponDrawnSel.value = '0';
+    const ps = document.getElementById('pose');
+    if ([...ps.options].some(o => o.value === el.value)) ps.value = el.value;
+  } else {
+    weaponDrawnSel.value = '1'; weaponPoseSel.value = String(chainStanceIndex(el));
+  }
+  chainDriving = true;
+  try { await applyWeaponState(); } finally { chainDriving = false; }
+  // a pose or a loop stance never "finishes": it holds for CHAIN_HOLD, unless it is the last
+  // link of a chain that does not repeat
+  const holds = el.kind === 'pose' || isLoopClip(weapon.poses()[chainStanceIndex(el)]);
+  const last = k === chain.length - 1;
+  if (chainRunning && chainPos === k && holds && !(last && !chainLoop))
+    chainTimer = setTimeout(() => { chainTimer = null; if (chainRunning && chainPos === k) chainPlayFrom(k + 1); }, CHAIN_HOLD * 1000);
+}
+// what saveState writes for the chain: the links as they are, and the Loop flag. A hoisted
+// function so saveState can name it from higher up; before the chain exists it returns nothing
+function chainSaveState(){
+  try { return { chain: chain.map(el => Object.assign({}, el)), chainLoop }; } catch (_) { return {}; }
+}
+document.getElementById('chainAddPose').onclick = () => {
+  if (!chainPoseSel.value) return;
+  chain.push({ kind: 'pose', value: chainPoseSel.value, label: chainPoseSel.options[chainPoseSel.selectedIndex].text });
+  paintChain(); saveState();
+};
+// Preview: play the picked pose or stance now, exactly as picking it in the Hunter or Weapon
+// panel would (Raven, 2026-09-03: "Add a preview button for both Animation Pose and Stance
+// drop downs")
+document.getElementById('chainPrevPose').onclick = async () => {
+  if (!chainPoseSel.value) return;
+  const ps = document.getElementById('pose'); ps.value = chainPoseSel.value; weaponDrawnSel.value = '0';
+  await applyWeaponState(); saveState();
+};
+document.getElementById('chainPrevStance').onclick = async () => {
+  if (chainStanceSel.value === '') return;
+  weaponPoseSel.value = chainStanceSel.value; weaponDrawnSel.value = '1';
+  await applyWeaponState(); saveState();
+};
+// picking in either list previews it at once (Raven: "Have Stances and Poses auto preview on
+// selection"); the buttons stay for replaying the pick
+chainPoseSel.onchange = () => document.getElementById('chainPrevPose').onclick();
+chainStanceSel.onchange = () => document.getElementById('chainPrevStance').onclick();
+document.getElementById('chainAddStance').onclick = () => {
+  if (chainStanceSel.value === '') return;
+  const p = weapon.poses()[+chainStanceSel.value]; if (!p) return;
+  const cj = weapon.classJson();
+  chain.push({ kind: 'stance', cls: weaponClassSel.value, clsName: cj ? cj.name : weaponClassSel.value, clip: p.clip, label: p.label });
+  paintChain(); saveState();
+};
+document.getElementById('chainClear').onclick = () => { chainReset(); saveState(); };
+document.getElementById('chainLoop').onclick = () => { chainLoop = !chainLoop; paintChain(); saveState(); };
+document.getElementById('chainPlay').onclick = () => { if (chain.length) chainPlayFrom(0); };
+chainList.onclick = e => {
+  const k = e.target && e.target.dataset ? e.target.dataset.k : undefined;
+  if (k === undefined) return;
+  chain.splice(+k, 1); if (chainPos >= chain.length) chainPos = -1; paintChain(); saveState();
+};
+pose.onFinished = () => { if (chainRunning) chainPlayFrom(chainPos + 1); };
+// The saved chain comes back on load, checked link by link (Raven, 2026-09-03: "Make the
+// chain survive a page reload too"). Labels are stored with the links, so this needs neither
+// the pose list nor the class's stance list; a stance of a class not yet equipped shows muted
+// until the boot restores the weapon. It is listed, not started.
+if (SAVED && Array.isArray(SAVED.chain)){
+  for (const el of SAVED.chain){
+    if (!el || typeof el !== 'object') continue;
+    if (el.kind === 'pose' && typeof el.value === 'string' && el.value.startsWith('g:'))
+      chain.push({ kind: 'pose', value: el.value, label: typeof el.label === 'string' ? el.label : el.value });
+    else if (el.kind === 'stance' && typeof el.cls === 'string' && typeof el.clip === 'string')
+      chain.push({ kind: 'stance', cls: el.cls, clsName: typeof el.clsName === 'string' ? el.clsName : el.cls,
+                   clip: el.clip, label: typeof el.label === 'string' ? el.label : el.clip });
+  }
+  chainLoop = !!SAVED.chainLoop;
+  paintChain();
+}
 weaponFormSel.onchange  = () => { weapon.setForm(weaponFormSel.value === '' ? null : +weaponFormSel.value); weapon.step(); saveState(); };
 arrowSel.onchange       = () => { weapon.setArrow(arrowSel.value || null); saveState(); };
 kinsectSel.onchange     = async () => { await weapon.setKinsect(kinsectSel.value || null); saveState(); };
@@ -3134,7 +3549,10 @@ function setFigure(f){
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
   // Palico stands in bind pose beside it.
-  const done = h ? restoreHunterPose() : otPlayPose();
+  let resumeAt = -1;
+  if (!h){ chainResume = chainRunning ? chainPos : -1; chainStop(); }   // park the hunter's chain
+  else { resumeAt = chainResume; chainResume = -1; }                    // and pick it up again
+  const done = h ? (resumeAt >= 0 ? chainPlayFrom(resumeAt) : restoreHunterPose()) : otPlayPose();
   Promise.resolve(done).then(() => {
     if (figCam[f]) applyCameraState(figCam[f]); else frameAll();
   });
@@ -3297,6 +3715,8 @@ await otApply();
   try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
   if (t === 'tabPalico') setFigure('palico');
 }
+bankHunter();           // the hunter on screen into its slot, now that it is dressed
+paintHunters();
 restoring = false;      // from here on, user changes persist
 // The camera is framed ONCE, here, and after that only Fit to View moves it: every
 // other control (armor, hair, skin tone, pose, gender) used to re-frame and yanked the
@@ -3317,6 +3737,8 @@ saveState();
 
 window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, MIX,
   pose, weapon, MOUNT_ROM,
+  setGender, switchHunter,
+  hunters: () => ({ names: HUNTERS.map(h => h.name), genders: HUNTERS.map(h => h.set ? h.set.gender : null), index: hunterIndex }),
   // the ROM chain as applied right now: the clip's ids, and per part the index, joint,
   // record, rest scale and provenance
   mount: () => weapon.audit(),
@@ -3732,12 +4154,16 @@ async function resetSlot(){
   await applySet(Object.assign({}, RESET_HUNTER, { gender }));
 }
 document.getElementById('resetBtn').onclick = async () => {
-  const what = figure === 'palico' ? 'the Palico' : (gender === 'm' ? 'the male hunter' : 'the female hunter');
+  const what = figure === 'palico' ? 'the Palico'
+    : (HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'the hunter') + ' (' + (gender === 'm' ? 'male' : 'female') + ')';
   if (!confirm('Reset ' + what + ' to the defaults? The current look is replaced.')) return;
   await resetSlot();
 };
-// A parsed set onto the page -- the body of Open. Reset feeds it a slot's default.
-async function applySet(d){
+// A parsed set onto the page -- the body of Open. Reset feeds it a slot's default, and a
+// hunter switch feeds it the slot's set with { camera: false, otomo: false }: the camera is
+// global and the Palico is its own figure, so neither follows a hunter.
+async function applySet(d, opt){
+  opt = opt || {};
   // setGender is a no-op when it already matches, and it rebuilds the lists itself
   if (d.gender === 'm' || d.gender === 'f') await setGender(d.gender);
   const h = d.hunter || {};
@@ -3753,7 +4179,7 @@ async function applySet(d){
   // matched by LABEL, so the file does not depend on CLOTHING's ordering
   clothSel.value = '';
   if (h.clothing){
-    const hit = [...clothSel.options].find(o => o.textContent === h.clothing);
+    const hit = [...clothSel.options].find(o => o.textContent === h.clothing || o.value === h.clothing);
     if (hit) clothSel.value = hit.value;
   }
   for (const [selId, part] of CHAR_PARTS){
@@ -3801,13 +4227,13 @@ async function applySet(d){
   }
   await refreshChar();
   await apply(map);
-  await applyOtomoSet(d.otomo);
+  if (opt.otomo !== false) await applyOtomoSet(d.otomo);
   applyCharColors();
   // version 3 files carry the weapon; a file without one clears it
   await applyWeaponFile((d.weapon && typeof d.weapon === 'object') ? d.weapon : null);
   // Opening a set is a load, not an incidental UI change, so it may frame -- but
   // only when the file carries no camera of its own.
-  if (!applyCameraState(d.camera)) frameAll();
+  if (opt.camera !== false && !applyCameraState(d.camera)) frameAll();
   saveState();
 }
 
