@@ -150,7 +150,7 @@ export function applyTint(mat){
                  ' uniform float uAlphaCut;' +
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform float uF0;' +
                  ' uniform float uDark;' +
-                 ' float gGloss = 0.0; void main() {')
+                 ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 ); void main() {')
         .replace('#include <map_fragment>',
           `#ifdef USE_MAP
              vec2 mapUv = vMapUv;
@@ -202,6 +202,7 @@ export function applyTint(mat){
              if ( uCharAmt > 0.0 ) {
                base = mix( base, uChar * luma * 2.0, uCharAmt );
              }
+               gBase = base;           // the dyed albedo, for the glow below
                diffuseColor.rgb *= base;
              }
              // the region fades toward black by uDark (the Esurient animation); on a region
@@ -210,9 +211,17 @@ export function applyTint(mat){
              // hand the sampled alpha to alphaTest / blending where the map is a real cutout
              diffuseColor.a *= mix( 1.0, texel.a, uAlphaCut );
            #endif`)
-        // the glow goes to black with the region
+        // The glow is the emission constant times the DYED albedo, not the raw map. With the
+        // raw map the dye region -- authored whitish so a pigment can be multiplied in --
+        // glowed grey over whatever pigment was on it and washed it out (Raven, 2026-09-04:
+        // "The female Esurient armors seem to wash out the pigment"; green read as
+        // (119,162,114) with the glow and (15,117,16) without). Undyed materials are
+        // unchanged: gBase is then the map texel, which is what the stock chunk sampled.
+        // And the glow goes to black with the region.
         .replace('#include <emissivemap_fragment>',
-          `#include <emissivemap_fragment>
+          `#ifdef USE_EMISSIVEMAP
+             totalEmissiveRadiance *= gBase;
+           #endif
            totalEmissiveRadiance *= 1.0 - uDark;`)
         // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
         // Sample it with the view-space normal and add it on top of the lit color.
