@@ -169,8 +169,13 @@ header #bar{position:static;transform:none;width:auto;max-width:none;
 header #bar .sep{height:16px}
 /* the titlebar adds its own margin to .btn.tiny, which doubles up with #bar's gap */
 header #bar .btn.tiny{margin-right:0}
-#orbitLock{display:inline-flex;align-items:center;gap:6px}
-#orbitLock img{width:14px;height:14px;display:block}
+/* The camera bar's controls are icons, their labels moved into the tooltip as
+   "Label: what it does" (Raven, 2026-09-04). Equal squares, so a button that the state
+   renames can no longer shunt the ones beside it -- which is what the two width-pinning
+   measurements below the bar used to be for. */
+#bar .ico{display:inline-flex;align-items:center;justify-content:center;width:32px;padding:3px 0}
+#bar .ico svg{width:15px;height:15px;display:block;fill:none;stroke:currentColor;
+  stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 #viewport canvas{display:block;width:100%;height:100%}
 /* Scoped to the render area on purpose: #bar and the overlays are SIBLINGS of #viewport,
    so the toolbar keeps its pointer and stays usable while the cursor is hidden. */
@@ -575,11 +580,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <p id="renderNote">Some models may not render correctly at this time or some oddities may happen</p>
       <div id="err"></div>
       <div id="bar">
-        <button id="fitBtn" class="btn tiny" title="Frame the whole figure">Fit to View</button>
-        <button id="spinBtn" class="btn tiny" title="Cycle the turntable speed">Rotate</button>
-        <button id="orbitLock" class="btn tiny" title="Lock the orbit so dragging pans the view instead of rotating it"><img id="orbitLockIcon" alt=""><span id="orbitLockText">Orbit</span></button>
-        <button id="wireBtn" class="btn tiny" title="Draw the meshes as wireframe">Wireframe</button>
-        <button id="cursorBtn" class="btn tiny" title="Hide the mouse pointer over the model">Hide Cursor</button>
+        <button id="fitBtn" class="btn tiny ico" aria-label="Fit to View" title="Fit to View: Frame the whole figure"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/></svg></button>
+        <button id="spinBtn" class="btn tiny ico" aria-label="Rotate" title="Rotate: Cycle the turntable speed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"/><path d="M20.5 4v4.5H16"/></svg></button>
+        <button id="orbitLock" class="btn tiny ico" aria-label="Orbit" title="Orbit: Lock the orbit so dragging pans the view instead of rotating it"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="9.6" ry="4.3" transform="rotate(-30 12 12)"/></svg></button>
+        <button id="wireBtn" class="btn tiny ico" aria-label="Wireframe" title="Wireframe: Draw the meshes as wireframe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20.5 8v8L12 21 3.5 16V8L12 3Z"/><path d="M3.5 8 12 12.5 20.5 8M12 12.5V21"/></svg></button>
+        <button id="cursorBtn" class="btn tiny ico" aria-label="Hide Cursor" title="Hide Cursor: Hide the mouse pointer over the model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.6 15.8 12l-4.3.5 2.1 5.4-2 .8-2.1-5.4-3.5 2.9V3.6Z"/><path d="M4 20 20 4"/></svg></button>
+        <button id="shotBtn" class="btn tiny ico" aria-label="Screenshot" title="Screenshot: Save a PNG of the render area"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 8.6h3.2L8.2 6.5h7.6l1.5 2.1h3.2v10.4H3.5V8.6Z"/><circle cx="12" cy="13.6" r="3.3"/></svg></button>
       </div>
     </section>
   </main>
@@ -1051,23 +1057,24 @@ initAssets(renderer);
 // Orbit / pan lock, same control the Weapon Tree carries: unlocked (the default,
 // button lit) drags to orbit; locked drags to pan instead. OrbitControls already does
 // both, so this just reassigns which one the LEFT button and a one-finger drag mean.
-const BOOK_ICON = { locked: "data:image/webp;base64,UklGRs4AAABXRUJQVlA4TMIAAAAvMUAMEAZIjSRJkgbWkCtCQ2cYHZtRmV779yIQhHDN0C65hCAQNDfGOimscP8VuW2kpDOHZYY3COmRDIrltX30bL1tHcBdSHBAYOEA2bUf2HAdxT/qBspp09K0jwm1ESgteCe6ttJbFQUrfCiLGjrQCpRDCoNsoYWFidwOxKUJi7VJWv7kuhcgIAJEFqIiYucQu5M4AcQpI04ycVsQNxJx6xE3K39733uPYzEimoUzL/YB+P7bYvh/0TpTEcP8rwuCkQ==", unlocked: "data:image/webp;base64,UklGRs4AAABXRUJQVlA4TMEAAAAvMUAMEAZGkSRJQRC2MIMUZF5z1fLvJsi2mc7cjjKVOxJk20xnbFeZyh37r8htIyWdOSwzvEGQNhgUy1mSdtVZbS2Ajs0ECwTscXxrOOCXRvFHMwE79E8n+jjDdWyFlngnOrbQWxUlFvhIlpclHWgFwiElg2xhB5ZMZDmQLk2yWGXszOKe1AIERIDIQlRE7BxidxIngDhlxEkmbgviRiJuPeJm5W9vScvhEdHYMy/2Auj622L4X7Q0UxHD/K8LgpEAAA==" };
+// Every camera-bar button is an icon now, and each carries the words it used to show at
+// the head of its tooltip ("Orbit: Lock the orbit so dragging pans ..."). A button the
+// state renames rewrites both, so the label is never lost with the text.
+const ICON = {
+  orbit:  '<circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="9.6" ry="4.3" transform="rotate(-30 12 12)"/>',
+  pan:    '<path d="M12 3.5v17M3.5 12h17M12 3.5 9.6 6M12 3.5 14.4 6M12 20.5 9.6 18M12 20.5 14.4 18M3.5 12 6 9.6M3.5 12 6 14.4M20.5 12 18 9.6M20.5 12 18 14.4"/>',
+  camera: '<path d="M3.5 8.6h3.2L8.2 6.5h7.6l1.5 2.1h3.2v10.4H3.5V8.6Z"/><circle cx="12" cy="13.6" r="3.3"/>',
+  check:  '<path d="m5 12.6 4.6 4.6L19 7.4"/>'
+};
+function setIcon(btn, key){ btn.querySelector('svg').innerHTML = ICON[key]; }
+function setLabel(btn, label, tip){ btn.setAttribute('aria-label', label); btn.title = label + ': ' + tip; }
 let orbitLocked = false;
 const orbitLockBtn = document.getElementById('orbitLock');
-const orbitLockIcon = document.getElementById('orbitLockIcon');
 // The button names the mode that is ACTIVE: dragging orbits, or dragging pans.
-const orbitLockText = document.getElementById('orbitLockText');
-// Same problem the Rotate/Turbo button has -- two labels of different widths would shunt
-// everything to the right of it. Measure both once and pin the button to the wider.
-(function lockOrbitWidth(){
-  let w = 0;
-  for (const t of ['Orbit', 'Pan']){ orbitLockText.textContent = t; w = Math.max(w, orbitLockBtn.offsetWidth); }
-  orbitLockBtn.style.minWidth = w + 'px';
-  orbitLockBtn.style.justifyContent = 'center';
-})();
+const ORBIT_TIP = 'Lock the orbit so dragging pans the view instead of rotating it';
 function paintOrbitLock(){
-  orbitLockIcon.src = BOOK_ICON[orbitLocked ? 'unlocked' : 'locked'];
-  orbitLockText.textContent = orbitLocked ? 'Pan' : 'Orbit';
+  setIcon(orbitLockBtn, orbitLocked ? 'pan' : 'orbit');
+  setLabel(orbitLockBtn, orbitLocked ? 'Pan' : 'Orbit', ORBIT_TIP);
   orbitLockBtn.classList.toggle('on', !orbitLocked);
   controls.mouseButtons.LEFT = orbitLocked ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
   controls.touches.ONE = orbitLocked ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
@@ -2285,17 +2292,9 @@ const SPIN_STEPS = [{ label: 'Rotate', speed: 0 }].concat(
   SPIN_SPEEDS.map((v, i) => ({ label: i === SPIN_SPEEDS.length - 1 ? 'Turbo' : 'Rotate', speed: v })));
 let spinStep = 0;
 const spinBtn = document.getElementById('spinBtn');
-// The label swaps between two words of different widths, which would shunt every button
-// to its right. Measure both once and pin the button to the wider.
-(function lockSpinWidth(){
-  let w = 0;
-  for (const st of SPIN_STEPS){ spinBtn.textContent = st.label; w = Math.max(w, spinBtn.offsetWidth); }
-  spinBtn.style.minWidth = w + 'px';
-  spinBtn.style.textAlign = 'center';
-})();
 function paintSpin(){
   const st = SPIN_STEPS[spinStep];
-  spinBtn.textContent = st.label;
+  setLabel(spinBtn, st.label, 'Cycle the turntable speed');
   spinBtn.classList.toggle('on', st.speed > 0);
   controls.autoRotate = st.speed > 0;
   controls.autoRotateSpeed = st.speed || 3;
@@ -4207,6 +4206,47 @@ async function applySet(d, opt){
 }
 
 document.getElementById('fitBtn').onclick = () => frameAll();
+
+// A PNG of the render area (Raven, 2026-09-04). Three things it does that grabbing the
+// canvas as it stands would not:
+//   - re-renders first. The context is not preserveDrawingBuffer, so the buffer is only
+//     guaranteed readable inside the task that drew it; toDataURL is called on the same
+//     line for the same reason (toBlob's callback runs after the pixel ratio is restored).
+//   - renders at twice the screen's pixel ratio, capped at 4096 px on the longest side, so
+//     the file is worth sharing rather than a copy of the on-screen pixels.
+//   - hands the browser a Blob rather than the data URL, which downloads a large image
+//     without running into the limits on data-URL links.
+// The figure comes out cut out on transparency: the canvas is transparent and .content
+// paints the backdrop in CSS, so there is nothing behind the model to capture.
+const SHOT_TIP = 'Save a PNG of the render area';
+document.getElementById('shotBtn').onclick = () => {
+  const btn = document.getElementById('shotBtn'), el = renderer.domElement;
+  const prev = renderer.getPixelRatio();
+  const cap = 4096 / Math.max(el.clientWidth, el.clientHeight, 1);
+  const ratio = Math.max(prev, Math.min(prev * 2, cap));
+  let url;
+  try {
+    if (ratio !== prev) renderer.setPixelRatio(ratio);
+    head.position.copy(camera.position);
+    renderer.render(scene, camera);
+    url = el.toDataURL('image/png');
+  } finally {
+    if (ratio !== prev) renderer.setPixelRatio(prev);
+  }
+  const bin = atob(url.slice(url.indexOf(',') + 1));
+  const buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const href = URL.createObjectURL(new Blob([buf], { type: 'image/png' }));
+  const who = figure === 'palico' ? 'Palico'
+            : ((HUNTERS[hunterIndex] && HUNTERS[hunterIndex].name) || 'Hunter');
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = 'MHGU ' + who + ' ' + new Date().toISOString().slice(0, 10) + '.png';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(href), 10000);
+  setIcon(btn, 'check'); setLabel(btn, 'Saved', SHOT_TIP);
+  setTimeout(() => { setIcon(btn, 'camera'); setLabel(btn, 'Screenshot', SHOT_TIP); }, 1200);
+};
 
 // ---- scene harness (dev only) ----------------------------------------------------------
 // `?clean&scene=<name>[&run=<label>][&shot]` applies one of dev/scenes.json's fixed scenes
