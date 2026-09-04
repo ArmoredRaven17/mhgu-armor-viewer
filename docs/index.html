@@ -2107,6 +2107,7 @@ async function switchHunter(k, opt){
   if (!HUNTERS[k] || (k === hunterIndex && !opt.force) || hunterBusy) return;
   if (!opt.noBank) bankHunter();     // before the busy flag goes up: the bank skips while busy
   hunterBusy = true;
+  setLoading(true);
   try {
     const from = HUNTERS[hunterIndex], to = HUNTERS[k];
     if (to.inheritWeapon){ to.set.weapon = (from && from.set && from.set.weapon) || null; delete to.inheritWeapon; }
@@ -2115,7 +2116,7 @@ async function switchHunter(k, opt){
     // per-gender memory, never shown yet) keeps the view on screen
     await applySet(to.set, { camera: !!(to.set && to.set.camera), otomo: false });
     delete to.fresh;
-  } finally { hunterBusy = false; }
+  } finally { hunterBusy = false; setLoading(false); }
   saveState();
 }
 function freeHunterName(){
@@ -2386,8 +2387,22 @@ fitRenderer();
 // models through the default camera, zoomed far in, and the view then jumped (Raven,
 // 2026-09-03: "the hunter model is zoomed super far in, then the camera resets").
 let booted = false;
+// The same treatment while a hunter slot is dressed (Raven, 2026-09-04: "When selecting a
+// hunter, can we have it use the Loading... screen until the pieces load in like when the
+// page is first opened"): a switch mounts five armour pieces, the character parts and a
+// weapon one at a time, and the half-dressed figure in between is what the boot overlay
+// already hides. Counted, so nested holds cannot leave the overlay stuck on. Clearing on
+// the way in matters: with the loop suspended the last frame would otherwise sit on the
+// canvas, showing the outgoing hunter under the text.
+let loadHold = 0;
+function setLoading(on){
+  loadHold = Math.max(0, loadHold + (on ? 1 : -1));
+  const show = !booted || loadHold > 0;
+  document.getElementById('loading').hidden = !show;
+  if (show && on) renderer.clear();
+}
 renderer.setAnimationLoop(() => {
-  if (!booted) return;
+  if (!booted || loadHold > 0) return;
   stepGamePose();
   weapon.stepMotion();
   weapon.step();
@@ -3731,7 +3746,7 @@ restoring = false;      // from here on, user changes persist
 if (!applyCameraState(figCam[figure] || (SAVED && SAVED.camera)) &&
     !(!SAVED && applyCameraState(DEFAULT_SET.camera))) frameAll();
 booted = true;
-document.getElementById('loading').hidden = true;
+setLoading(false);          // 0 holds and booted: the overlay goes
 saveState();
 {
   let camTimer = null;
