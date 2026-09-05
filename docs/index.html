@@ -454,6 +454,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         </div>
       </section>
 
+      <section class="panel" id="platePanel" data-open="false">
+        <button class="panel-head">Name plate <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <label class="chk"><input type="checkbox" id="plateOn">Show the name plate</label>
+          <div class="field"><label for="plateHr">Hunter Rank</label><select id="plateHr" title="The rank band sets the plate's colour, as the game does"></select></div>
+          <div class="field"><label for="plateShow">Shows</label><select id="plateShow" title="What the plate reads: the name, the guild card title alone (only the icon until words are chosen), or the name with the title under it in brackets"><option value="name">Name</option><option value="title">Guild card title</option><option value="both">Name and title</option></select></div>
+          <div class="field"><label for="plateT1">Title</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT3">Second word</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
+          <p class="hint">The name is this hunter's name (Rename it in the Hunters panel); the weapon icon follows the equipped weapon and the colour follows the rank, as the game's plate does. Saved with the hunter.</p>
+        </div>
+      </section>
+
       <section class="panel" id="weaponPanel" data-open="false">
         <button class="panel-head">Weapon <span class="chev">&#9662;</span></button>
         <div class="panel-body">
@@ -1132,6 +1145,7 @@ import { classes as weaponClasses, loadClass as loadWeaponClass, loadKinsects, m
 import { loadMaterialsDb } from './render/materials-db.js';
 import { createFx } from './render/fx.js';
 import { renderCameraFor, LENS_DEFAULT, LENS_TYPES, SQUEEZES, fovSrcOf } from './render/lens.js';
+import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
@@ -1227,6 +1241,7 @@ let fxFocusLive = 0, fxFocusTick = 0; const _aniso = new THREE.Vector2(1, 1);
 function renderFrame(t){
   frameNo++;
   const cam = lensCamera();               // the master camera, or the lens's own derived from it
+  plateUpdate(cam);                       // the name plate rides above the head, facing the camera
   const focus = fxState.dof.follow ? focusDistance(t !== undefined) : fxState.dof.focus;
   fxFocusLive = focus;
   _aniso.set(lensState.type === 'anamorphic' ? 1 / lensState.squeeze : 1, 1);
@@ -1425,6 +1440,101 @@ function restoreEffects(e){
   fxApply(); paintFx();
 }
 const applyEffectsFile = restoreEffects;     // a file or a slot without a block keeps what is on screen
+
+// ---- The name plate (Raven, 2026-09-05: "we have our name along with a weapon icon float above
+// our hunters, this can be toggled to show our guild card names ... an HR Drop Down for the
+// different ranges (i.e. colors). A drop down for the first title, then a 2nd for the in-between
+// char values and 3rd for the second title. Once populated, display the nameplate over the
+// hunters head"). render/plate.js draws it; this block owns the state, the panel and where it
+// rides. The title words are the game's own pools (guild-card-titles.json, from GC_Title_1 and
+// GC_Title_2). The state saves with the session, the set file and every hunter slot; a file or
+// a slot without a block keeps what is on screen, as lighting and effects do. ----
+const plate = createPlate({ iconUrl: 'ui/plate-icons.png?v=20260905', font: "'MHFU', 'Segoe UI', system-ui, sans-serif" });
+scene.add(plate.sprite);
+const PLATE_UP = 0.32;             // metres above the head joint (the joint sits at the skull's base)
+const PLATE_NONE = '(None)';
+const PLATE_SHOWS = ['name', 'title', 'both'];
+// weapon folder -> the glyph's cell in ui/plate-icons.png (the game's weapon enum; w05 was removed)
+const PLATE_ICON = { w00: 0, w01: 1, w02: 2, w03: 3, w04: 4, w06: 6, w07: 7, w08: 8, w09: 9, w10: 10, w11: 11, w12: 12, w13: 13, w14: 14 };
+let plateState = { on: false, show: 'name', hr: 1, title: [PLATE_NONE, PLATE_NONE, PLATE_NONE] };
+let plateWords = { words: [PLATE_NONE], joins: [PLATE_NONE] };
+function plateTitle(){ return plateState.title.filter(w => w && w !== PLATE_NONE).join(' '); }
+function plateName(){ return HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'Hunter'; }   // the hunter's own name, so a rename shows at once
+function platePaint(){
+  // Title alone shows the title and nothing else (just the icon until words are chosen), so
+  // the switch is always visible (Raven, 2026-09-05: "Shows does not seem to switch between
+  // Name, Title or Both successfully" -- it fell back to the name while the title was empty)
+  const t = plateTitle();
+  const line1 = plateState.show === 'title' ? t : plateName();
+  const line2 = plateState.show === 'both' && t ? '(' + t + ')' : '';
+  const icon = PLATE_ICON[weaponClassSel.value];
+  plate.paint({ line1, line2, color: hrColor(plateState.hr), icon: icon === undefined ? -1 : icon });
+}
+const _plateAnchor = new THREE.Vector3(), _plateSize = new THREE.Vector2();
+function plateUpdate(cam){
+  const on = plateState.on && figure !== 'palico';
+  plate.setVisible(on);
+  if (!on) return;
+  platePaint();                                   // repaints only when something changed
+  const b = playerBone(activeMounts(), 4);        // the head joint, live under the pose
+  if (b){ b.getWorldPosition(_plateAnchor); _plateAnchor.y += PLATE_UP; }
+  else { figureCenter(_plateAnchor); _plateAnchor.y += 1.0; }
+  plate.sprite.position.copy(_plateAnchor);
+  plate.update(cam, renderer.getSize(_plateSize).y);
+}
+function plateFileState(){
+  return { on: plateState.on, show: plateState.show, hr: plateState.hr, title: plateState.title.slice() };
+}
+function restorePlate(p){
+  if (!p || typeof p !== 'object') return;
+  const t = Array.isArray(p.title) ? p.title : [];
+  const word = v => (typeof v === 'string' && v.trim()) ? v.trim().slice(0, 40) : PLATE_NONE;
+  plateState = {
+    on: p.on === true,
+    show: PLATE_SHOWS.includes(p.show) ? p.show : 'name',
+    hr: Number.isFinite(+p.hr) ? Math.max(0, Math.min(999, Math.round(+p.hr))) : 1,
+    title: [word(t[0]), word(t[1]), word(t[2])]
+  };
+  paintPlate();
+}
+// A slot or a file WITHOUT a plate block shows no plate: the plate is the hunter's own (name,
+// rank, title), not a view setting, so nothing carries over from the hunter before (Raven,
+// 2026-09-05: "Ensure nameplate settings persist between slots" -- a slot banked before the
+// plate existed kept showing the previous hunter's).
+function applyPlateFile(p){ restorePlate(p && typeof p === 'object' ? p : { on: false }); }
+function fillPlateWords(){
+  const fill = (id, list) => {
+    const sel = document.getElementById(id); sel.textContent = '';
+    for (const w of list){ const o = document.createElement('option'); o.value = w; o.textContent = w; sel.appendChild(o); }
+  };
+  fill('plateT1', plateWords.words); fill('plateT3', plateWords.words); fill('plateT2', plateWords.joins);
+}
+function paintPlate(){
+  const g = id => document.getElementById(id);
+  g('plateOn').checked = plateState.on;
+  const band = HR_BANDS.find(b => plateState.hr <= b.max) || HR_BANDS[HR_BANDS.length - 1];
+  g('plateHr').value = String(band.hr);
+  g('plateShow').value = plateState.show;
+  ['plateT1', 'plateT2', 'plateT3'].forEach((id, i) => {
+    const sel = g(id), w = plateState.title[i];
+    sel.value = w; if (sel.value !== w) sel.value = PLATE_NONE;   // a word the list lacks shows as (None), the plate still says it
+  });
+}
+function plateEdit(){
+  const g = id => document.getElementById(id);
+  plateState.on = g('plateOn').checked;
+  plateState.hr = +g('plateHr').value || 1;
+  plateState.show = PLATE_SHOWS.includes(g('plateShow').value) ? g('plateShow').value : 'name';
+  plateState.title = ['plateT1', 'plateT2', 'plateT3'].map(id => g(id).value || PLATE_NONE);
+  paintPlate(); platePaint(); saveState();
+}
+document.getElementById('plateHr').innerHTML = HR_BANDS.map(b => '<option value="' + b.hr + '">' + b.label + '</option>').join('');
+for (const id of ['plateOn', 'plateHr', 'plateShow', 'plateT1', 'plateT2', 'plateT3']) document.getElementById(id).onchange = plateEdit;
+fetch('guild-card-titles.json?v=20260905').then(r => r.json()).then(j => {
+  const clean = list => [PLATE_NONE].concat((list || []).filter(w => typeof w === 'string' && w !== PLATE_NONE && w !== 'Reserve cell'));
+  plateWords = { words: clean(j.words), joins: clean(j.joins) };
+  fillPlateWords(); paintPlate();
+}).catch(e => console.warn('name plate: the title words did not load', e));
 document.querySelectorAll('#fxRow .btn').forEach(b => b.onclick = () => { applyFxPreset(b.dataset.fx); saveState(); });
 for (const path in FX_IDS){
   const e = document.getElementById(FX_IDS[path]); if (!e) continue;
@@ -1915,7 +2025,7 @@ function saveState(){
       otomo: otCapture(),
       orbitLocked, spinStep, spinRev, camDamp: controls.enableDamping, camZoomCursor: !!controls.zoomToCursor,
       camMode, flySpeed: fly.speed, camFace: faceLock,   // camMode is a mirror: the mode comes back with the camera state
-      wireOn, hideCursor, ...lightingSaveState(), effects: effectsState(),
+      wireOn, hideCursor, ...lightingSaveState(), effects: effectsState(), plate: plateFileState(),
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, arrow: arrowSel.value,
@@ -2950,7 +3060,7 @@ document.getElementById('hunterRename').onclick = () => {
     if (done) return; done = true; hunterRenaming = false;
     const v = inp.value.trim();
     if (keep && v) h.name = v.slice(0, 40);
-    paintHunters(); saveState();
+    paintHunters(); platePaint(); saveState();      // the plate carries this name
   };
   inp.onkeydown = ev => { if (ev.key === 'Enter') finish(true); else if (ev.key === 'Escape') finish(false); };
   inp.onblur = () => finish(true);
@@ -4248,6 +4358,8 @@ paintFlySpeed(); paintCamMode();
 if (!('requestPointerLock' in document.body)){ flyBtn.hidden = true; document.getElementById('camModeField').hidden = true; }
 restoreLighting(SAVED);                       // the studio rig unless a preset or a custom rig was saved
 if (SAVED) restoreEffects(SAVED.effects);     // the effects, or Off on a first visit
+if (SAVED) restorePlate(SAVED.plate);         // the name plate, or none on a first visit
+paintPlate();
 fxApply(); paintFx();
 
 // restore the saved session before the first load so nothing flashes then changes
@@ -4736,6 +4848,12 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     force: on => fx.force(on),
     stats: () => fx.stats()
   },
+  plate: {
+    set: sp => { restorePlate(Object.assign(plateFileState(), sp || {})); platePaint(); },
+    state: () => Object.assign({ name: plateName(), line: plateTitle(), size: plate.size(), anchor: _plateAnchor.toArray(), visible: plate.sprite.visible }, plateFileState()),
+    words: () => ({ words: plateWords.words.length, joins: plateWords.joins.length }),
+    sprite: plate.sprite
+  },
   fly: {
     enter: () => setCamMode('fly'), leave: () => setCamMode('orbit'), mode: () => camMode,
     look: (dyaw, dpitch) => flyTurn(dyaw, dpitch),
@@ -4853,6 +4971,7 @@ function currentSet(){
     camera: cameraState(),
     lighting: lightingFileState(),
     effects: effectsState(),
+    plate: plateFileState(),
     // The Palico, in the same shape and the same spirit as the hunter above: every id
     // carries its name and every index its label, so a shared file stays readable and a
     // reordered list cannot silently change what it means.
@@ -5097,6 +5216,7 @@ const RESET_HUNTER = {
   hunter: { face: 'Type 1', hair: 'Type 1', body: true, faceStyle: 0, hairStyle: 0,
             clothing: 'Type 1', skinColor: null, eyeColor: null, hairColor: null },
   pose: 'g:0', weapon: null, lighting: { preset: 'studio' }, effects: { preset: 'off' },
+  plate: { on: false, show: 'name', hr: 1, title: [] },
   camera: { p: [-0.0159, 0.403, 3.2224], t: [-0.137, -0.3196, -0.0258] }
 };
 // What Reset restores for the Palico: the otomo block of Raven's ResetPalico.json
@@ -5203,6 +5323,7 @@ async function applySet(d, opt){
   // the rig, where the file or the slot carries one (2026-09-04); without, it stays as it is
   applyLightingFile(d.lighting);
   applyEffectsFile(d.effects);
+  applyPlateFile(d.plate);
   if (opt.camera !== false && !applyCameraState(d.camera)) frameAll();
   saveState();
 }
