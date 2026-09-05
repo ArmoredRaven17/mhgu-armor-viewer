@@ -458,12 +458,13 @@ input[type=range]{width:100%;accent-color:var(--accent)}
         <button class="panel-head">Name plate <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <label class="chk"><input type="checkbox" id="plateOn">Show the name plate</label>
+          <div class="field"><label for="plateName">Name</label><input id="plateName" type="text" maxlength="24" placeholder="this slot's name" title="The name on the plate. Empty uses the slot's name from the Hunters list, so several slots can share one hunter"></div>
           <div class="field"><label for="plateHr">Hunter Rank</label><select id="plateHr" title="The rank band sets the plate's colour, as the game does"></select></div>
           <div class="field"><label for="plateShow">Shows</label><select id="plateShow" title="What the plate reads: the name, the guild card title alone (only the icon until words are chosen), or the name with the title under it in brackets"><option value="name">Name</option><option value="title">Guild card title</option><option value="both">Name and title</option></select></div>
           <div class="field"><label for="plateT1">Title</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
           <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
           <div class="field"><label for="plateT3">Second word</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
-          <p class="hint">The name is this hunter's name (Rename it in the Hunters panel); the weapon icon follows the equipped weapon and the colour follows the rank, as the game's plate does. Saved with the hunter.</p>
+          <p class="hint">The weapon icon follows the equipped weapon and the colour follows the rank, as the game's plate does. Saved with the hunter slot.</p>
         </div>
       </section>
 
@@ -1456,10 +1457,11 @@ const PLATE_NONE = '(None)';
 const PLATE_SHOWS = ['name', 'title', 'both'];
 // weapon folder -> the glyph's cell in ui/plate-icons.png (the game's weapon enum; w05 was removed)
 const PLATE_ICON = { w00: 0, w01: 1, w02: 2, w03: 3, w04: 4, w06: 6, w07: 7, w08: 8, w09: 9, w10: 10, w11: 11, w12: 12, w13: 13, w14: 14 };
-let plateState = { on: false, show: 'name', hr: 1, title: [PLATE_NONE, PLATE_NONE, PLATE_NONE] };
+let plateState = { on: false, show: 'name', name: '', hr: 1, title: [PLATE_NONE, PLATE_NONE, PLATE_NONE] };
 let plateWords = { words: [PLATE_NONE], joins: [PLATE_NONE] };
 function plateTitle(){ return plateState.title.filter(w => w && w !== PLATE_NONE).join(' '); }
-function plateName(){ return HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'Hunter'; }   // the hunter's own name, so a rename shows at once
+// the plate's own name (Raven, 2026-09-05: several slots may hold one hunter), else the slot's, live
+function plateName(){ return plateState.name || (HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'Hunter'); }
 function platePaint(){
   // Title alone shows the title and nothing else (just the icon until words are chosen), so
   // the switch is always visible (Raven, 2026-09-05: "Shows does not seem to switch between
@@ -1483,7 +1485,7 @@ function plateUpdate(cam){
   plate.update(cam, renderer.getSize(_plateSize).y);
 }
 function plateFileState(){
-  return { on: plateState.on, show: plateState.show, hr: plateState.hr, title: plateState.title.slice() };
+  return { on: plateState.on, show: plateState.show, name: plateState.name, hr: plateState.hr, title: plateState.title.slice() };
 }
 function restorePlate(p){
   if (!p || typeof p !== 'object') return;
@@ -1492,6 +1494,7 @@ function restorePlate(p){
   plateState = {
     on: p.on === true,
     show: PLATE_SHOWS.includes(p.show) ? p.show : 'name',
+    name: typeof p.name === 'string' ? p.name.trim().slice(0, 24) : '',
     hr: Number.isFinite(+p.hr) ? Math.max(0, Math.min(999, Math.round(+p.hr))) : 1,
     title: [word(t[0]), word(t[1]), word(t[2])]
   };
@@ -1512,6 +1515,8 @@ function fillPlateWords(){
 function paintPlate(){
   const g = id => document.getElementById(id);
   g('plateOn').checked = plateState.on;
+  if (document.activeElement !== g('plateName')) g('plateName').value = plateState.name;
+  g('plateName').placeholder = HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : "this slot's name";
   const band = HR_BANDS.find(b => plateState.hr <= b.max) || HR_BANDS[HR_BANDS.length - 1];
   g('plateHr').value = String(band.hr);
   g('plateShow').value = plateState.show;
@@ -1523,6 +1528,7 @@ function paintPlate(){
 function plateEdit(){
   const g = id => document.getElementById(id);
   plateState.on = g('plateOn').checked;
+  plateState.name = g('plateName').value.trim().slice(0, 24);
   plateState.hr = +g('plateHr').value || 1;
   plateState.show = PLATE_SHOWS.includes(g('plateShow').value) ? g('plateShow').value : 'name';
   plateState.title = ['plateT1', 'plateT2', 'plateT3'].map(id => g(id).value || PLATE_NONE);
@@ -1530,6 +1536,7 @@ function plateEdit(){
 }
 document.getElementById('plateHr').innerHTML = HR_BANDS.map(b => '<option value="' + b.hr + '">' + b.label + '</option>').join('');
 for (const id of ['plateOn', 'plateHr', 'plateShow', 'plateT1', 'plateT2', 'plateT3']) document.getElementById(id).onchange = plateEdit;
+{ const n = document.getElementById('plateName'); n.oninput = () => { plateState.name = n.value.trim().slice(0, 24); platePaint(); }; n.onchange = plateEdit; }
 fetch('guild-card-titles.json?v=20260905').then(r => r.json()).then(j => {
   const clean = list => [PLATE_NONE].concat((list || []).filter(w => typeof w === 'string' && w !== PLATE_NONE && w !== 'Reserve cell'));
   plateWords = { words: clean(j.words), joins: clean(j.joins) };
@@ -4850,7 +4857,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   },
   plate: {
     set: sp => { restorePlate(Object.assign(plateFileState(), sp || {})); platePaint(); },
-    state: () => Object.assign({ name: plateName(), line: plateTitle(), size: plate.size(), anchor: _plateAnchor.toArray(), visible: plate.sprite.visible }, plateFileState()),
+    state: () => Object.assign({ shown: plateName(), line: plateTitle(), size: plate.size(), anchor: _plateAnchor.toArray(), visible: plate.sprite.visible }, plateFileState()),
     words: () => ({ words: plateWords.words.length, joins: plateWords.joins.length }),
     sprite: plate.sprite
   },
@@ -5216,7 +5223,7 @@ const RESET_HUNTER = {
   hunter: { face: 'Type 1', hair: 'Type 1', body: true, faceStyle: 0, hairStyle: 0,
             clothing: 'Type 1', skinColor: null, eyeColor: null, hairColor: null },
   pose: 'g:0', weapon: null, lighting: { preset: 'studio' }, effects: { preset: 'off' },
-  plate: { on: false, show: 'name', hr: 1, title: [] },
+  plate: { on: false, show: 'name', name: '', hr: 1, title: [] },
   camera: { p: [-0.0159, 0.403, 3.2224], t: [-0.137, -0.3196, -0.0258] }
 };
 // What Reset restores for the Palico: the otomo block of Raven's ResetPalico.json
