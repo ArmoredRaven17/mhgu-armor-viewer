@@ -1727,12 +1727,15 @@ flyBtn.onclick = () => { setCamMode(camMode === 'fly' ? 'orbit' : 'fly'); saveSt
 let orbitLocked = false;
 const orbitLockBtn = document.getElementById('orbitLock');
 // The button names the mode that is ACTIVE: dragging orbits, or dragging pans.
-const ORBIT_TIP = 'Lock the orbit so dragging pans the view instead of rotating it';
+const ORBIT_TIP = 'Lock the orbit so dragging pans the view instead of rotating it; the right button always does the other one';
 function paintOrbitLock(){
   setIcon(orbitLockBtn, orbitLocked ? 'pan' : 'orbit');
   setLabel(orbitLockBtn, orbitLocked ? 'Pan' : 'Orbit', ORBIT_TIP);
   orbitLockBtn.classList.toggle('on', !orbitLocked);
   controls.mouseButtons.LEFT = orbitLocked ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+  // the right button is the other one (Raven, 2026-09-05: "Ensure the Right Click Button does
+  // the opposite of the Orbit/Pan button"); before, it panned whichever way the left was set
+  controls.mouseButtons.RIGHT = orbitLocked ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
   controls.touches.ONE = orbitLocked ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
 }
 function toggleOrbitLock(){ orbitLocked = !orbitLocked; paintOrbitLock(); saveState(); }
