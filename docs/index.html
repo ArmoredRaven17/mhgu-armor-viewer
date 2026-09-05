@@ -1538,7 +1538,9 @@ document.getElementById('plateHr').innerHTML = HR_BANDS.map(b => '<option value=
 for (const id of ['plateOn', 'plateHr', 'plateShow', 'plateT1', 'plateT2', 'plateT3']) document.getElementById(id).onchange = plateEdit;
 { const n = document.getElementById('plateName'); n.oninput = () => { plateState.name = n.value.trim().slice(0, 24); platePaint(); }; n.onchange = plateEdit; }
 fetch('guild-card-titles.json?v=20260905').then(r => r.json()).then(j => {
-  const clean = list => [PLATE_NONE].concat((list || []).filter(w => typeof w === 'string' && w !== PLATE_NONE && w !== 'Reserve cell'));
+  // alphabetical, (None) first (Raven, 2026-09-05: "List the Titles in the drop downs in alphabetical order")
+  const clean = list => [PLATE_NONE].concat((list || []).filter(w => typeof w === 'string' && w !== PLATE_NONE && w !== 'Reserve cell')
+    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true })));
   plateWords = { words: clean(j.words), joins: clean(j.joins) };
   fillPlateWords(); paintPlate();
 }).catch(e => console.warn('name plate: the title words did not load', e));
