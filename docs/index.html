@@ -3272,10 +3272,16 @@ function buildPoseList(){
   // Only the game's own held poses are offered. `relaxed` and `t-pose` were ours, authored
   // before the lobby motions were found; `relaxed` survives as the internal resting stance
   // behind a weapon stance, but it is not something to pick any more.
-  sel.insertAdjacentHTML('beforeend',
-    '<optgroup label="Game poses">' +
-    list.map((p, i) => '<option value="g:' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('') +
-    '</optgroup>');
+  // One optgroup per `group` in first-seen order (Raven, 2026-09-05: every player motion list
+  // is shipped now); the entries without one are the original held poses, whose g:N index
+  // every saved set relies on, so they come first and keep their numbers.
+  const order = [], byGroup = new Map();
+  list.forEach((p, i) => {
+    const g = p.group || 'Game poses';
+    if (!byGroup.has(g)){ byGroup.set(g, []); order.push(g); }
+    byGroup.get(g).push('<option value="g:' + i + '" title="' + (p.src ? p.src + ' ' : '') + p.clip + (p.dur ? ', ' + p.dur.toFixed(2) + ' s' : ', one frame') + '">' + p.label + '</option>');
+  });
+  sel.insertAdjacentHTML('beforeend', order.map(g => '<optgroup label="' + g + '">' + byGroup.get(g).join('') + '</optgroup>').join(''));
 }
 // first visit: seed the hunter options from DEFAULT_SET before anything is restored
 if (!SAVED) {
@@ -4626,9 +4632,16 @@ otClothSel.onchange = async () => {
 const otPoseSel = document.getElementById('otPose');
 function otBuildPoses(){
   const list = (OT && OT.poses) || [];
+  // one optgroup per `group`, first-seen order; the ungrouped entries are the original held
+  // poses, whose index a saved set relies on, so they stay first (Raven, 2026-09-05)
+  const order = [], byGroup = new Map();
+  list.forEach((p, i) => {
+    const g = p.group || 'Held poses';
+    if (!byGroup.has(g)){ byGroup.set(g, []); order.push(g); }
+    byGroup.get(g).push('<option value="' + i + '" title="' + (p.src ? p.src + ' ' : '') + p.clip + (p.dur ? ', ' + p.dur.toFixed(2) + ' s' : ', one frame') + '">' + p.label + '</option>');
+  });
   otPoseSel.innerHTML = '<option value="">Bind pose</option>' +
-    list.map((p, i) => '<option value="' + i + '" title="' + p.clip + '">' +
-                       p.label + '</option>').join('');
+    order.map(g => '<optgroup label="' + g + '">' + byGroup.get(g).join('') + '</optgroup>').join('');
 }
 async function otPlayPose(){
   const list = (OT && OT.poses) || [];
