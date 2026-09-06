@@ -531,8 +531,17 @@ export class WeaponRig {
     const byName = root => { const m = new Map(); root.traverse(o => { const n = o.userData && o.userData.name; if (n) m.set(n, o); }); return m; };
     const rootBone = part.userData.bone;
     const rootName = rootBone && rootBone.userData && rootBone.userData.name;
-    // bone 0's layered state: the mount owns the node itself, placePart composes this on top
-    const rootBase = { position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1, 1, 1) };
+    // bone 0's layered state: the mount owns the node itself, placePart composes this on top.
+    // It starts from the MODEL'S OWN REST, not from zero: a list tracks only some bones (the
+    // Gunlance's wg09_00 tracks the lance's bone 1 and never the shield's bone 0) and the
+    // game keeps a bone's rest wherever a clip has no track for it, so a shield whose bone 0
+    // rests off the origin (Blackhare Gunlance, 0.912 m) stays where its model puts it
+    // (Raven, 2026-09-05: "shield is not attached to the arm"). The shipped sets carry no
+    // channel for untracked bones any more (strip-untracked-weapon-tracks.py); a tracked
+    // bone is still driven from here by copyDriven below.
+    const rootBase = rootBone
+      ? { position: rootBone.position.clone(), quaternion: rootBone.quaternion.clone(), scale: rootBone.scale.clone() }
+      : { position: new THREE.Vector3(), quaternion: new THREE.Quaternion(), scale: new THREE.Vector3(1, 1, 1) };
     const layers = [];
     if (restHit && restHit[0] !== clip) layers.push([restHit[0], restHit[1], false]);
     const startsDrawn = !!(ids0 && ids0.ids.size && !Array.from(ids0.ids).some(i => SHEATHED_IDS.has(i)));
