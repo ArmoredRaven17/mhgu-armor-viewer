@@ -92,6 +92,19 @@ export class PoseDriver {
   async play(entry, opt){
     this.figure = (opt && opt.figure) || 'hunter';
     const poseJoints = (opt && opt.joints) || this.defaultJoints;
+    // Both anchors were unconditional, which is right for the hunter's lobby loops (they walk
+    // and turn, and the figure must stay in frame) and wrong for a clip whose travel IS the
+    // motion: a monster's charge, and any flight clip, whose lowest bone would be dragged back
+    // down to the rest ground every frame. The caller may switch either off; the default is the
+    // behaviour every existing caller already gets.
+    this.anchorXZ = !(opt && opt.anchorXZ === false);
+    this.groundLock = !(opt && opt.groundLock === false);
+    // Hold the clip's `reference` node -- the travel the game adds to the unit's position --
+    // at the origin while letting the root bone move: the Rath-of-Meow's shell sits at the
+    // unit's origin and the ride clip's root seats the cat on it (ot_2[142], 2026-09-06).
+    // The pelvis anchor cancels both kinds of motion at once, which is right for a lobby pose.
+    this.holdReference = !!(opt && opt.holdReference);
+    this.referenceNode = null;
     let gltf = poseCache.get(entry.file);
     if (!gltf) {
       gltf = await loader.loadAsync(entry.file);
@@ -112,6 +125,7 @@ export class PoseDriver {
     // the proxy is never added to the scene; it exists only to be sampled
     gltf.scene.updateMatrixWorld(true);
     this.proxyBones = new Map(bonesByGid(gltf.scene, poseJoints).map(e => [e.gid, e.node]));
+    this.referenceNode = this.holdReference ? (gltf.scene.getObjectByName('reference') || null) : null;
     this.mixer = new THREE.AnimationMixer(gltf.scene);
     // Where the pelvis sits at REST. Many of these motions carry root translation -- they
     // are lobby animations, so the character walks, steps and turns -- and left alone the
@@ -197,6 +211,7 @@ export class PoseDriver {
   anchorProxy(){
     const scn = this.mixer.getRoot();
     scn.position.set(0, 0, 0);
+    if (this.referenceNode) this.referenceNode.position.set(0, 0, 0);
     scn.updateMatrixWorld(true);
     const hip = this.proxyBones.get(0);
     let lowest = null;
@@ -206,12 +221,12 @@ export class PoseDriver {
       if (lowest === null || y < lowest) lowest = y;
     });
     let dx = 0, dz = 0;
-    if (hip && this.anchor){
+    if (hip && this.anchor && this.anchorXZ !== false){
       _v.setFromMatrixPosition(hip.matrixWorld);
       dx = this.anchor.x - _v.x;
       dz = this.anchor.z - _v.z;
     }
-    const dy = (this.ground !== null && lowest !== null) ? this.ground - lowest : 0;
+    const dy = (this.groundLock !== false && this.ground !== null && lowest !== null) ? this.ground - lowest : 0;
     scn.position.set(dx, dy, dz);
     scn.updateMatrixWorld(true);
   }
@@ -220,7 +235,7 @@ export class PoseDriver {
     if (this.loopTimer) { clearTimeout(this.loopTimer); this.loopTimer = null; }
     if (this.action) this.action.stop();
     this.mixer = null; this.proxyBones = null; this.action = null; this.anchor = null;
-    this.bounds = null; this.center = null; this.ground = null;
+    this.bounds = null; this.center = null; this.ground = null; this.referenceNode = null;
   }
 
   // called every frame while a game pose is playing; `roots` are the mounted pieces of the

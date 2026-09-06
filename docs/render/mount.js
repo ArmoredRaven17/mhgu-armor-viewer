@@ -180,6 +180,52 @@ export function mountFor(opt){
   return { type, index, joint, rec, scale, prov };
 }
 
+// The Palico's weapon (the Prowler's class 15 -> type 23), read from the OTOMO branch of the
+// same dispatcher (0x003070f8), 2026-09-06. An owner whose byte +0x13cc has bit 3 set
+// (0x0027b450: the otomo) takes 0x003172b0 for the index and 0x00316edc for the joint; the
+// records come from the type-23 getter 0x00317148, which builds them in code:
+//   index    0x00283288, from the clip's group-0 ids alone: id 1 -> 0 (held), id 2 -> 2
+//            (sheathed), id 17 -> 17 -> as the Palico's drawn flag says (vfn +0x178: drawn ?
+//            0 : 2), nothing -> 20. Two runtime tests in 0x003172b0 (vfn +0x1b8/+0x2d4 and
+//            [owner+0x13c8] != 0, states a still viewer has no reading of) force index 2.
+//   joint    0x00316edc: 0 -> 9 (the -X paw, the cat's RIGHT paw), 2 -> the carry record's
+//            joint (every carry record says 1, the spine) or 1 when the carry is 0, 18 -> 1,
+//            20 -> 1; the other indices leave the joint as it was.
+//   record   0x00317148: 0 -> (-4.5, -1, 0) cm, no turn; 2 -> the carry table's record
+//            carry-1 (0x018827a0 + 48*(carry-1): pos, rot and the joint, filled by the
+//            constructor 0x003173c4; ROM.types['23'].carry) or, carry 0, the rest record
+//            (-11, 21, -8) cm / (90, -5, 54) degrees; 18 -> that rest record; 20 -> none.
+//   scale    0x00316edc: 1.0 in the paw and for 20; 0.8 on the back (indices 2, 18) unless
+//            id 18 is active (0x00316fb4, the same full-scale id the hunter has).
+//   carry    the model's mCarryType in the Palico's own weapon list, resident.arc
+//            weapon/airou/pwl/pl_airou.plweplist (manifest.otomo.weapons.pieces[].carry).
+//   order    the consumer 0x008a4dfc, the unit default case 0 = ROM.eulerOrder, as the hunter.
+// Which clips feed it is the hunter's rule (Raven, 2026-09-06: "Lobby animations should be
+// treated like poses, not stances"): a lobby pose sheathes the weapon (id 2, the common rest
+// idle's state, 'rom:common-idle'); a quest clip is a stance, a drawn action whose own ids
+// place it. The caller says which (index.html otActiveIds).
+// opt: { ids: Set, carry: number, drawn: bool, synthetic: bool, prov?: string }
+export function prowlerMountFor(opt){
+  const t = ROM.types['23'];
+  if (!t) return null;
+  const ids = opt.ids || new Set();
+  let index = 20;
+  if (ids.has(1)) index = 0;
+  else if (ids.has(2)) index = 2;
+  else if (ids.has(17)) index = opt.drawn ? 0 : 2;
+  let prov = (opt.prov || (opt.synthetic ? 'rom:synthetic' : 'rom:clip-state')) + ':index' + index;
+  let joint = 1, rec = null, scale = 1;
+  if (index === 0){ joint = 9; rec = t.index['0'] || null; }
+  else if (index === 2){
+    const c = opt.carry > 0 ? t.carry && t.carry[String(opt.carry)] : null;
+    if (c && c.pos && c.rot){ rec = c; joint = c.joint; prov += ':carry' + opt.carry; }
+    else { rec = t.index['2'] || null; joint = 1; prov += opt.carry > 0 ? ':carry' + opt.carry + ':no-record' : ':carry0'; }
+    scale = ids.has(ROM.fullScaleState) ? 1 : 0.8;
+  }
+  else if (index === 18){ rec = t.index['18'] || null; joint = 1; scale = ids.has(ROM.fullScaleState) ? 1 : 0.8; }
+  return { type: 23, index, joint, rec, scale, prov };
+}
+
 // The part's local transform on its joint: position cm -> m, rotation degrees in the
 // record's angle order (rec.order, a MT_ORDER string; the mount records have none and take
 // ROM.eulerOrder, the unit default), then the scale -- the node's own T * R * S. A null

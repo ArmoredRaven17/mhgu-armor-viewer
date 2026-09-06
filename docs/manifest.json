@@ -405125,7 +405125,5646 @@
      "jp": 1
     }
    ]
-  }
+  },
+  "weapons": {
+   "ids": [
+    "001",
+    "002",
+    "003",
+    "004",
+    "005",
+    "008",
+    "009",
+    "010",
+    "011",
+    "012",
+    "013",
+    "014",
+    "016",
+    "017",
+    "018",
+    "019",
+    "020",
+    "021",
+    "022",
+    "023",
+    "024",
+    "025",
+    "027",
+    "029",
+    "030",
+    "031",
+    "032",
+    "033",
+    "034",
+    "036",
+    "037",
+    "038",
+    "040",
+    "041",
+    "042",
+    "043",
+    "045",
+    "049",
+    "050",
+    "051",
+    "052",
+    "053",
+    "054",
+    "055",
+    "056",
+    "057",
+    "058",
+    "059",
+    "060",
+    "061",
+    "062",
+    "064",
+    "066",
+    "067",
+    "068",
+    "069",
+    "070",
+    "071",
+    "072",
+    "073",
+    "074",
+    "075",
+    "077",
+    "079",
+    "080",
+    "082",
+    "084",
+    "085",
+    "086",
+    "087",
+    "088",
+    "089",
+    "090",
+    "091",
+    "093",
+    "095",
+    "096",
+    "098",
+    "100",
+    "101",
+    "102",
+    "104",
+    "106",
+    "107",
+    "108",
+    "109",
+    "110",
+    "111",
+    "112",
+    "113",
+    "114",
+    "115",
+    "116",
+    "117",
+    "118",
+    "119",
+    "120",
+    "121",
+    "122",
+    "123",
+    "124",
+    "125",
+    "126",
+    "127",
+    "128",
+    "129",
+    "130",
+    "131",
+    "132",
+    "133",
+    "134",
+    "135",
+    "136",
+    "137",
+    "138",
+    "140",
+    "141",
+    "142",
+    "143",
+    "144",
+    "145",
+    "146",
+    "147",
+    "148",
+    "149",
+    "150",
+    "151",
+    "152",
+    "153",
+    "156",
+    "157",
+    "158",
+    "159",
+    "162",
+    "163",
+    "164",
+    "165",
+    "166",
+    "168",
+    "169",
+    "170",
+    "171",
+    "172",
+    "174",
+    "175",
+    "176",
+    "178",
+    "179",
+    "180",
+    "181",
+    "182",
+    "183",
+    "184",
+    "185",
+    "186",
+    "187",
+    "188",
+    "190",
+    "191",
+    "192",
+    "193",
+    "194",
+    "195",
+    "196",
+    "197",
+    "198",
+    "199",
+    "200",
+    "202",
+    "203",
+    "206",
+    "211",
+    "212",
+    "213",
+    "214"
+   ],
+   "pieces": {
+    "o_we001": {
+     "glb": "models/o_we001.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b72f094fae41ddf1.png"
+    },
+    "o_we002": {
+     "glb": "models/o_we002.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/54d8f488c9ccc3f0.png"
+    },
+    "o_we003": {
+     "glb": "models/o_we003.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/5c77086620c8bd2a.png"
+    },
+    "o_we004": {
+     "glb": "models/o_we004.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/7845d6f9fc5bdb7c.png"
+    },
+    "o_we005": {
+     "glb": "models/o_we005.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ca1409350d28b4b7.png"
+    },
+    "o_we008": {
+     "glb": "models/o_we008.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b55fe92b00187dc9.png"
+    },
+    "o_we009": {
+     "glb": "models/o_we009.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/4a19d5bdd6e40738.png"
+    },
+    "o_we010": {
+     "glb": "models/o_we010.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/4a0fcd0cdf90ee6c.png"
+    },
+    "o_we011": {
+     "glb": "models/o_we011.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/1de0147b9a7d8d6c.png"
+    },
+    "o_we012": {
+     "glb": "models/o_we012.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a87b03372d32b75f.png"
+    },
+    "o_we013": {
+     "glb": "models/o_we013.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/102fda007f693cfc.png"
+    },
+    "o_we014": {
+     "glb": "models/o_we014.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a3ad1dcba30ac694.png"
+    },
+    "o_we016": {
+     "glb": "models/o_we016.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/53c2c24715d0418e.png"
+    },
+    "o_we017": {
+     "glb": "models/o_we017.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/d4d8e260968b8755.png"
+    },
+    "o_we018": {
+     "glb": "models/o_we018.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ac2bd5a8ef3eb49b.png"
+    },
+    "o_we019": {
+     "glb": "models/o_we019.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c33f51ffca3cf84b.png"
+    },
+    "o_we020": {
+     "glb": "models/o_we020.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/1cd2070d70b4e46a.png"
+    },
+    "o_we021": {
+     "glb": "models/o_we021.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c18b24c516339970.png"
+    },
+    "o_we022": {
+     "glb": "models/o_we022.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/0a6147e35684f9b7.png"
+    },
+    "o_we023": {
+     "glb": "models/o_we023.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a8d5a537a86e3a35.png"
+    },
+    "o_we024": {
+     "glb": "models/o_we024.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/3d89ea266ac21f52.png"
+    },
+    "o_we025": {
+     "glb": "models/o_we025.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/1f849d711e8bab30.png"
+    },
+    "o_we027": {
+     "glb": "models/o_we027.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/3a9b10455129c792.png"
+    },
+    "o_we029": {
+     "glb": "models/o_we029.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/5dd3b466608f6461.png"
+    },
+    "o_we030": {
+     "glb": "models/o_we030.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/60f99b5662d0a0a9.png"
+    },
+    "o_we031": {
+     "glb": "models/o_we031.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/bcc4c8460c02d9fc.png"
+    },
+    "o_we032": {
+     "glb": "models/o_we032.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/d5bd24bd26c8c3bb.png"
+    },
+    "o_we033": {
+     "glb": "models/o_we033.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/92d10c3dda09af99.png"
+    },
+    "o_we034": {
+     "glb": "models/o_we034.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ff52b0f57c19baa7.png"
+    },
+    "o_we036": {
+     "glb": "models/o_we036.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/caaa5147e9f3e337.png"
+    },
+    "o_we037": {
+     "glb": "models/o_we037.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/9a0bd89182889151.png"
+    },
+    "o_we038": {
+     "glb": "models/o_we038.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a93fe5c15aadfe46.png"
+    },
+    "o_we040": {
+     "glb": "models/o_we040.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/2ce6ef1cde41c2ab.png"
+    },
+    "o_we041": {
+     "glb": "models/o_we041.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/6042278fe3f2c792.png"
+    },
+    "o_we042": {
+     "glb": "models/o_we042.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/4750571a7d33dab7.png"
+    },
+    "o_we043": {
+     "glb": "models/o_we043.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/1ddaab630a7997f2.png"
+    },
+    "o_we045": {
+     "glb": "models/o_we045.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/8042136e242ee8a9.png"
+    },
+    "o_we049": {
+     "glb": "models/o_we049.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/27b0e9a7ba0b5005.png"
+    },
+    "o_we050": {
+     "glb": "models/o_we050.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a84cd5198d059527.png"
+    },
+    "o_we051": {
+     "glb": "models/o_we051.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/cdef126a65f4947d.png"
+    },
+    "o_we052": {
+     "glb": "models/o_we052.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/368d0e498bded624.png"
+    },
+    "o_we053": {
+     "glb": "models/o_we053.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/4a294c7b4f5ad5cf.png"
+    },
+    "o_we054": {
+     "glb": "models/o_we054.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f8001e6c10727fa5.png"
+    },
+    "o_we055": {
+     "glb": "models/o_we055.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/89b494584cce3a8f.png"
+    },
+    "o_we056": {
+     "glb": "models/o_we056.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f510ce2e5b7cc3ab.png"
+    },
+    "o_we057": {
+     "glb": "models/o_we057.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/0b0730b9ff1bbcec.png"
+    },
+    "o_we058": {
+     "glb": "models/o_we058.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b297e25d48e5be28.png"
+    },
+    "o_we059": {
+     "glb": "models/o_we059.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/96c74ec1725b2e81.png"
+    },
+    "o_we060": {
+     "glb": "models/o_we060.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/9f07c48e340f29a8.png"
+    },
+    "o_we061": {
+     "glb": "models/o_we061.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/97cb4d7fa8833d4a.png"
+    },
+    "o_we062": {
+     "glb": "models/o_we062.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/556119f645491329.png"
+    },
+    "o_we064": {
+     "glb": "models/o_we064.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/79ace975200412f7.png"
+    },
+    "o_we066": {
+     "glb": "models/o_we066.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f096f8700d87ff79.png"
+    },
+    "o_we067": {
+     "glb": "models/o_we067.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/492dd2dc32404e5f.png"
+    },
+    "o_we068": {
+     "glb": "models/o_we068.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c6bb073766fe1f3b.png"
+    },
+    "o_we069": {
+     "glb": "models/o_we069.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/8b95299f8ec322f6.png"
+    },
+    "o_we070": {
+     "glb": "models/o_we070.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/28d6ae3251f81f1f.png"
+    },
+    "o_we071": {
+     "glb": "models/o_we071.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/56976e6dc69e3d66.png"
+    },
+    "o_we072": {
+     "glb": "models/o_we072.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/16cd31136ce02cfe.png"
+    },
+    "o_we073": {
+     "glb": "models/o_we073.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/abfebe921b8e8dbb.png"
+    },
+    "o_we074": {
+     "glb": "models/o_we074.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/815694e9498f4f07.png"
+    },
+    "o_we075": {
+     "glb": "models/o_we075.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/5f49cb7bbf33c64d.png"
+    },
+    "o_we077": {
+     "glb": "models/o_we077.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/6baf08d6351f1fa8.png"
+    },
+    "o_we079": {
+     "glb": "models/o_we079.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e42e28b02078b663.png"
+    },
+    "o_we080": {
+     "glb": "models/o_we080.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ff682436579552cc.png"
+    },
+    "o_we082": {
+     "glb": "models/o_we082.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a237cd2f3ffd4c7f.png"
+    },
+    "o_we084": {
+     "glb": "models/o_we084.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/5d44b7de2c783467.png"
+    },
+    "o_we085": {
+     "glb": "models/o_we085.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/7fd3068d8f680d11.png"
+    },
+    "o_we086": {
+     "glb": "models/o_we086.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c98b3e55e94f18eb.png"
+    },
+    "o_we087": {
+     "glb": "models/o_we087.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f3f58f317b4a4a4b.png"
+    },
+    "o_we088": {
+     "glb": "models/o_we088.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/66eb909a64efad6b.png"
+    },
+    "o_we089": {
+     "glb": "models/o_we089.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/0ddab369961b40ee.png"
+    },
+    "o_we090": {
+     "glb": "models/o_we090.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c4c7dc05c308260f.png"
+    },
+    "o_we091": {
+     "glb": "models/o_we091.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/2ad0547c2153e3c6.png"
+    },
+    "o_we093": {
+     "glb": "models/o_we093.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c8fd59d3f6871268.png"
+    },
+    "o_we095": {
+     "glb": "models/o_we095.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/7c331a1853e498ce.png"
+    },
+    "o_we096": {
+     "glb": "models/o_we096.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a0e47770a4c28ff2.png"
+    },
+    "o_we098": {
+     "glb": "models/o_we098.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e9c0b1b4220ca2e8.png"
+    },
+    "o_we100": {
+     "glb": "models/o_we100.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 4,
+     "tex": "tex/5f035095957e166b.png"
+    },
+    "o_we101": {
+     "glb": "models/o_we101.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/352dcfc653d56e3d.png"
+    },
+    "o_we102": {
+     "glb": "models/o_we102.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/2db0d3586ab0b784.png"
+    },
+    "o_we104": {
+     "glb": "models/o_we104.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/2c69182b50f9baf9.png"
+    },
+    "o_we106": {
+     "glb": "models/o_we106.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 11,
+     "tex": "tex/26da282d864cd76c.png"
+    },
+    "o_we107": {
+     "glb": "models/o_we107.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/775c7eb56b1b6f4d.png"
+    },
+    "o_we108": {
+     "glb": "models/o_we108.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/de709dbc20e34b5b.png"
+    },
+    "o_we109": {
+     "glb": "models/o_we109.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/75effd2bb76ac35e.png"
+    },
+    "o_we110": {
+     "glb": "models/o_we110.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/89bdbf309829e592.png"
+    },
+    "o_we111": {
+     "glb": "models/o_we111.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/17700068a4e3d877.png"
+    },
+    "o_we112": {
+     "glb": "models/o_we112.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 9,
+     "tex": "tex/03f17d2889f30201.png"
+    },
+    "o_we113": {
+     "glb": "models/o_we113.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 9,
+     "tex": "tex/467c24d257d840f9.png"
+    },
+    "o_we114": {
+     "glb": "models/o_we114.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 9,
+     "tex": "tex/f38a5cfbf5246d29.png"
+    },
+    "o_we115": {
+     "glb": "models/o_we115.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/b3ebb11d3ddc7f84.png"
+    },
+    "o_we116": {
+     "glb": "models/o_we116.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/0901ba143ba2ec88.png"
+    },
+    "o_we117": {
+     "glb": "models/o_we117.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/10318e4e8db80e8b.png"
+    },
+    "o_we118": {
+     "glb": "models/o_we118.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b9ff0d172b8bce3d.png"
+    },
+    "o_we119": {
+     "glb": "models/o_we119.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/972edb6b2d141ba6.png"
+    },
+    "o_we120": {
+     "glb": "models/o_we120.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/4380c6390e235aeb.png"
+    },
+    "o_we121": {
+     "glb": "models/o_we121.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/7c8bb96291b2ecc9.png"
+    },
+    "o_we122": {
+     "glb": "models/o_we122.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f0c29c997e82c842.png"
+    },
+    "o_we123": {
+     "glb": "models/o_we123.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 4,
+     "tex": "tex/7c492438c016d411.png"
+    },
+    "o_we124": {
+     "glb": "models/o_we124.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/18445e8678ffbaa9.png"
+    },
+    "o_we125": {
+     "glb": "models/o_we125.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/ce22163a53c436de.png"
+    },
+    "o_we126": {
+     "glb": "models/o_we126.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/296fcece9e42dd19.png"
+    },
+    "o_we127": {
+     "glb": "models/o_we127.glb",
+     "joints": [],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 3,
+     "tex": "tex/4992e99601768f09.png"
+    },
+    "o_we128": {
+     "glb": "models/o_we128.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/de27a92c46399707.png"
+    },
+    "o_we129": {
+     "glb": "models/o_we129.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/0f64dab6b346baee.png"
+    },
+    "o_we130": {
+     "glb": "models/o_we130.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/17f1f4f26513d4a4.png"
+    },
+    "o_we131": {
+     "glb": "models/o_we131.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/5aa02c1629389abc.png"
+    },
+    "o_we132": {
+     "glb": "models/o_we132.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/8842f897a9ef9936.png"
+    },
+    "o_we133": {
+     "glb": "models/o_we133.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/e0353e6283c484d9.png"
+    },
+    "o_we134": {
+     "glb": "models/o_we134.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e6cc153f4ed6a72d.png"
+    },
+    "o_we135": {
+     "glb": "models/o_we135.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ef6c659457c4e7b9.png"
+    },
+    "o_we136": {
+     "glb": "models/o_we136.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/44a99231e83d17b1.png"
+    },
+    "o_we137": {
+     "glb": "models/o_we137.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c7223d33f4f788f9.png"
+    },
+    "o_we138": {
+     "glb": "models/o_we138.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 0,
+     "tex": "tex/b4643a2130584345.png"
+    },
+    "o_we140": {
+     "glb": "models/o_we140.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/43f40a85cdeed80e.png"
+    },
+    "o_we141": {
+     "glb": "models/o_we141.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/a5e39e93ca348558.png"
+    },
+    "o_we142": {
+     "glb": "models/o_we142.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 1,
+     "tex": "tex/71c9fc6b0f761861.png"
+    },
+    "o_we143": {
+     "glb": "models/o_we143.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b44236162b2fb5d8.png"
+    },
+    "o_we144": {
+     "glb": "models/o_we144.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/d4b5cedbcc2d5857.png"
+    },
+    "o_we145": {
+     "glb": "models/o_we145.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/3c1355c1b5bda799.png"
+    },
+    "o_we146": {
+     "glb": "models/o_we146.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/13f5b6cd079ee618.png"
+    },
+    "o_we147": {
+     "glb": "models/o_we147.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e81b8820b23cc0ec.png"
+    },
+    "o_we148": {
+     "glb": "models/o_we148.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/eb64fa3fabe47dab.png"
+    },
+    "o_we149": {
+     "glb": "models/o_we149.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/b69201ebbbaa74cb.png"
+    },
+    "o_we150": {
+     "glb": "models/o_we150.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/f2b740ce46073f01.png"
+    },
+    "o_we151": {
+     "glb": "models/o_we151.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/722858be3124b3b5.png"
+    },
+    "o_we152": {
+     "glb": "models/o_we152.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/94cafc3a84368d53.png"
+    },
+    "o_we153": {
+     "glb": "models/o_we153.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/44fc2fd4bb7a3b6c.png"
+    },
+    "o_we156": {
+     "glb": "models/o_we156.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/8facb994b88f3865.png"
+    },
+    "o_we157": {
+     "glb": "models/o_we157.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [],
+     "carry": 1,
+     "tex": "tex/38b7f307e7087934.png"
+    },
+    "o_we158": {
+     "glb": "models/o_we158.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0
+    },
+    "o_we159": {
+     "glb": "models/o_we159.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/87c221e826e95500.png"
+    },
+    "o_we162": {
+     "glb": "models/o_we162.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 3,
+     "tex": "tex/e510ec27bac6283f.png"
+    },
+    "o_we163": {
+     "glb": "models/o_we163.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "disp": 3,
+     "tex": "tex/d513979a9a362143.png"
+    },
+    "o_we164": {
+     "glb": "models/o_we164.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/4fc7a9442a7b5681.png"
+    },
+    "o_we165": {
+     "glb": "models/o_we165.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/8bc665084d6f1e7d.png"
+    },
+    "o_we166": {
+     "glb": "models/o_we166.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 7,
+     "tex": "tex/8acbf9bbf6a69e01.png"
+    },
+    "o_we168": {
+     "glb": "models/o_we168.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 2,
+     "disp": 1,
+     "tex": "tex/ba040cf1395fe816.png"
+    },
+    "o_we169": {
+     "glb": "models/o_we169.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 9,
+     "tex": "tex/b7d52dab51f2d4be.png"
+    },
+    "o_we170": {
+     "glb": "models/o_we170.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 6
+    },
+    "o_we171": {
+     "glb": "models/o_we171.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 5,
+     "tex": "tex/ef9d271e78670f31.png"
+    },
+    "o_we172": {
+     "glb": "models/o_we172.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/06a25565b5a1b77b.png"
+    },
+    "o_we174": {
+     "glb": "models/o_we174.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/3d11adbfc5627a7c.png"
+    },
+    "o_we175": {
+     "glb": "models/o_we175.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/39393251123a1037.png"
+    },
+    "o_we176": {
+     "glb": "models/o_we176.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 10,
+     "tex": "tex/e8c856676f795141.png"
+    },
+    "o_we178": {
+     "glb": "models/o_we178.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 4,
+     "tex": "tex/363986edd532263b.png"
+    },
+    "o_we179": {
+     "glb": "models/o_we179.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "disp": 2,
+     "tex": "tex/dffc69599a872b91.png"
+    },
+    "o_we180": {
+     "glb": "models/o_we180.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/293835909587c85b.png"
+    },
+    "o_we181": {
+     "glb": "models/o_we181.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/1982d548118f2154.png"
+    },
+    "o_we182": {
+     "glb": "models/o_we182.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/82eb4171744f287a.png"
+    },
+    "o_we183": {
+     "glb": "models/o_we183.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/32eb41c381b11ad6.png"
+    },
+    "o_we184": {
+     "glb": "models/o_we184.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/dd18ee9648b28c36.png"
+    },
+    "o_we185": {
+     "glb": "models/o_we185.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/642996af702d0a64.png"
+    },
+    "o_we186": {
+     "glb": "models/o_we186.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 4,
+     "tex": "tex/e75e0ddf93fda807.png"
+    },
+    "o_we187": {
+     "glb": "models/o_we187.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/314856210e560ec1.png"
+    },
+    "o_we188": {
+     "glb": "models/o_we188.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/ff1ca86c275adfc5.png"
+    },
+    "o_we190": {
+     "glb": "models/o_we190.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/c4ab302944ef4501.png"
+    },
+    "o_we191": {
+     "glb": "models/o_we191.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/174eb843cbb7f5b7.png"
+    },
+    "o_we192": {
+     "glb": "models/o_we192.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/93f5855d8864290a.png"
+    },
+    "o_we193": {
+     "glb": "models/o_we193.glb",
+     "joints": [],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/66c89492f9e76cf0.png"
+    },
+    "o_we194": {
+     "glb": "models/o_we194.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/a19aaa9b9398b4e4.png"
+    },
+    "o_we195": {
+     "glb": "models/o_we195.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/1ea42cc32c83d9d4.png"
+    },
+    "o_we196": {
+     "glb": "models/o_we196.glb",
+     "joints": [],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 8,
+     "tex": "tex/0a570ff5c8bbd670.png"
+    },
+    "o_we197": {
+     "glb": "models/o_we197.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/83bc3a44b5be0b76.png"
+    },
+    "o_we198": {
+     "glb": "models/o_we198.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/3aa0675fef4686e7.png"
+    },
+    "o_we199": {
+     "glb": "models/o_we199.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/87c221e826e95500.png"
+    },
+    "o_we200": {
+     "glb": "models/o_we200.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/2cae99fd4ac79a14.png"
+    },
+    "o_we202": {
+     "glb": "models/o_we202.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 7,
+     "tex": "tex/e56fe91591bc29dc.png"
+    },
+    "o_we203": {
+     "glb": "models/o_we203.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/0c4634752fe9136b.png"
+    },
+    "o_we206": {
+     "glb": "models/o_we206.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e69dab88890d7ce6.png"
+    },
+    "o_we211": {
+     "glb": "models/o_we211.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/e218efeefbef9829.png"
+    },
+    "o_we212": {
+     "glb": "models/o_we212.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/dd01c1838cc92c10.png"
+    },
+    "o_we213": {
+     "glb": "models/o_we213.glb",
+     "joints": [
+      {
+       "gid": 1,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/4ca67947cdb25205.png"
+    },
+    "o_we214": {
+     "glb": "models/o_we214.glb",
+     "joints": [
+      {
+       "gid": 14,
+       "leaf": true
+      }
+     ],
+     "hide": [
+      "Group[100]"
+     ],
+     "carry": 0,
+     "tex": "tex/d13db892285f5733.png"
+    }
+   },
+   "list": [
+    {
+     "row": 1,
+     "name": "F Bone Wedge",
+     "model": "001",
+     "blunt": false
+    },
+    {
+     "row": 2,
+     "name": "F Bherna Staff",
+     "model": "132",
+     "blunt": true
+    },
+    {
+     "row": 3,
+     "name": "F Iron Sword",
+     "model": "041",
+     "blunt": false
+    },
+    {
+     "row": 4,
+     "name": "F Bone Hammer",
+     "model": "040",
+     "blunt": true
+    },
+    {
+     "row": 5,
+     "name": "F Jaggi Knife",
+     "model": "025",
+     "blunt": false
+    },
+    {
+     "row": 6,
+     "name": "F Hunting Knife",
+     "model": "131",
+     "blunt": false
+    },
+    {
+     "row": 7,
+     "name": "F Yukumo Bokken",
+     "model": "036",
+     "blunt": true
+    },
+    {
+     "row": 8,
+     "name": "F Wood Chopper",
+     "model": "054",
+     "blunt": false
+    },
+    {
+     "row": 9,
+     "name": "F Paw Punch",
+     "model": "002",
+     "blunt": true
+    },
+    {
+     "row": 10,
+     "name": "F Alta Net",
+     "model": "111",
+     "blunt": true
+    },
+    {
+     "row": 11,
+     "name": "F Rheno Hammer",
+     "model": "033",
+     "blunt": true
+    },
+    {
+     "row": 12,
+     "name": "F Bnaha Dagger",
+     "model": "034",
+     "blunt": false
+    },
+    {
+     "row": 13,
+     "name": "F Maccao Dagger",
+     "model": "119",
+     "blunt": false
+    },
+    {
+     "row": 14,
+     "name": "F Vprey Bayonet",
+     "model": "112",
+     "blunt": false
+    },
+    {
+     "row": 15,
+     "name": "F Bulldrome Tusk",
+     "model": "031",
+     "blunt": true
+    },
+    {
+     "row": 16,
+     "name": "F Arzuros Mace",
+     "model": "027",
+     "blunt": true
+    },
+    {
+     "row": 17,
+     "name": "F Genprey Bayonet",
+     "model": "113",
+     "blunt": false
+    },
+    {
+     "row": 18,
+     "name": "F Cephalos Brush",
+     "model": "089",
+     "blunt": true
+    },
+    {
+     "row": 19,
+     "name": "F Machalite Wedge",
+     "model": "049",
+     "blunt": false
+    },
+    {
+     "row": 20,
+     "name": "F Giant Acorn",
+     "model": "050",
+     "blunt": true
+    },
+    {
+     "row": 21,
+     "name": "F Stone Cat Statue",
+     "model": "157",
+     "blunt": true
+    },
+    {
+     "row": 22,
+     "name": "F Venombee Bat",
+     "model": "137",
+     "blunt": true
+    },
+    {
+     "row": 23,
+     "name": "F Gourmet Cheese",
+     "model": "134",
+     "blunt": true
+    },
+    {
+     "row": 24,
+     "name": "F Moofah Cotton",
+     "model": "133",
+     "blunt": true
+    },
+    {
+     "row": 25,
+     "name": "F Aptonoth Meat",
+     "model": "129",
+     "blunt": true
+    },
+    {
+     "row": 26,
+     "name": "F Fish Stick",
+     "model": "110",
+     "blunt": false
+    },
+    {
+     "row": 27,
+     "name": "F Grilled Hammer",
+     "model": "032",
+     "blunt": true
+    },
+    {
+     "row": 28,
+     "name": "F Ioprey Bayonet",
+     "model": "114",
+     "blunt": false
+    },
+    {
+     "row": 29,
+     "name": "F Lagombi Staff",
+     "model": "029",
+     "blunt": true
+    },
+    {
+     "row": 30,
+     "name": "F Kut-Ku Cutter",
+     "model": "069",
+     "blunt": false
+    },
+    {
+     "row": 31,
+     "name": "F Gypceros Glare",
+     "model": "087",
+     "blunt": true
+    },
+    {
+     "row": 32,
+     "name": "F Cabra Pounder",
+     "model": "059",
+     "blunt": true
+    },
+    {
+     "row": 33,
+     "name": "F Daimyo Shears",
+     "model": "088",
+     "blunt": true
+    },
+    {
+     "row": 34,
+     "name": "F Ludroth Paw",
+     "model": "013",
+     "blunt": false
+    },
+    {
+     "row": 35,
+     "name": "F Khezu Whaccine",
+     "model": "066",
+     "blunt": false
+    },
+    {
+     "row": 36,
+     "name": "F Nibel Blammer",
+     "model": "023",
+     "blunt": true
+    },
+    {
+     "row": 37,
+     "name": "F Quest Book",
+     "model": "130",
+     "blunt": true
+    },
+    {
+     "row": 38,
+     "name": "F Vprey Wedge",
+     "model": "051",
+     "blunt": false
+    },
+    {
+     "row": 39,
+     "name": "F Barrel Basher",
+     "model": "052",
+     "blunt": true
+    },
+    {
+     "row": 40,
+     "name": "F Derring Lance",
+     "model": "055",
+     "blunt": false
+    },
+    {
+     "row": 41,
+     "name": "F Edel Rod",
+     "model": "136",
+     "blunt": true
+    },
+    {
+     "row": 42,
+     "name": "F Mosgharl Broom",
+     "model": "042",
+     "blunt": true
+    },
+    {
+     "row": 43,
+     "name": "F Bushwhacker",
+     "model": "118",
+     "blunt": true
+    },
+    {
+     "row": 44,
+     "name": "F Death Stench Scythe",
+     "model": "138",
+     "blunt": false
+    },
+    {
+     "row": 45,
+     "name": "F Marauder Blade",
+     "model": "003",
+     "blunt": false
+    },
+    {
+     "row": 46,
+     "name": "F Marauder Gavel",
+     "model": "053",
+     "blunt": true
+    },
+    {
+     "row": 47,
+     "name": "F Volvi Lantern",
+     "model": "030",
+     "blunt": true
+    },
+    {
+     "row": 48,
+     "name": "F Jester Parasol",
+     "model": "120",
+     "blunt": true
+    },
+    {
+     "row": 49,
+     "name": "F Rathian Rapier",
+     "model": "004",
+     "blunt": false
+    },
+    {
+     "row": 50,
+     "name": "F Blango Spear",
+     "model": "115",
+     "blunt": false
+    },
+    {
+     "row": 51,
+     "name": "F Ceanataur Cutter",
+     "model": "116",
+     "blunt": false
+    },
+    {
+     "row": 52,
+     "name": "F Naja Pungi",
+     "model": "060",
+     "blunt": true
+    },
+    {
+     "row": 53,
+     "name": "F Narga Shuriken",
+     "model": "018",
+     "blunt": false
+    },
+    {
+     "row": 54,
+     "name": "F Kokoto Beer",
+     "model": "127",
+     "blunt": true
+    },
+    {
+     "row": 55,
+     "name": "F Pokke Mop",
+     "model": "128",
+     "blunt": true
+    },
+    {
+     "row": 56,
+     "name": "F Yukumo Fan",
+     "model": "100",
+     "blunt": false
+    },
+    {
+     "row": 57,
+     "name": "F Shroom Rod",
+     "model": "158",
+     "blunt": true
+    },
+    {
+     "row": 58,
+     "name": "F Eldora Paw",
+     "model": "156",
+     "blunt": false
+    },
+    {
+     "row": 59,
+     "name": "F Garuga Fan",
+     "model": "085",
+     "blunt": false
+    },
+    {
+     "row": 60,
+     "name": "F Uragaan Iron",
+     "model": "012",
+     "blunt": true
+    },
+    {
+     "row": 61,
+     "name": "F Rathalos Blade",
+     "model": "005",
+     "blunt": false
+    },
+    {
+     "row": 62,
+     "name": "F Lagia Anchor",
+     "model": "073",
+     "blunt": false
+    },
+    {
+     "row": 63,
+     "name": "F Astalos Spear",
+     "model": "122",
+     "blunt": false
+    },
+    {
+     "row": 64,
+     "name": "F Enormews Staff",
+     "model": "123",
+     "blunt": false
+    },
+    {
+     "row": 65,
+     "name": "F Mizutsune Parasol",
+     "model": "124",
+     "blunt": true
+    },
+    {
+     "row": 66,
+     "name": "F Guild Rapier",
+     "model": "038",
+     "blunt": false
+    },
+    {
+     "row": 67,
+     "name": "F Moofy Plush",
+     "model": "159",
+     "blunt": true
+    },
+    {
+     "row": 68,
+     "name": "F Scorching Blade",
+     "model": "121",
+     "blunt": false
+    },
+    {
+     "row": 69,
+     "name": "F Mewsurper's Peal",
+     "model": "021",
+     "blunt": false
+    },
+    {
+     "row": 70,
+     "name": "F Katzenlampe",
+     "model": "061",
+     "blunt": false
+    },
+    {
+     "row": 71,
+     "name": "F Seregios Edge",
+     "model": "093",
+     "blunt": false
+    },
+    {
+     "row": 72,
+     "name": "F Tigrex Whammer",
+     "model": "017",
+     "blunt": true
+    },
+    {
+     "row": 73,
+     "name": "F Kirin Rumblezap",
+     "model": "067",
+     "blunt": false
+    },
+    {
+     "row": 74,
+     "name": "F Brachy Punch",
+     "model": "072",
+     "blunt": true
+    },
+    {
+     "row": 75,
+     "name": "F Le C\u0153ur de Chat",
+     "model": "062",
+     "blunt": false
+    },
+    {
+     "row": 76,
+     "name": "F Kushala Wand",
+     "model": "070",
+     "blunt": false
+    },
+    {
+     "row": 77,
+     "name": "F Genie Breath",
+     "model": "084",
+     "blunt": false
+    },
+    {
+     "row": 78,
+     "name": "F Kaiser Mace",
+     "model": "071",
+     "blunt": true
+    },
+    {
+     "row": 79,
+     "name": "F White Felyne Husk",
+     "model": "125",
+     "blunt": true
+    },
+    {
+     "row": 80,
+     "name": "F Bone Wedge S",
+     "model": "001",
+     "blunt": false
+    },
+    {
+     "row": 81,
+     "name": "F Bherna Staff S",
+     "model": "132",
+     "blunt": true
+    },
+    {
+     "row": 82,
+     "name": "F Hunting Knife S",
+     "model": "131",
+     "blunt": false
+    },
+    {
+     "row": 83,
+     "name": "F Yukumo Bonito",
+     "model": "036",
+     "blunt": true
+    },
+    {
+     "row": 84,
+     "name": "F Carbalite Wedge",
+     "model": "049",
+     "blunt": false
+    },
+    {
+     "row": 85,
+     "name": "F Giant Acorn S",
+     "model": "050",
+     "blunt": true
+    },
+    {
+     "row": 86,
+     "name": "F Vprey Wedge S",
+     "model": "051",
+     "blunt": false
+    },
+    {
+     "row": 87,
+     "name": "F Barrel Basher S",
+     "model": "052",
+     "blunt": true
+    },
+    {
+     "row": 88,
+     "name": "F Gourmet Cheese S",
+     "model": "134",
+     "blunt": true
+    },
+    {
+     "row": 89,
+     "name": "F Moofah Cotton S",
+     "model": "133",
+     "blunt": true
+    },
+    {
+     "row": 90,
+     "name": "F Barbecue",
+     "model": "129",
+     "blunt": true
+    },
+    {
+     "row": 91,
+     "name": "F Fish Stick S",
+     "model": "110",
+     "blunt": false
+    },
+    {
+     "row": 92,
+     "name": "F Fingerlicker",
+     "model": "032",
+     "blunt": true
+    },
+    {
+     "row": 93,
+     "name": "F Bushwhacker S",
+     "model": "118",
+     "blunt": true
+    },
+    {
+     "row": 94,
+     "name": "F Paw Punch S",
+     "model": "002",
+     "blunt": true
+    },
+    {
+     "row": 95,
+     "name": "F Carbalite Sword",
+     "model": "041",
+     "blunt": false
+    },
+    {
+     "row": 96,
+     "name": "F Bone Hammer S",
+     "model": "040",
+     "blunt": true
+    },
+    {
+     "row": 97,
+     "name": "F Alta Net S",
+     "model": "111",
+     "blunt": true
+    },
+    {
+     "row": 98,
+     "name": "F Bnaha Dagger S",
+     "model": "034",
+     "blunt": false
+    },
+    {
+     "row": 99,
+     "name": "F Jaggi Knife S",
+     "model": "025",
+     "blunt": false
+    },
+    {
+     "row": 100,
+     "name": "F Rheno Hammer S",
+     "model": "033",
+     "blunt": true
+    },
+    {
+     "row": 101,
+     "name": "F Slagtoth Leaf",
+     "model": "043",
+     "blunt": true
+    },
+    {
+     "row": 102,
+     "name": "F Maccao Dagger S",
+     "model": "119",
+     "blunt": false
+    },
+    {
+     "row": 103,
+     "name": "F Vprey Bayonet S",
+     "model": "112",
+     "blunt": false
+    },
+    {
+     "row": 104,
+     "name": "F Bulldrome Tusk S",
+     "model": "031",
+     "blunt": true
+    },
+    {
+     "row": 105,
+     "name": "F Arzuros Mace S",
+     "model": "027",
+     "blunt": true
+    },
+    {
+     "row": 283,
+     "name": "F Giaprey Bayonet",
+     "model": "197",
+     "blunt": false
+    },
+    {
+     "row": 106,
+     "name": "F Genprey Bayonet S",
+     "model": "113",
+     "blunt": false
+    },
+    {
+     "row": 107,
+     "name": "F Lagombi Staff S",
+     "model": "029",
+     "blunt": true
+    },
+    {
+     "row": 108,
+     "name": "F Cephalos Brush S",
+     "model": "089",
+     "blunt": true
+    },
+    {
+     "row": 109,
+     "name": "F Kut-Ku Cutter S",
+     "model": "069",
+     "blunt": false
+    },
+    {
+     "row": 110,
+     "name": "F Gypceros Glare S",
+     "model": "087",
+     "blunt": true
+    },
+    {
+     "row": 111,
+     "name": "F Cabra Pounder S",
+     "model": "059",
+     "blunt": true
+    },
+    {
+     "row": 112,
+     "name": "F Daimyo Shears S",
+     "model": "088",
+     "blunt": true
+    },
+    {
+     "row": 113,
+     "name": "F Ludroth Paw S",
+     "model": "013",
+     "blunt": false
+    },
+    {
+     "row": 284,
+     "name": "F Conga Cymbals",
+     "model": "091",
+     "blunt": false
+    },
+    {
+     "row": 114,
+     "name": "F Kecha Harrow",
+     "model": "057",
+     "blunt": false
+    },
+    {
+     "row": 285,
+     "name": "F Barroth Mace",
+     "model": "011",
+     "blunt": true
+    },
+    {
+     "row": 115,
+     "name": "F Bell Rod",
+     "model": "037",
+     "blunt": true
+    },
+    {
+     "row": 116,
+     "name": "F Gargouille Waltz",
+     "model": "157",
+     "blunt": true
+    },
+    {
+     "row": 117,
+     "name": "F Venombee Bat S",
+     "model": "137",
+     "blunt": true
+    },
+    {
+     "row": 118,
+     "name": "F Mosgharl Broom S",
+     "model": "042",
+     "blunt": true
+    },
+    {
+     "row": 119,
+     "name": "F Meowtetsuken",
+     "model": "003",
+     "blunt": false
+    },
+    {
+     "row": 120,
+     "name": "F Pounderpurr",
+     "model": "053",
+     "blunt": true
+    },
+    {
+     "row": 286,
+     "name": "F Second Sight Lens",
+     "model": "200",
+     "blunt": true
+    },
+    {
+     "row": 121,
+     "name": "F Ioprey Bayonet S",
+     "model": "114",
+     "blunt": false
+    },
+    {
+     "row": 122,
+     "name": "F Volvi Lantern S",
+     "model": "030",
+     "blunt": true
+    },
+    {
+     "row": 287,
+     "name": "F Basarios Axe",
+     "model": "090",
+     "blunt": false
+    },
+    {
+     "row": 123,
+     "name": "F Khezu Whaccine S",
+     "model": "066",
+     "blunt": false
+    },
+    {
+     "row": 124,
+     "name": "F Nibel Blammer S",
+     "model": "023",
+     "blunt": true
+    },
+    {
+     "row": 125,
+     "name": "F Slumbering Duke",
+     "model": "120",
+     "blunt": true
+    },
+    {
+     "row": 126,
+     "name": "F Queen Rapier",
+     "model": "004",
+     "blunt": false
+    },
+    {
+     "row": 127,
+     "name": "F Blango Spear S",
+     "model": "115",
+     "blunt": false
+    },
+    {
+     "row": 128,
+     "name": "F Ceanataur Cutter S",
+     "model": "116",
+     "blunt": false
+    },
+    {
+     "row": 288,
+     "name": "F Nerscylla Wedge",
+     "model": "058",
+     "blunt": false
+    },
+    {
+     "row": 129,
+     "name": "F Naja Pungi S",
+     "model": "060",
+     "blunt": true
+    },
+    {
+     "row": 130,
+     "name": "F Narga Shuriken S",
+     "model": "018",
+     "blunt": false
+    },
+    {
+     "row": 131,
+     "name": "F Garuga Fan S",
+     "model": "085",
+     "blunt": false
+    },
+    {
+     "row": 132,
+     "name": "F Uragaan Iron S",
+     "model": "012",
+     "blunt": true
+    },
+    {
+     "row": 133,
+     "name": "F Zamtrios Paw",
+     "model": "064",
+     "blunt": true
+    },
+    {
+     "row": 134,
+     "name": "F Plesioth Board",
+     "model": "074",
+     "blunt": false
+    },
+    {
+     "row": 135,
+     "name": "F Lava Mace",
+     "model": "117",
+     "blunt": true
+    },
+    {
+     "row": 136,
+     "name": "F Edel Rod S",
+     "model": "136",
+     "blunt": true
+    },
+    {
+     "row": 137,
+     "name": "F Lulling Moofy Plush",
+     "model": "159",
+     "blunt": true
+    },
+    {
+     "row": 138,
+     "name": "F Wood Chopper S",
+     "model": "054",
+     "blunt": false
+    },
+    {
+     "row": 139,
+     "name": "F Kut-Ku Cackle",
+     "model": "075",
+     "blunt": false
+    },
+    {
+     "row": 140,
+     "name": "F Bulldrome Rrrush",
+     "model": "098",
+     "blunt": true
+    },
+    {
+     "row": 141,
+     "name": "F Mighty Shroom Rod",
+     "model": "158",
+     "blunt": true
+    },
+    {
+     "row": 142,
+     "name": "F D. Stench Scythe S",
+     "model": "138",
+     "blunt": false
+    },
+    {
+     "row": 143,
+     "name": "F Lost Catspaw Staff",
+     "model": "156",
+     "blunt": false
+    },
+    {
+     "row": 144,
+     "name": "F Lagia Anchor S",
+     "model": "073",
+     "blunt": false
+    },
+    {
+     "row": 145,
+     "name": "F Scorched Whiskers",
+     "model": "121",
+     "blunt": false
+    },
+    {
+     "row": 146,
+     "name": "F Lightning Spear",
+     "model": "122",
+     "blunt": false
+    },
+    {
+     "row": 147,
+     "name": "F Ginormews Staff",
+     "model": "123",
+     "blunt": false
+    },
+    {
+     "row": 148,
+     "name": "F Crimson Parasol",
+     "model": "124",
+     "blunt": true
+    },
+    {
+     "row": 289,
+     "name": "F Barioth Knife",
+     "model": "008",
+     "blunt": false
+    },
+    {
+     "row": 149,
+     "name": "F Blazing Blade",
+     "model": "005",
+     "blunt": false
+    },
+    {
+     "row": 150,
+     "name": "F Mewsurper's Roar",
+     "model": "021",
+     "blunt": false
+    },
+    {
+     "row": 290,
+     "name": "F Grav Bazooka",
+     "model": "086",
+     "blunt": true
+    },
+    {
+     "row": 151,
+     "name": "F Katzenfunzel",
+     "model": "061",
+     "blunt": false
+    },
+    {
+     "row": 152,
+     "name": "F Tigrex Whammer S",
+     "model": "017",
+     "blunt": true
+    },
+    {
+     "row": 153,
+     "name": "F Seltas Drill",
+     "model": "056",
+     "blunt": false
+    },
+    {
+     "row": 154,
+     "name": "F Agnaktor Lance",
+     "model": "014",
+     "blunt": false
+    },
+    {
+     "row": 155,
+     "name": "F Duram Axe",
+     "model": "024",
+     "blunt": false
+    },
+    {
+     "row": 156,
+     "name": "F Kirin Bolt",
+     "model": "067",
+     "blunt": false
+    },
+    {
+     "row": 157,
+     "name": "F Golden Gadget",
+     "model": "068",
+     "blunt": true
+    },
+    {
+     "row": 158,
+     "name": "F Vangis Mace",
+     "model": "010",
+     "blunt": true
+    },
+    {
+     "row": 159,
+     "name": "F Kut-Ku Cutter R",
+     "model": "069",
+     "blunt": false
+    },
+    {
+     "row": 160,
+     "name": "F Kecha Harrow R",
+     "model": "057",
+     "blunt": false
+    },
+    {
+     "row": 161,
+     "name": "F Gypceros Ankh R",
+     "model": "087",
+     "blunt": true
+    },
+    {
+     "row": 162,
+     "name": "F Cabra Pounder R",
+     "model": "059",
+     "blunt": true
+    },
+    {
+     "row": 163,
+     "name": "F Daimyo Shears R",
+     "model": "088",
+     "blunt": true
+    },
+    {
+     "row": 164,
+     "name": "F Ludroth Paw R",
+     "model": "013",
+     "blunt": false
+    },
+    {
+     "row": 165,
+     "name": "F Jester Parasol R",
+     "model": "120",
+     "blunt": true
+    },
+    {
+     "row": 166,
+     "name": "F Zamtrios Paw R",
+     "model": "064",
+     "blunt": true
+    },
+    {
+     "row": 167,
+     "name": "F Khezu Whaccine R",
+     "model": "066",
+     "blunt": false
+    },
+    {
+     "row": 168,
+     "name": "F Rathian Rapier R",
+     "model": "004",
+     "blunt": false
+    },
+    {
+     "row": 169,
+     "name": "F Nibel Blammer R",
+     "model": "023",
+     "blunt": true
+    },
+    {
+     "row": 170,
+     "name": "F Plesioth Board R",
+     "model": "074",
+     "blunt": false
+    },
+    {
+     "row": 171,
+     "name": "F Blango Spear R",
+     "model": "115",
+     "blunt": false
+    },
+    {
+     "row": 172,
+     "name": "F Quest Book S",
+     "model": "130",
+     "blunt": true
+    },
+    {
+     "row": 173,
+     "name": "F Kokoto Beer S",
+     "model": "127",
+     "blunt": true
+    },
+    {
+     "row": 174,
+     "name": "F Pokke Mop S",
+     "model": "128",
+     "blunt": true
+    },
+    {
+     "row": 175,
+     "name": "F Yukumo Fan S",
+     "model": "100",
+     "blunt": false
+    },
+    {
+     "row": 176,
+     "name": "F Guildcalibur",
+     "model": "038",
+     "blunt": false
+    },
+    {
+     "row": 177,
+     "name": "F Dragon Evertones",
+     "model": "095",
+     "blunt": true
+    },
+    {
+     "row": 178,
+     "name": "F Barrel Mallet",
+     "model": "109",
+     "blunt": true
+    },
+    {
+     "row": 179,
+     "name": "F Dirty Blade",
+     "model": "096",
+     "blunt": false
+    },
+    {
+     "row": 180,
+     "name": "F Meowsketeer Rapier",
+     "model": "135",
+     "blunt": false
+    },
+    {
+     "row": 181,
+     "name": "F Master's Blade",
+     "model": "153",
+     "blunt": false
+    },
+    {
+     "row": 182,
+     "name": "F Derring Lance S",
+     "model": "055",
+     "blunt": false
+    },
+    {
+     "row": 183,
+     "name": "F Seregios Edge S",
+     "model": "093",
+     "blunt": false
+    },
+    {
+     "row": 291,
+     "name": "F Diablos Hammer",
+     "model": "009",
+     "blunt": true
+    },
+    {
+     "row": 184,
+     "name": "F Brachy Wallop",
+     "model": "072",
+     "blunt": true
+    },
+    {
+     "row": 185,
+     "name": "F Le Chatphrodite",
+     "model": "062",
+     "blunt": false
+    },
+    {
+     "row": 292,
+     "name": "F Silverwing Sword",
+     "model": "191",
+     "blunt": false
+    },
+    {
+     "row": 186,
+     "name": "F White Felyne Staff",
+     "model": "125",
+     "blunt": true
+    },
+    {
+     "row": 187,
+     "name": "F Polaris Sword",
+     "model": "126",
+     "blunt": false
+    },
+    {
+     "row": 188,
+     "name": "F Lava Mace R",
+     "model": "117",
+     "blunt": true
+    },
+    {
+     "row": 189,
+     "name": "F Ceanataur Cutter R",
+     "model": "116",
+     "blunt": false
+    },
+    {
+     "row": 190,
+     "name": "F Narga Shuriken R",
+     "model": "018",
+     "blunt": false
+    },
+    {
+     "row": 191,
+     "name": "F Naja Pungi R",
+     "model": "060",
+     "blunt": true
+    },
+    {
+     "row": 192,
+     "name": "F Garuga Fan R",
+     "model": "085",
+     "blunt": false
+    },
+    {
+     "row": 193,
+     "name": "F Uragaan Iron R",
+     "model": "012",
+     "blunt": true
+    },
+    {
+     "row": 194,
+     "name": "F Seltas Drill R",
+     "model": "056",
+     "blunt": false
+    },
+    {
+     "row": 195,
+     "name": "F Rathalos Blade R",
+     "model": "005",
+     "blunt": false
+    },
+    {
+     "row": 196,
+     "name": "F Lagia Anchor R",
+     "model": "073",
+     "blunt": false
+    },
+    {
+     "row": 197,
+     "name": "F Mewsurper's Peal R",
+     "model": "021",
+     "blunt": false
+    },
+    {
+     "row": 198,
+     "name": "F Kushala Wand S",
+     "model": "070",
+     "blunt": false
+    },
+    {
+     "row": 199,
+     "name": "F Genie Breath S",
+     "model": "084",
+     "blunt": false
+    },
+    {
+     "row": 200,
+     "name": "F Kaiser Mace S",
+     "model": "071",
+     "blunt": true
+    },
+    {
+     "row": 201,
+     "name": "F Akantor Sword",
+     "model": "019",
+     "blunt": false
+    },
+    {
+     "row": 202,
+     "name": "F Ukanlos Shovel",
+     "model": "020",
+     "blunt": true
+    },
+    {
+     "row": 203,
+     "name": "F Cursed Cloud",
+     "model": "022",
+     "blunt": false
+    },
+    {
+     "row": 204,
+     "name": "F Escador Scythe",
+     "model": "016",
+     "blunt": false
+    },
+    {
+     "row": 205,
+     "name": "F Mizutsune Parasol R",
+     "model": "124",
+     "blunt": true
+    },
+    {
+     "row": 206,
+     "name": "F Astalos Spear R",
+     "model": "122",
+     "blunt": false
+    },
+    {
+     "row": 207,
+     "name": "F Enormews Staff R",
+     "model": "123",
+     "blunt": false
+    },
+    {
+     "row": 208,
+     "name": "F Scorching Blade R",
+     "model": "121",
+     "blunt": false
+    },
+    {
+     "row": 209,
+     "name": "F Agnaktor Lance R",
+     "model": "014",
+     "blunt": false
+    },
+    {
+     "row": 210,
+     "name": "F Katzenlampe R",
+     "model": "061",
+     "blunt": false
+    },
+    {
+     "row": 211,
+     "name": "F Seregios Edge R",
+     "model": "093",
+     "blunt": false
+    },
+    {
+     "row": 212,
+     "name": "F Duram Axe R",
+     "model": "024",
+     "blunt": false
+    },
+    {
+     "row": 213,
+     "name": "F Tigrex Whammer R",
+     "model": "017",
+     "blunt": true
+    },
+    {
+     "row": 214,
+     "name": "F Brachy Punch R",
+     "model": "072",
+     "blunt": true
+    },
+    {
+     "row": 215,
+     "name": "F Golden Gadget R",
+     "model": "068",
+     "blunt": true
+    },
+    {
+     "row": 216,
+     "name": "F Deviljho Mace R",
+     "model": "010",
+     "blunt": true
+    },
+    {
+     "row": 293,
+     "name": "F Bone Wedge X",
+     "model": "001",
+     "blunt": false
+    },
+    {
+     "row": 294,
+     "name": "F Bherna Staff X",
+     "model": "132",
+     "blunt": true
+    },
+    {
+     "row": 295,
+     "name": "F Eltalite Wedge",
+     "model": "049",
+     "blunt": false
+    },
+    {
+     "row": 296,
+     "name": "F Giant Acorn X",
+     "model": "050",
+     "blunt": true
+    },
+    {
+     "row": 297,
+     "name": "F Vprey Wedge X",
+     "model": "051",
+     "blunt": false
+    },
+    {
+     "row": 298,
+     "name": "F Barrel Basher X",
+     "model": "052",
+     "blunt": true
+    },
+    {
+     "row": 299,
+     "name": "F Gourmet Cheese X",
+     "model": "134",
+     "blunt": true
+    },
+    {
+     "row": 300,
+     "name": "F Moofah Cotton X",
+     "model": "133",
+     "blunt": true
+    },
+    {
+     "row": 301,
+     "name": "F Deluxe BBQ",
+     "model": "129",
+     "blunt": true
+    },
+    {
+     "row": 302,
+     "name": "F Fish Stick X",
+     "model": "110",
+     "blunt": false
+    },
+    {
+     "row": 303,
+     "name": "F Smorgasbord",
+     "model": "032",
+     "blunt": true
+    },
+    {
+     "row": 304,
+     "name": "F Bushwhacker X",
+     "model": "118",
+     "blunt": true
+    },
+    {
+     "row": 305,
+     "name": "F Paw Punch X",
+     "model": "002",
+     "blunt": true
+    },
+    {
+     "row": 306,
+     "name": "F Eltalite Sword",
+     "model": "041",
+     "blunt": false
+    },
+    {
+     "row": 307,
+     "name": "F Bone Hammer X",
+     "model": "040",
+     "blunt": true
+    },
+    {
+     "row": 308,
+     "name": "F Alta Net X",
+     "model": "111",
+     "blunt": true
+    },
+    {
+     "row": 309,
+     "name": "F Bnaha Dagger X",
+     "model": "034",
+     "blunt": false
+    },
+    {
+     "row": 310,
+     "name": "F Jaggi Knife X",
+     "model": "025",
+     "blunt": false
+    },
+    {
+     "row": 311,
+     "name": "F Rheno Hammer X",
+     "model": "033",
+     "blunt": true
+    },
+    {
+     "row": 312,
+     "name": "F Slagtoth Leaf X",
+     "model": "043",
+     "blunt": true
+    },
+    {
+     "row": 313,
+     "name": "F Maccao Dagger X",
+     "model": "119",
+     "blunt": false
+    },
+    {
+     "row": 314,
+     "name": "F Vprey Bayonet X",
+     "model": "112",
+     "blunt": false
+    },
+    {
+     "row": 315,
+     "name": "F Bulldrome Tusk X",
+     "model": "031",
+     "blunt": true
+    },
+    {
+     "row": 316,
+     "name": "F Arzuros Mace X",
+     "model": "027",
+     "blunt": true
+    },
+    {
+     "row": 317,
+     "name": "F Giaprey Bayonet X",
+     "model": "197",
+     "blunt": false
+    },
+    {
+     "row": 318,
+     "name": "F Genprey Bayonet X",
+     "model": "113",
+     "blunt": false
+    },
+    {
+     "row": 319,
+     "name": "F Lagombi Staff X",
+     "model": "029",
+     "blunt": true
+    },
+    {
+     "row": 320,
+     "name": "F Cephalos Brush X",
+     "model": "089",
+     "blunt": true
+    },
+    {
+     "row": 321,
+     "name": "F Kut-Ku Cutter X",
+     "model": "069",
+     "blunt": false
+    },
+    {
+     "row": 322,
+     "name": "F Gypceros Glare X",
+     "model": "087",
+     "blunt": true
+    },
+    {
+     "row": 323,
+     "name": "F Cabra Pounder X",
+     "model": "059",
+     "blunt": true
+    },
+    {
+     "row": 324,
+     "name": "F Daimyo Shears X",
+     "model": "088",
+     "blunt": true
+    },
+    {
+     "row": 325,
+     "name": "F Ludroth Paw X",
+     "model": "013",
+     "blunt": false
+    },
+    {
+     "row": 326,
+     "name": "F Kecha Harrow X",
+     "model": "057",
+     "blunt": false
+    },
+    {
+     "row": 327,
+     "name": "F Kokoto Beer X",
+     "model": "127",
+     "blunt": true
+    },
+    {
+     "row": 328,
+     "name": "F Yukumo Fan X",
+     "model": "100",
+     "blunt": false
+    },
+    {
+     "row": 329,
+     "name": "F Bell Rod X",
+     "model": "037",
+     "blunt": true
+    },
+    {
+     "row": 330,
+     "name": "F Yian Kut-Ku Cackle",
+     "model": "075",
+     "blunt": false
+    },
+    {
+     "row": 331,
+     "name": "F Bulldrome Rrrumble",
+     "model": "098",
+     "blunt": true
+    },
+    {
+     "row": 332,
+     "name": "F Sacred Titan Dance",
+     "model": "157",
+     "blunt": true
+    },
+    {
+     "row": 333,
+     "name": "F Venombee Bat X",
+     "model": "137",
+     "blunt": true
+    },
+    {
+     "row": 334,
+     "name": "F Mosgharl Broom X",
+     "model": "042",
+     "blunt": true
+    },
+    {
+     "row": 335,
+     "name": "F Real Catetsu Blade",
+     "model": "003",
+     "blunt": false
+    },
+    {
+     "row": 336,
+     "name": "F Marauder Warhammer",
+     "model": "053",
+     "blunt": true
+    },
+    {
+     "row": 337,
+     "name": "F Finder's Loupe",
+     "model": "200",
+     "blunt": true
+    },
+    {
+     "row": 338,
+     "name": "F Ioprey Bayonet X",
+     "model": "114",
+     "blunt": false
+    },
+    {
+     "row": 339,
+     "name": "F Volvi Lantern X",
+     "model": "030",
+     "blunt": true
+    },
+    {
+     "row": 340,
+     "name": "F Basarios Axe X",
+     "model": "090",
+     "blunt": false
+    },
+    {
+     "row": 341,
+     "name": "F Conga Cymbals X",
+     "model": "091",
+     "blunt": false
+    },
+    {
+     "row": 342,
+     "name": "F Barroth Mace X",
+     "model": "011",
+     "blunt": true
+    },
+    {
+     "row": 343,
+     "name": "F Khezu Whaccine X",
+     "model": "066",
+     "blunt": false
+    },
+    {
+     "row": 344,
+     "name": "F Nibel Blammer X",
+     "model": "023",
+     "blunt": true
+    },
+    {
+     "row": 345,
+     "name": "F Slumbering Archduke",
+     "model": "120",
+     "blunt": true
+    },
+    {
+     "row": 346,
+     "name": "F Swiftblur Rapier",
+     "model": "004",
+     "blunt": false
+    },
+    {
+     "row": 347,
+     "name": "F Blango Spear X",
+     "model": "115",
+     "blunt": false
+    },
+    {
+     "row": 348,
+     "name": "F Ceanataur Cutter X",
+     "model": "116",
+     "blunt": false
+    },
+    {
+     "row": 349,
+     "name": "F Scylla Wedge X",
+     "model": "058",
+     "blunt": false
+    },
+    {
+     "row": 350,
+     "name": "F Naja Pungi X",
+     "model": "060",
+     "blunt": true
+    },
+    {
+     "row": 351,
+     "name": "F Narga Shuriken X",
+     "model": "018",
+     "blunt": false
+    },
+    {
+     "row": 352,
+     "name": "F Zamtrios Paw X",
+     "model": "064",
+     "blunt": true
+    },
+    {
+     "row": 353,
+     "name": "F Plesioth Board X",
+     "model": "074",
+     "blunt": false
+    },
+    {
+     "row": 354,
+     "name": "F Kut-Ku Cutter XR",
+     "model": "069",
+     "blunt": false
+    },
+    {
+     "row": 355,
+     "name": "F Kecha Harrow XR",
+     "model": "057",
+     "blunt": false
+    },
+    {
+     "row": 356,
+     "name": "F Gypceros Glare XR",
+     "model": "087",
+     "blunt": true
+    },
+    {
+     "row": 357,
+     "name": "F Cabra Pounder XR",
+     "model": "059",
+     "blunt": true
+    },
+    {
+     "row": 358,
+     "name": "F Daimyo Shears XR",
+     "model": "088",
+     "blunt": true
+    },
+    {
+     "row": 359,
+     "name": "F Ludroth Paw XR",
+     "model": "013",
+     "blunt": false
+    },
+    {
+     "row": 360,
+     "name": "F Quest Book X",
+     "model": "130",
+     "blunt": true
+    },
+    {
+     "row": 361,
+     "name": "F Derring Lance X",
+     "model": "055",
+     "blunt": false
+    },
+    {
+     "row": 362,
+     "name": "F Barrel Hammer",
+     "model": "109",
+     "blunt": true
+    },
+    {
+     "row": 363,
+     "name": "F Snoozy Moofy Plush",
+     "model": "159",
+     "blunt": true
+    },
+    {
+     "row": 364,
+     "name": "F Wood Chopper X",
+     "model": "054",
+     "blunt": false
+    },
+    {
+     "row": 365,
+     "name": "F Mycetic Rod",
+     "model": "158",
+     "blunt": true
+    },
+    {
+     "row": 366,
+     "name": "F DeathStench Scythe X",
+     "model": "138",
+     "blunt": false
+    },
+    {
+     "row": 367,
+     "name": "F Fine Catspaw Staff",
+     "model": "156",
+     "blunt": false
+    },
+    {
+     "row": 368,
+     "name": "F Slumbral Moofy Plush",
+     "model": "198",
+     "blunt": true
+    },
+    {
+     "row": 369,
+     "name": "F Garuga Fan X",
+     "model": "085",
+     "blunt": false
+    },
+    {
+     "row": 370,
+     "name": "F Uragaan Iron X",
+     "model": "012",
+     "blunt": true
+    },
+    {
+     "row": 371,
+     "name": "F Lava Mace X",
+     "model": "117",
+     "blunt": true
+    },
+    {
+     "row": 372,
+     "name": "F Lagia Anchor X",
+     "model": "073",
+     "blunt": false
+    },
+    {
+     "row": 373,
+     "name": "F Novaslice Whiskers",
+     "model": "121",
+     "blunt": false
+    },
+    {
+     "row": 374,
+     "name": "F St. Elmo's Javelin",
+     "model": "122",
+     "blunt": false
+    },
+    {
+     "row": 375,
+     "name": "F Ginormewsest Staff",
+     "model": "123",
+     "blunt": false
+    },
+    {
+     "row": 376,
+     "name": "F Crimson Sky Parasol",
+     "model": "124",
+     "blunt": true
+    },
+    {
+     "row": 377,
+     "name": "F Barioth Knife X",
+     "model": "008",
+     "blunt": false
+    },
+    {
+     "row": 378,
+     "name": "F Charring Blade",
+     "model": "005",
+     "blunt": false
+    },
+    {
+     "row": 379,
+     "name": "F Mewsurper's Yowl",
+     "model": "021",
+     "blunt": false
+    },
+    {
+     "row": 380,
+     "name": "F Grav Bazooka X",
+     "model": "086",
+     "blunt": true
+    },
+    {
+     "row": 381,
+     "name": "F Katzenseele",
+     "model": "061",
+     "blunt": false
+    },
+    {
+     "row": 382,
+     "name": "F Tigrex Whammer X",
+     "model": "017",
+     "blunt": true
+    },
+    {
+     "row": 383,
+     "name": "F Seltas Drill X",
+     "model": "056",
+     "blunt": false
+    },
+    {
+     "row": 384,
+     "name": "F Kirin Bolt Maximus",
+     "model": "067",
+     "blunt": false
+    },
+    {
+     "row": 385,
+     "name": "F Sealed Drgn Halberd",
+     "model": "192",
+     "blunt": false
+    },
+    {
+     "row": 386,
+     "name": "F Basarios Axe XR",
+     "model": "090",
+     "blunt": false
+    },
+    {
+     "row": 387,
+     "name": "F Conga Cymbals XR",
+     "model": "091",
+     "blunt": false
+    },
+    {
+     "row": 388,
+     "name": "F Barroth Mace XR",
+     "model": "011",
+     "blunt": true
+    },
+    {
+     "row": 389,
+     "name": "F Khezu Whaccine XR",
+     "model": "066",
+     "blunt": false
+    },
+    {
+     "row": 390,
+     "name": "F Nibel Blammer XR",
+     "model": "023",
+     "blunt": true
+    },
+    {
+     "row": 391,
+     "name": "F Jester Parasol XR",
+     "model": "120",
+     "blunt": true
+    },
+    {
+     "row": 392,
+     "name": "F Rathian Rapier XR",
+     "model": "004",
+     "blunt": false
+    },
+    {
+     "row": 393,
+     "name": "F Blango Spear XR",
+     "model": "115",
+     "blunt": false
+    },
+    {
+     "row": 394,
+     "name": "F Ceanataur Cutter XR",
+     "model": "116",
+     "blunt": false
+    },
+    {
+     "row": 395,
+     "name": "F Scylla Wedge XR",
+     "model": "058",
+     "blunt": false
+    },
+    {
+     "row": 396,
+     "name": "F Naja Pungi XR",
+     "model": "060",
+     "blunt": true
+    },
+    {
+     "row": 397,
+     "name": "F Narga Shuriken XR",
+     "model": "018",
+     "blunt": false
+    },
+    {
+     "row": 398,
+     "name": "F Zamtrios Paw XR",
+     "model": "064",
+     "blunt": true
+    },
+    {
+     "row": 399,
+     "name": "F Plesioth Board XR",
+     "model": "074",
+     "blunt": false
+    },
+    {
+     "row": 400,
+     "name": "F Guildcalibur X",
+     "model": "038",
+     "blunt": false
+    },
+    {
+     "row": 401,
+     "name": "F Dragon Forevertones",
+     "model": "095",
+     "blunt": true
+    },
+    {
+     "row": 402,
+     "name": "F Pro Dirty Blade",
+     "model": "096",
+     "blunt": false
+    },
+    {
+     "row": 403,
+     "name": "F Meowsketeer Espada",
+     "model": "135",
+     "blunt": false
+    },
+    {
+     "row": 404,
+     "name": "F Legend Blade",
+     "model": "153",
+     "blunt": false
+    },
+    {
+     "row": 405,
+     "name": "F Miaownifique",
+     "model": "202",
+     "blunt": false
+    },
+    {
+     "row": 406,
+     "name": "F Purrlissimo",
+     "model": "203",
+     "blunt": true
+    },
+    {
+     "row": 407,
+     "name": "F Agnaktor Lance X",
+     "model": "014",
+     "blunt": false
+    },
+    {
+     "row": 408,
+     "name": "F Duram Axe X",
+     "model": "024",
+     "blunt": false
+    },
+    {
+     "row": 409,
+     "name": "F Seregios Edge X",
+     "model": "093",
+     "blunt": false
+    },
+    {
+     "row": 410,
+     "name": "F Diablos Hammer X",
+     "model": "009",
+     "blunt": true
+    },
+    {
+     "row": 411,
+     "name": "F Brachydios Smash",
+     "model": "072",
+     "blunt": true
+    },
+    {
+     "row": 412,
+     "name": "F La Venyasss",
+     "model": "062",
+     "blunt": false
+    },
+    {
+     "row": 413,
+     "name": "F Dragon Comet",
+     "model": "191",
+     "blunt": false
+    },
+    {
+     "row": 414,
+     "name": "F Golden Gadget X",
+     "model": "068",
+     "blunt": true
+    },
+    {
+     "row": 415,
+     "name": "F Vangis Mace X",
+     "model": "010",
+     "blunt": true
+    },
+    {
+     "row": 416,
+     "name": "F Fischfleisch",
+     "model": "194",
+     "blunt": false
+    },
+    {
+     "row": 417,
+     "name": "F Kushala Wand X",
+     "model": "070",
+     "blunt": false
+    },
+    {
+     "row": 418,
+     "name": "F Genie Breath X",
+     "model": "084",
+     "blunt": false
+    },
+    {
+     "row": 419,
+     "name": "F Kaiser Mace X",
+     "model": "071",
+     "blunt": true
+    },
+    {
+     "row": 420,
+     "name": "F White Felyne Scepter",
+     "model": "125",
+     "blunt": true
+    },
+    {
+     "row": 421,
+     "name": "F Polaris Clawsword",
+     "model": "126",
+     "blunt": false
+    },
+    {
+     "row": 422,
+     "name": "F Engraved Staff",
+     "model": "190",
+     "blunt": true
+    },
+    {
+     "row": 423,
+     "name": "F Garuga Fan XR",
+     "model": "085",
+     "blunt": false
+    },
+    {
+     "row": 424,
+     "name": "F Uragaan Iron XR",
+     "model": "012",
+     "blunt": true
+    },
+    {
+     "row": 425,
+     "name": "F Lava Mace XR",
+     "model": "117",
+     "blunt": true
+    },
+    {
+     "row": 426,
+     "name": "F Lagia Anchor XR",
+     "model": "073",
+     "blunt": false
+    },
+    {
+     "row": 427,
+     "name": "F Scorching Blade XR",
+     "model": "121",
+     "blunt": false
+    },
+    {
+     "row": 428,
+     "name": "F Astalos Spear XR",
+     "model": "122",
+     "blunt": false
+    },
+    {
+     "row": 429,
+     "name": "F Enormews Staff XR",
+     "model": "123",
+     "blunt": false
+    },
+    {
+     "row": 430,
+     "name": "F Mizutsune Parasol XR",
+     "model": "124",
+     "blunt": true
+    },
+    {
+     "row": 431,
+     "name": "F Barioth Knife XR",
+     "model": "008",
+     "blunt": false
+    },
+    {
+     "row": 432,
+     "name": "F Rathalos Blade XR",
+     "model": "005",
+     "blunt": false
+    },
+    {
+     "row": 433,
+     "name": "F Mewsurper's Peal XR",
+     "model": "021",
+     "blunt": false
+    },
+    {
+     "row": 434,
+     "name": "F Grav Bazooka XR",
+     "model": "086",
+     "blunt": true
+    },
+    {
+     "row": 435,
+     "name": "F Katzenlampe XR",
+     "model": "061",
+     "blunt": false
+    },
+    {
+     "row": 436,
+     "name": "F Tigrex Whammer XR",
+     "model": "017",
+     "blunt": true
+    },
+    {
+     "row": 437,
+     "name": "F Seltas Drill XR",
+     "model": "056",
+     "blunt": false
+    },
+    {
+     "row": 438,
+     "name": "F Hunting Knife X",
+     "model": "131",
+     "blunt": false
+    },
+    {
+     "row": 439,
+     "name": "F True Yukumo Bokken",
+     "model": "036",
+     "blunt": true
+    },
+    {
+     "row": 440,
+     "name": "F Pokke Mop X",
+     "model": "128",
+     "blunt": true
+    },
+    {
+     "row": 441,
+     "name": "F Edel Rod X",
+     "model": "136",
+     "blunt": true
+    },
+    {
+     "row": 442,
+     "name": "F Akantor Sword X",
+     "model": "019",
+     "blunt": false
+    },
+    {
+     "row": 443,
+     "name": "F Ukanlos Shovel X",
+     "model": "020",
+     "blunt": true
+    },
+    {
+     "row": 444,
+     "name": "F Celestial Squall",
+     "model": "022",
+     "blunt": false
+    },
+    {
+     "row": 445,
+     "name": "F Escador Scythe X",
+     "model": "016",
+     "blunt": false
+    },
+    {
+     "row": 446,
+     "name": "F Fatalis Eye",
+     "model": "193",
+     "blunt": false
+    },
+    {
+     "row": 447,
+     "name": "F Havoc Eye",
+     "model": "195",
+     "blunt": false
+    },
+    {
+     "row": 448,
+     "name": "F Fatalis Rod",
+     "model": "196",
+     "blunt": false
+    },
+    {
+     "row": 449,
+     "name": "F Agnaktor Lance XR",
+     "model": "014",
+     "blunt": false
+    },
+    {
+     "row": 450,
+     "name": "F Duram Axe XR",
+     "model": "024",
+     "blunt": false
+    },
+    {
+     "row": 451,
+     "name": "F Seregios Edge XR",
+     "model": "093",
+     "blunt": false
+    },
+    {
+     "row": 452,
+     "name": "F Diablos Hammer XR",
+     "model": "009",
+     "blunt": true
+    },
+    {
+     "row": 453,
+     "name": "F Brachy Punch XR",
+     "model": "072",
+     "blunt": true
+    },
+    {
+     "row": 454,
+     "name": "F Golden Gadget XR",
+     "model": "068",
+     "blunt": true
+    },
+    {
+     "row": 455,
+     "name": "F Vangis Mace XR",
+     "model": "010",
+     "blunt": true
+    },
+    {
+     "row": 217,
+     "name": "F Strange Hammer",
+     "model": "152",
+     "blunt": true
+    },
+    {
+     "row": 218,
+     "name": "F Strange Hammer S",
+     "model": "152",
+     "blunt": true
+    },
+    {
+     "row": 456,
+     "name": "F Strange Hammer X",
+     "model": "152",
+     "blunt": true
+    },
+    {
+     "row": 457,
+     "name": "F Strange Hammer XX",
+     "model": "152",
+     "blunt": true
+    },
+    {
+     "row": 219,
+     "name": "F Redhelm Mace",
+     "model": "140",
+     "blunt": true
+    },
+    {
+     "row": 220,
+     "name": "F Redhelm Mace S",
+     "model": "140",
+     "blunt": true
+    },
+    {
+     "row": 458,
+     "name": "F Redhelm Mace X",
+     "model": "140",
+     "blunt": true
+    },
+    {
+     "row": 459,
+     "name": "F Redhelm Mace XX",
+     "model": "140",
+     "blunt": true
+    },
+    {
+     "row": 221,
+     "name": "F Snowbaron Stick",
+     "model": "141",
+     "blunt": true
+    },
+    {
+     "row": 222,
+     "name": "F Snowbaron Stick S",
+     "model": "141",
+     "blunt": true
+    },
+    {
+     "row": 460,
+     "name": "F Snowbaron Stick X",
+     "model": "141",
+     "blunt": true
+    },
+    {
+     "row": 461,
+     "name": "F Snowbaron Stick XX",
+     "model": "141",
+     "blunt": true
+    },
+    {
+     "row": 223,
+     "name": "F Stonefist Shears",
+     "model": "143",
+     "blunt": true
+    },
+    {
+     "row": 224,
+     "name": "F Stonefist Shears S",
+     "model": "143",
+     "blunt": true
+    },
+    {
+     "row": 462,
+     "name": "F Stonefist Shears X",
+     "model": "143",
+     "blunt": true
+    },
+    {
+     "row": 463,
+     "name": "F Stonefist Shears XX",
+     "model": "143",
+     "blunt": true
+    },
+    {
+     "row": 225,
+     "name": "F Dreadqueen Rapier",
+     "model": "144",
+     "blunt": false
+    },
+    {
+     "row": 226,
+     "name": "F Dreadqueen Rapier S",
+     "model": "144",
+     "blunt": false
+    },
+    {
+     "row": 464,
+     "name": "F DreadqueenRapier X",
+     "model": "144",
+     "blunt": false
+    },
+    {
+     "row": 465,
+     "name": "F DreadqueenRapier XX",
+     "model": "144",
+     "blunt": false
+    },
+    {
+     "row": 227,
+     "name": "F Drilltusk Pounder",
+     "model": "142",
+     "blunt": true
+    },
+    {
+     "row": 228,
+     "name": "F Drilltusk Pounder S",
+     "model": "142",
+     "blunt": true
+    },
+    {
+     "row": 466,
+     "name": "F Drilltusk Pounder X",
+     "model": "142",
+     "blunt": true
+    },
+    {
+     "row": 467,
+     "name": "F Drilltusk Pounder XX",
+     "model": "142",
+     "blunt": true
+    },
+    {
+     "row": 468,
+     "name": "F Cloaked Parasol",
+     "model": "187",
+     "blunt": true
+    },
+    {
+     "row": 469,
+     "name": "F Exalted Parasol",
+     "model": "187",
+     "blunt": true
+    },
+    {
+     "row": 470,
+     "name": "F Scratching Pole",
+     "model": "188",
+     "blunt": false
+    },
+    {
+     "row": 471,
+     "name": "F Rending Pole",
+     "model": "188",
+     "blunt": false
+    },
+    {
+     "row": 229,
+     "name": "F Silverwind Star",
+     "model": "147",
+     "blunt": false
+    },
+    {
+     "row": 230,
+     "name": "F Silverwind Star S",
+     "model": "147",
+     "blunt": false
+    },
+    {
+     "row": 472,
+     "name": "F Silverwind Star X",
+     "model": "147",
+     "blunt": false
+    },
+    {
+     "row": 473,
+     "name": "F Silverwind Star XX",
+     "model": "147",
+     "blunt": false
+    },
+    {
+     "row": 231,
+     "name": "F Crystalbeard Iron",
+     "model": "150",
+     "blunt": true
+    },
+    {
+     "row": 232,
+     "name": "F Crystalbeard Iron S",
+     "model": "150",
+     "blunt": true
+    },
+    {
+     "row": 474,
+     "name": "F Crystalbeard Iron X",
+     "model": "150",
+     "blunt": true
+    },
+    {
+     "row": 475,
+     "name": "F Crystalbeard Iron XX",
+     "model": "150",
+     "blunt": true
+    },
+    {
+     "row": 233,
+     "name": "F Deadeye Fan",
+     "model": "149",
+     "blunt": false
+    },
+    {
+     "row": 234,
+     "name": "F Deadeye Fan S",
+     "model": "149",
+     "blunt": false
+    },
+    {
+     "row": 476,
+     "name": "F Deadeye Fan X",
+     "model": "149",
+     "blunt": false
+    },
+    {
+     "row": 477,
+     "name": "F Deadeye Fan XX",
+     "model": "149",
+     "blunt": false
+    },
+    {
+     "row": 235,
+     "name": "F Dreadking Blade",
+     "model": "145",
+     "blunt": false
+    },
+    {
+     "row": 236,
+     "name": "F Dreadking Blade S",
+     "model": "145",
+     "blunt": false
+    },
+    {
+     "row": 478,
+     "name": "F Dreadking Blade X",
+     "model": "145",
+     "blunt": false
+    },
+    {
+     "row": 479,
+     "name": "F Dreadking Blade XX",
+     "model": "145",
+     "blunt": false
+    },
+    {
+     "row": 237,
+     "name": "F Thunderlord's Peal",
+     "model": "148",
+     "blunt": false
+    },
+    {
+     "row": 238,
+     "name": "F Thunderlord's Roar",
+     "model": "148",
+     "blunt": false
+    },
+    {
+     "row": 480,
+     "name": "F Thunderlord'sRoar X",
+     "model": "148",
+     "blunt": false
+    },
+    {
+     "row": 481,
+     "name": "F Thunderlord'sRoar XX",
+     "model": "148",
+     "blunt": false
+    },
+    {
+     "row": 239,
+     "name": "F Grimclaw Whammer",
+     "model": "146",
+     "blunt": true
+    },
+    {
+     "row": 240,
+     "name": "F Grimclaw Whammer S",
+     "model": "146",
+     "blunt": true
+    },
+    {
+     "row": 482,
+     "name": "F GrimclawWhammer X",
+     "model": "146",
+     "blunt": true
+    },
+    {
+     "row": 483,
+     "name": "F GrimclawWhammr XX",
+     "model": "146",
+     "blunt": true
+    },
+    {
+     "row": 241,
+     "name": "F Blazing Ashes",
+     "model": "151",
+     "blunt": false
+    },
+    {
+     "row": 242,
+     "name": "F Ashen Whiskers",
+     "model": "151",
+     "blunt": false
+    },
+    {
+     "row": 484,
+     "name": "F Smouldering Whiskers",
+     "model": "151",
+     "blunt": false
+    },
+    {
+     "row": 485,
+     "name": "F Searing Whiskers",
+     "model": "151",
+     "blunt": false
+    },
+    {
+     "row": 486,
+     "name": "F Scarlet Virtue",
+     "model": "185",
+     "blunt": true
+    },
+    {
+     "row": 487,
+     "name": "F Incarnadine Greed",
+     "model": "185",
+     "blunt": true
+    },
+    {
+     "row": 488,
+     "name": "F Zephra Spear",
+     "model": "184",
+     "blunt": false
+    },
+    {
+     "row": 489,
+     "name": "F Zilbolt Spear",
+     "model": "184",
+     "blunt": false
+    },
+    {
+     "row": 490,
+     "name": "F Snowcap Staff",
+     "model": "186",
+     "blunt": false
+    },
+    {
+     "row": 491,
+     "name": "F The Trampler",
+     "model": "186",
+     "blunt": false
+    },
+    {
+     "row": 492,
+     "name": "F Carnage Hammer",
+     "model": "183",
+     "blunt": true
+    },
+    {
+     "row": 493,
+     "name": "F Bloodbath Hammer",
+     "model": "183",
+     "blunt": true
+    },
+    {
+     "row": 243,
+     "name": "F Zombie-kun Gut",
+     "model": "174",
+     "blunt": true
+    },
+    {
+     "row": 244,
+     "name": "F Fairy Tail Blade",
+     "model": "168",
+     "blunt": false
+    },
+    {
+     "row": 245,
+     "name": "F Treasure Chalice J",
+     "model": "169",
+     "blunt": true
+    },
+    {
+     "row": 246,
+     "name": "F Pirate Key J",
+     "model": "045",
+     "blunt": false
+    },
+    {
+     "row": 247,
+     "name": "F Legendary Glass J",
+     "model": "077",
+     "blunt": true
+    },
+    {
+     "row": 248,
+     "name": "F Greedy Hook J",
+     "model": "102",
+     "blunt": false
+    },
+    {
+     "row": 249,
+     "name": "F Rolled-up Paper",
+     "model": "171",
+     "blunt": true
+    },
+    {
+     "row": 250,
+     "name": "F Monqlo Ball",
+     "model": "172",
+     "blunt": true
+    },
+    {
+     "row": 252,
+     "name": "@",
+     "model": "179",
+     "blunt": false
+    },
+    {
+     "row": 495,
+     "name": "F Cutie Moon Rod",
+     "model": "213",
+     "blunt": true
+    },
+    {
+     "row": 253,
+     "name": "F Midousuji Bike",
+     "model": "166",
+     "blunt": true
+    },
+    {
+     "row": 254,
+     "name": "F Zombie-kun Stomach",
+     "model": "174",
+     "blunt": true
+    },
+    {
+     "row": 255,
+     "name": "F Grandpaw Danger",
+     "model": "082",
+     "blunt": true
+    },
+    {
+     "row": 256,
+     "name": "F True Fairy Tail Blade",
+     "model": "168",
+     "blunt": false
+    },
+    {
+     "row": 257,
+     "name": "F Dark Meowgic Staff",
+     "model": "180",
+     "blunt": true
+    },
+    {
+     "row": 258,
+     "name": "F Booty Chalice J",
+     "model": "169",
+     "blunt": true
+    },
+    {
+     "row": 259,
+     "name": "F Buccaneer Key J",
+     "model": "045",
+     "blunt": false
+    },
+    {
+     "row": 260,
+     "name": "F King Scope J",
+     "model": "077",
+     "blunt": true
+    },
+    {
+     "row": 261,
+     "name": "F Avaricious Hook J",
+     "model": "102",
+     "blunt": false
+    },
+    {
+     "row": 262,
+     "name": "F Tightly-rolled Paper",
+     "model": "171",
+     "blunt": true
+    },
+    {
+     "row": 263,
+     "name": "F Monqlo Ball S",
+     "model": "172",
+     "blunt": true
+    },
+    {
+     "row": 267,
+     "name": "@",
+     "model": "170",
+     "blunt": true
+    },
+    {
+     "row": 268,
+     "name": "@",
+     "model": "178",
+     "blunt": false
+    },
+    {
+     "row": 269,
+     "name": "F Wind Waker",
+     "model": "176",
+     "blunt": true
+    },
+    {
+     "row": 270,
+     "name": "F Blaster",
+     "model": "175",
+     "blunt": true
+    },
+    {
+     "row": 271,
+     "name": "F Invincible Hammer",
+     "model": "080",
+     "blunt": true
+    },
+    {
+     "row": 272,
+     "name": "F Sentry's Pickaxe",
+     "model": "107",
+     "blunt": false
+    },
+    {
+     "row": 273,
+     "name": "F Minder's Binder",
+     "model": "108",
+     "blunt": true
+    },
+    {
+     "row": 274,
+     "name": "F Sword of Purrity",
+     "model": "165",
+     "blunt": false
+    },
+    {
+     "row": 275,
+     "name": "F Chun Bracelets",
+     "model": "162",
+     "blunt": true
+    },
+    {
+     "row": 276,
+     "name": "F Blanka Fish",
+     "model": "164",
+     "blunt": true
+    },
+    {
+     "row": 277,
+     "name": "F Alastor",
+     "model": "163",
+     "blunt": false
+    },
+    {
+     "row": 278,
+     "name": "F Rushing Hammer",
+     "model": "104",
+     "blunt": true
+    },
+    {
+     "row": 279,
+     "name": "F Melodic Baton",
+     "model": "101",
+     "blunt": true
+    },
+    {
+     "row": 280,
+     "name": "@",
+     "model": "179",
+     "blunt": false
+    },
+    {
+     "row": 281,
+     "name": "F Fan Megaphone",
+     "model": "079",
+     "blunt": true
+    },
+    {
+     "row": 282,
+     "name": "F Tenderpaw Clog",
+     "model": "106",
+     "blunt": true
+    },
+    {
+     "row": 497,
+     "name": "F Tsumugari",
+     "model": "182",
+     "blunt": false
+    },
+    {
+     "row": 498,
+     "name": "F Arthur's Lance",
+     "model": "181",
+     "blunt": false
+    },
+    {
+     "row": 499,
+     "name": "F Cutie Moon Rod S",
+     "model": "213",
+     "blunt": true
+    },
+    {
+     "row": 500,
+     "name": "DUMMY",
+     "model": "206",
+     "blunt": true
+    },
+    {
+     "row": 501,
+     "name": "F Tsumugari X",
+     "model": "182",
+     "blunt": false
+    },
+    {
+     "row": 502,
+     "name": "F Arthur's Lance X",
+     "model": "181",
+     "blunt": false
+    },
+    {
+     "row": 503,
+     "name": "F Cutie Moon Rod X",
+     "model": "213",
+     "blunt": true
+    },
+    {
+     "row": 504,
+     "name": "DUMMY",
+     "model": "206",
+     "blunt": true
+    },
+    {
+     "row": 505,
+     "name": "F Objection! Panel",
+     "model": "212",
+     "blunt": true
+    },
+    {
+     "row": 506,
+     "name": "F Spirits Pickaxe",
+     "model": "211",
+     "blunt": false
+    },
+    {
+     "row": 507,
+     "name": "F Korok Branch",
+     "model": "214",
+     "blunt": true
+    }
+   ],
+   "mountBone": 14,
+   "source": {
+    "models": "arc/otomo/mod/NNN/w.arc -> o_weNNN (one bone, gid 14)",
+    "table": "table/otWeaponData.owp +4 u16 model, +6 blunt; names eng/table/otWeaponData_eng.gmd; order table/otWeaponCreate.oec",
+    "carry": "loc/arc/resident.arc weapon/airou/pwl/pl_airou.plweplist (rPlayerWeaponList): 16-byte rows by model id, u32 mGmkMotNo, u32 mDispType, u32 mCarryType, u8 mSubParam[4]; carry -> render/mount.js prowlerMountFor"
+   }
+  },
+  "props": [
+   {
+    "id": "ot_etc005",
+    "name": "Rath-of-Meow",
+    "glb": "models/ot_etc005.glb",
+    "joints": [
+     {
+      "gid": 0,
+      "leaf": false
+     },
+     {
+      "gid": 1,
+      "leaf": true
+     }
+    ],
+    "hide": [
+     "Group[100]"
+    ],
+    "src": "arc/shell/ot/com.arc otomo/mod/ot_etc005 -- support action 45, Rath-of-Meow: the shell class uShellOt009 (type 78) binds it and parents itself to the cat's unit with no joint and no offset",
+    "tex": "tex/58f9bb91a02424ff.png"
+   }
+  ]
  },
  "kinsects": "weapons/bug.json"
 }
