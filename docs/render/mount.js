@@ -202,8 +202,14 @@ export function localMatrix(m, out){
 // on the body or the weapon is not drawn, 1 when drawn; the Charge Blade's axe form is
 // trigger 4 (its LMT id 13 selects the axe index 14). Per-type extras come from the player's
 // action id, which a still viewer does not have; those are exposed as a Form override.
+// The Charge Blade drawn in sword mode fires 3, not the common 1: its display-type-4 table
+// (Guardian Blade, Tigrex Divide, Gold Edge, Razor Slasher) opens a part on 3 and 5 and
+// closes it on 0, 2 and 4, and that part is the scythe Raven sees open in sword mode and
+// closed sheathed or in axe mode (2026-09-05). Every other Charge Blade table reads 3 as it
+// reads 0, so nothing else changes. Which action fires 3 against 5 (both open it) is not
+// read from the dispatcher (0x00315e04); a still sword-mode view takes 3.
 export function triggerFor(m, ids, drawn){
   if (!m || !drawn || m.joint === null || m.joint <= 2) return 0;
-  if ((m.type === 21 || m.type === 22) && ids.has(13)) return 4;
+  if (m.type === 21 || m.type === 22) return ids.has(13) ? 4 : 3;
   return 1;
 }
