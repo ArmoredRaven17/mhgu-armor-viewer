@@ -326,6 +326,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #pigModal .modal-card{width:min(420px,92vw)}
 #titleModal .modal-card{width:min(760px,94vw)}
 #titleFilter{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--text);font:inherit}
+/* lighter than the browser's placeholder gray (Raven, 2026-09-06), mixed from the theme's text so it holds on either theme */
+#titleFilter::placeholder{color:color-mix(in srgb, var(--text) 85%, var(--bg2));opacity:1}
 #titleCount{white-space:nowrap;align-self:center}
 #titleList{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin-top:12px;font-size:13px;line-height:1.35;max-height:56vh;overflow-y:auto;padding-right:4px}
 #titleList .title-h{grid-column:1/-1;margin:10px 0 2px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim)}
