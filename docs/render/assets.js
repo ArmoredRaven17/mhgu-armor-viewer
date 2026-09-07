@@ -18,17 +18,20 @@ export function initAssets(renderer){
   maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
 }
 
-export async function getTexture(file){
-  if (texCache.has(file)) return texCache.get(file);
+// `opt.linear`: a data map (a monster's normal map) that must not be read as sRGB colour;
+// cached apart from the colour reading of the same file
+export async function getTexture(file, opt){
+  const key = (opt && opt.linear) ? file + '#linear' : file;
+  if (texCache.has(key)) return texCache.get(key);
   const t = await texLoader.loadAsync(file);
-  t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;
+  t.colorSpace = (opt && opt.linear) ? THREE.NoColorSpace : THREE.SRGBColorSpace; t.flipY = false;
   // MT Framework tiles its maps: 14% of primitives have UVs outside 0..1, up to 6x on
   // capes, long hair and skirts. three.js defaults to ClampToEdge, which smears the edge
   // texel across everything past the first tile -- it reads as the texture being
   // magnified rather than repeated.
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.anisotropy = maxAnisotropy;
-  texCache.set(file, t); return t;
+  texCache.set(key, t); return t;
 }
 
 // one parse per cache key; callers skeletonClone() the scene they get back

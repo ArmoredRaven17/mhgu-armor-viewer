@@ -6,7 +6,9 @@
 //
 // What the ROM decides here, per material (spec.rom, from materials-db.js specFor):
 //   blend state  BSSolid opaque; BSBlendAlpha transparent, no depth write, drawn after the
-//                opaque parts; BSAddAlpha additive and unlit (the glow parts)
+//                opaque parts; BSAddAlpha additive and unlit (the glow parts); BSRevSubAlpha
+//                the same but reverse-subtracted, so it DARKENS instead (monsters only:
+//                Khezu's blood, Old Fatalis' face_sub, Grimclaw Tigrex's angry_arm)
 //   cull         RSMesh back -> front faces only; RSMeshCN -> both; RSMeshCF -> back faces
 //   depth bias   RSMeshBiasN (-32 N) -> a constant polygon offset of that many depth units
 //                toward the camera, no slope term (decal layers such as the Charge Blade 064
@@ -75,6 +77,25 @@ let alphaOverride = null;
 // the raw 32 units.
 const biasMats = new Set();
 let biasUnitsPerStep = 32;
+// RSMeshBiasN pulls a layer toward the camera. Every path that builds a material has to apply it,
+// so it lives here rather than being repeated: the additive and reverse-subtract branches returned
+// before the copy that used to sit further down, which silently dropped the bias on EVERY additive
+// material that carries one. Counted 2026-09-06: 72 of the monsters' 78 add/revsub materials, and
+// 375 of the 970 additive armour and weapon materials -- so this is NOT monster-only and it does
+// change what this app draws (m680's _add_ layers, m576_helm's bma01, o072's symadd00, and 372
+// more). Those are decal layers meant to sit ON the surface; with no bias they z-fight it.
+// Raven, 2026-09-06, on Savage Deviljho's groups 0/3/12/100: "we need to be better able to render
+// these", and "we don't 'decide' how, we let the ROM tell us how the game does it" -- the ROM says
+// bias -512 on that group's XfB__m02_body_k, so it gets bias -512.
+function applyRomBias(mat, st){
+  if (!(st && st.bias)) return mat;
+  mat.polygonOffset = true; mat.polygonOffsetFactor = 0;   // constant only: a slope term put a
+  mat.userData.romBias = st.bias;                          // black sliver on the Lecturer's boots
+  mat.polygonOffsetUnits = st.bias / 32 * biasUnitsPerStep;
+  biasMats.add(mat);
+  mat.addEventListener('dispose', () => biasMats.delete(mat));
+  return mat;
+}
 export function setBiasUnitsPerStep(v){
   if (!(v > 0) || Math.abs(v - biasUnitsPerStep) < biasUnitsPerStep * 0.05) return false;
   biasUnitsPerStep = v;
@@ -299,6 +320,12 @@ function envStrength(mat){
 //   slot       the pigment row this material reads ('helm'..'leg', 'cloth', 'ohelm', 'obody')
 //   own        the piece's authored default pigment ({i, hex, rgb}) or null
 //   wire       the wireframe toggle's current state
+//   unlit      OPT-IN: draw this material unlit (the map as the colour), honouring the ROM's
+//              cull mode and blend state. The MRL's class is nDraw::MaterialConstant or
+//              MaterialConstantFog on 325 hunter/weapon materials as well as the monsters'
+//              eyes, but this app has always drawn those through the lit path, and switching
+//              them wholesale would change armour that Raven has already reviewed. So the
+//              CALLER opts in (render/monster.js does; nothing in the Armor Viewer does).
 // The result carries userData.renderOrder (10 blended, 20 additive) for the mesh, and
 // userData.emissiveFromMap when the caller should hand the loaded map to emissiveMap too.
 export function createMaterial(spec){
@@ -324,6 +351,49 @@ export function createMaterial(spec){
     if (cb && ft && ft.transp === 'AlphaConstant') mat.opacity = cb.transparency;
     mat.userData.rom = rom; mat.userData.unlit = true; mat.userData.noTint = true;
     mat.userData.renderOrder = 20;
+    return applyRomBias(mat, st);
+  }
+  if (st && st.blend === 'revsub'){
+    // The additive path's mirror image: same source and destination factors, the opposite
+    // equation. The MRL blend word says so -- 0x20802 is BSAddAlpha and 0x4020802 is
+    // BSRevSubAlpha, differing only in bit 0x4000000 -- so this is dst - src*srcAlpha where
+    // add is dst + src*srcAlpha: a layer that DARKENS what is behind it.
+    //
+    // It went unmapped in mfx.py until Raven found Khezu "covered in ... a mesh"
+    // (2026-09-04). An unrecognised blend word falls through to the lit opaque path, and a
+    // darkening overlay drawn opaque is a solid black shell over the animal -- Khezu's
+    // m03_blood over its back and wings, Old Fatalis' m01_face_sub across its neck.
+    //
+    // Three materials in the ROM use it, all monsters (the third is Grimclaw Tigrex's
+    // m60_angry_arm); no armour or weapon material does, so this branch is unreachable in the
+    // Armor Viewer and its rendering is unchanged.
+    const mat = new THREE.MeshBasicMaterial({ name: spec.srcName, side, transparent: true,
+                                              depthWrite: false, wireframe: !!spec.wire,
+                                              blending: THREE.CustomBlending,
+                                              blendEquation: THREE.ReverseSubtractEquation,
+                                              blendSrc: THREE.SrcAlphaFactor,
+                                              blendDst: THREE.OneFactor });
+    // an overlay that binds no albedo samples black, and black subtracts nothing
+    if (rom && !rom.albedo){ mat.visible = false; mat.userData.maplessOverlay = true; }
+    if (cb && ft && ft.transp === 'AlphaConstant') mat.opacity = cb.transparency;
+    mat.userData.rom = rom; mat.userData.unlit = true; mat.userData.noTint = true;
+    mat.userData.renderOrder = 20;
+    return applyRomBias(mat, st);
+  }
+  if (spec.unlit){
+    // The map IS the colour: no lights, no matcap, no pigment. The ROM's cull mode and blend
+    // state still apply, so a transparent constant material still sorts and a two-sided one
+    // still draws both faces -- which a hard-coded MeshBasicMaterial in the caller would lose.
+    const mat = new THREE.MeshBasicMaterial({ name: spec.srcName, side, wireframe: !!spec.wire });
+    if (st && st.blend === 'blend'){
+      mat.transparent = true; mat.depthWrite = false; mat.userData.renderOrder = 10;
+      if (cb) mat.opacity = cb.transparency;
+    }
+    if (ft && (ft.transp === 'Alpha' || ft.transp === 'AlphaConstant') && rom.alphaTest)
+      mat.alphaTest = Math.max(0, gl ? gl.clip : 0) + ALPHA_EPS;
+    if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
+    applyRomBias(mat, st);
+    mat.userData.rom = rom; mat.userData.unlit = true; mat.userData.noTint = true;
     return mat;
   }
   const mat = new THREE.MeshStandardMaterial({
@@ -342,15 +412,7 @@ export function createMaterial(spec){
     if (cb) mat.opacity = cb.transparency;
     if (ft && ft.transp) texAlpha = true;
   }
-  // depth bias: RSMeshBiasN pulls the layer toward the camera, constant only (no slope
-  // term: that put a black sliver on the Lecturer's boots), scaled per step as above
-  if (st && st.bias){
-    mat.polygonOffset = true; mat.polygonOffsetFactor = 0;
-    mat.userData.romBias = st.bias;
-    mat.polygonOffsetUnits = st.bias / 32 * biasUnitsPerStep;
-    biasMats.add(mat);
-    mat.addEventListener('dispose', () => biasMats.delete(mat));
-  }
+  applyRomBias(mat, st);
   // albedo tint, emission, shininess
   if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
   if (gl && (gl.emission[0] + gl.emission[1] + gl.emission[2]) > 0){

@@ -8,8 +8,8 @@
 //   9-12  clavicle>hand, the -X arm = the RIGHT
 //   14-16 / 17-19 hip>foot, the same sides by the same x sign     20-22 back attachment
 import * as THREE from 'three';
-import { loader, poseCache } from './assets.js';
-import { bonesByGid, gidBonesOf } from './skeleton.js';
+import { loader, loadGlb, poseCache } from './assets.js';
+import { bonesByGid, gidBonesOf, skeletonClone } from './skeleton.js';
 
 export const POSES = {
   't-pose': {},
@@ -106,6 +106,25 @@ export class PoseDriver {
     this.holdReference = !!(opt && opt.holdReference);
     this.referenceNode = null;
     let gltf = poseCache.get(entry.file);
+    if (!gltf && entry.model) {
+      // A monster's motion files carry nodes and animations only (harvest-monsters.py strips
+      // the mesh), so the proxy is a clone of the MODEL itself and the clip binds to it by
+      // node name -- the same names, from the same converter. One proxy per model, cached;
+      // the clips of every list play on it.
+      let proxy = poseCache.get('proxy:' + entry.model);
+      if (!proxy) {
+        const g = await loadGlb(entry.model, entry.model);
+        proxy = { scene: skeletonClone(g.scene), userData: { bind: [] } };
+        proxy.scene.traverse(o => {
+          if (o.isBone || o.isObject3D)
+            proxy.userData.bind.push([o, o.position.clone(), o.quaternion.clone()]);
+        });
+        poseCache.set('proxy:' + entry.model, proxy);
+      }
+      let anim = poseCache.get('anim:' + entry.file);
+      if (!anim) { anim = await loader.loadAsync(entry.file); poseCache.set('anim:' + entry.file, anim); }
+      gltf = { scene: proxy.scene, animations: anim.animations, userData: proxy.userData };
+    }
     if (!gltf) {
       gltf = await loader.loadAsync(entry.file);
       // Snapshot the REST pose. The proxy is cached and reused across poses, so by the
@@ -120,7 +139,10 @@ export class PoseDriver {
       poseCache.set(entry.file, gltf);
     }
     for (const [node, pos, quat] of gltf.userData.bind){ node.position.copy(pos); node.quaternion.copy(quat); }
-    const clip = THREE.AnimationClip.findByName(gltf.animations, entry.clip);
+    // `entry.clip3` lets a caller hand over the clip it wants played rather than have it
+    // looked up here -- the monster viewer builds a retargeted copy when a monster borrows
+    // another's motion list. Nothing in this app passes it, so the lookup below is unchanged.
+    const clip = entry.clip3 || THREE.AnimationClip.findByName(gltf.animations, entry.clip);
     if (!clip) { this.onError('pose clip missing: ' + entry.clip); return; }
     // the proxy is never added to the scene; it exists only to be sampled
     gltf.scene.updateMatrixWorld(true);

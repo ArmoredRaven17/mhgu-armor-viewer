@@ -19,7 +19,8 @@ export function materialsDb(){ return DB; }
 
 export function entryFor(ref){
   if (!DB || !ref) return null;
-  return (DB.weapons && DB.weapons[ref]) || (DB.pieces && DB.pieces[ref]) || null;
+  return (DB.weapons && DB.weapons[ref]) || (DB.pieces && DB.pieces[ref])
+      || (DB.monsters && DB.monsters[ref]) || null;    // monsters: 'em/001_00', 'em/001_00/tail'
 }
 // the entry a shipped glb belongs to (materials.json carries the map for the weapon glbs)
 export function refForGlb(glbPath){
@@ -43,7 +44,15 @@ export function specFor(ref, name){
   const pick = i => (i && tex[i - 1]) || null;
   const t = m.t || {};
   return { name, entry: e, m,
+           // material animation, baked from the MRL by build-matanim.py: [{frames, loop, hash,
+           // tracks:[{target, type, cb, kind, interp, keys}]}]. The target is a NAMED shader
+           // constant (fUVTransform, fConstantColor, fTransparency ...) resolved through the
+           // shader package, not a guessed field.
+           anim: m.anim || null,
            albedo: pick(t.albedo), spec: pick(t.spec), sphere: pick(t.sphere),
+           // the tNormalMap binding: monsters only (no armour or weapon ships one)
+           normal: pick(t.normal),
+           cls: m.cls || 'Std',
            specIsAlbedo: !!(t.spec && t.spec === t.albedo),
            state: (DB.state && DB.state[m.s]) || null, feat: (DB.feat && DB.feat[m.f]) || null,
            cbm: (DB.cbm && DB.cbm[m.c]) || null, glob: (DB.glob && DB.glob[m.g]) || null,
