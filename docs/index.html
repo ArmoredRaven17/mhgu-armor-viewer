@@ -324,6 +324,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   cursor:pointer}
 .palbtn:hover{background:#ffffff1a;border-color:var(--accent-hover)}
 #pigModal .modal-card{width:min(420px,92vw)}
+#titleModal .modal-card{width:min(760px,94vw)}
+#titleFilter{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--text);font:inherit}
+#titleCount{white-space:nowrap;align-self:center}
+#titleList{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin-top:12px;font-size:13px;line-height:1.35;max-height:56vh;overflow-y:auto;padding-right:4px}
+#titleList .title-h{grid-column:1/-1;margin:10px 0 2px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim)}
+#titleList .title-w{font-weight:600}
+#titleList .title-r{color:var(--text-dim)}
+#titleList .sel{color:var(--accent)}
 #pigGrid,.pig-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:12px 0}
 /* black, not --line: a pale swatch against the panel had no edge at all, so light
    colours ran together and white was invisible */
@@ -477,6 +485,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="plateT1">Title</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
           <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
           <div class="field"><label for="plateT3">Second word</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
+          <button id="plateUnlocks" class="btn block" title="Every title word in the Guild Card's order, with what unlocks it">Unlock Requirements</button>
         </div>
       </section>
 
@@ -735,6 +744,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="row end gap">
       <button id="pigClose" class="btn">Close</button>
     </div>
+  </div>
+</div>
+
+<div id="titleModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Guild Card Titles</h2>
+    <div class="row gap"><input id="titleFilter" type="search" placeholder="Filter by word or requirement" autocomplete="off"><span id="titleCount" class="muted"></span></div>
+    <div id="titleList"></div>
+    <div class="row end gap"><button id="titleClose" class="btn">Close</button></div>
   </div>
 </div>
 
@@ -1469,6 +1487,7 @@ const PLATE_SHOWS = ['name', 'title', 'both'];
 const PLATE_ICON = { w00: 0, w01: 1, w02: 2, w03: 3, w04: 4, w06: 6, w07: 7, w08: 8, w09: 9, w10: 10, w11: 11, w12: 12, w13: 13, w14: 14 };
 let plateState = { on: false, show: 'name', name: '', hr: 1, title: [PLATE_NONE, PLATE_NONE, PLATE_NONE] };
 let plateWords = { words: [PLATE_NONE], joins: [PLATE_NONE] };
+let plateTitleRows = { words: [], joins: [], note: '' };   // {w, req, id} per word, the table's order
 function plateTitle(){ return plateState.title.filter(w => w && w !== PLATE_NONE).join(' '); }
 // the plate's own name (Raven, 2026-09-05: several slots may hold one hunter), else the slot's, live
 function plateName(){ return plateState.name || (HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'Hunter'); }
@@ -1547,13 +1566,45 @@ function plateEdit(){
 document.getElementById('plateHr').innerHTML = HR_BANDS.map(b => '<option value="' + b.hr + '">' + b.label + '</option>').join('');
 for (const id of ['plateOn', 'plateHr', 'plateShow', 'plateT1', 'plateT2', 'plateT3']) document.getElementById(id).onchange = plateEdit;
 { const n = document.getElementById('plateName'); n.oninput = () => { plateState.name = n.value.trim().slice(0, 24); platePaint(); }; n.onchange = plateEdit; }
-fetch('guild-card-titles.json?v=20260905').then(r => r.json()).then(j => {
-  // alphabetical, (None) first (Raven, 2026-09-05: "List the Titles in the drop downs in alphabetical order")
-  const clean = list => [PLATE_NONE].concat((list || []).filter(w => typeof w === 'string' && w !== PLATE_NONE && w !== 'Reserve cell')
-    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true })));
-  plateWords = { words: clean(j.words), joins: clean(j.joins) };
+fetch('guild-card-titles.json?v=20260906').then(r => r.json()).then(j => {
+  // The game's table order, (None) first (Raven, 2026-09-06: "this list should use the In Game
+  // order as they appear in the Guild Card"; it replaces the alphabetical order of 2026-09-05).
+  // Each word carries the unlock text the game shows for it (build-guild-card-titles.py), read
+  // by the Unlock Requirements modal below.
+  const rows = list => (list || []).map(x => typeof x === 'string' ? { w: x } : x)
+    .filter(x => x && typeof x.w === 'string' && x.w !== PLATE_NONE && x.w !== 'Reserve cell');
+  plateTitleRows = { words: rows(j.words), joins: rows(j.joins), note: typeof j.note === 'string' ? j.note : '' };
+  plateWords = { words: [PLATE_NONE].concat(plateTitleRows.words.map(x => x.w)), joins: [PLATE_NONE].concat(plateTitleRows.joins.map(x => x.w)) };
   fillPlateWords(); paintPlate();
 }).catch(e => console.warn('name plate: the title words did not load', e));
+// The Unlock Requirements modal (Raven, 2026-09-06: "can we have a modal that list the unlock
+// requirement?"): every title word in the Guild Card's order with its unlock text, the
+// connectors after it; the words on the plate are marked; the filter matches words and texts.
+const titleModal = document.getElementById('titleModal');
+function paintTitleModal(){
+  const list = document.getElementById('titleList'), q = document.getElementById('titleFilter').value.trim().toLowerCase();
+  const chosen = new Set(plateState.title.filter(w => w && w !== PLATE_NONE));
+  const frag = document.createDocumentFragment();
+  let shown = 0;
+  const head = t => { const h = document.createElement('div'); h.className = 'title-h'; h.textContent = t; frag.appendChild(h); };
+  const row = (w, req) => {
+    if (q && !(w.toLowerCase().includes(q) || (req || '').toLowerCase().includes(q))) return;
+    const a = document.createElement('div'), b = document.createElement('div');
+    a.className = 'title-w' + (chosen.has(w) ? ' sel' : ''); b.className = 'title-r' + (chosen.has(w) ? ' sel' : '');
+    a.textContent = w; b.textContent = req || '';
+    frag.appendChild(a); frag.appendChild(b); shown++;
+  };
+  head('Titles'); for (const x of plateTitleRows.words) row(x.w, x.req);
+  head('Connectors'); for (const x of plateTitleRows.joins) row(x.w, plateTitleRows.note);
+  list.textContent = ''; list.appendChild(frag);
+  document.getElementById('titleCount').textContent = shown + ' of ' + (plateTitleRows.words.length + plateTitleRows.joins.length);
+}
+function openTitleModal(){ document.getElementById('titleFilter').value = ''; paintTitleModal(); titleModal.classList.remove('hidden'); document.getElementById('titleFilter').focus(); }
+function closeTitleModal(){ titleModal.classList.add('hidden'); }
+document.getElementById('plateUnlocks').onclick = openTitleModal;
+document.getElementById('titleClose').onclick = closeTitleModal;
+document.getElementById('titleFilter').oninput = paintTitleModal;
+titleModal.onclick = e => { if (e.target === titleModal) closeTitleModal(); };
 document.querySelectorAll('#fxRow .btn').forEach(b => b.onclick = () => { applyFxPreset(b.dataset.fx); saveState(); });
 for (const path in FX_IDS){
   const e = document.getElementById(FX_IDS[path]); if (!e) continue;
