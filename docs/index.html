@@ -329,7 +329,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 /* lighter than the browser's placeholder gray (Raven, 2026-09-06), mixed from the theme's text so it holds on either theme */
 #titleFilter::placeholder{color:color-mix(in srgb, var(--text) 85%, var(--bg2));opacity:1}
 #titleCount{white-space:nowrap;align-self:center}
-#titleList{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;margin-top:12px;font-size:13px;line-height:1.35;max-height:56vh;overflow-y:auto;padding-right:4px}
+#titleList{display:grid;grid-template-columns:max-content max-content 1fr;gap:3px 14px;margin-top:12px;font-size:13px;line-height:1.35;max-height:56vh;overflow-y:auto;padding-right:4px}
+#titleList .title-p{color:var(--text-hint);font-variant-numeric:tabular-nums;white-space:nowrap}
+#titleList .title-pg{grid-column:1/-1;margin:8px 0 2px;padding-top:6px;border-top:1px solid var(--line);
+  font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-hint)}
 #titleList .title-h{grid-column:1/-1;margin:10px 0 2px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim)}
 #titleList .title-w{font-weight:600}
 #titleList .title-r{color:var(--text-dim)}
@@ -1494,6 +1497,8 @@ const PLATE_ICON = { w00: 0, w01: 1, w02: 2, w03: 3, w04: 4, w06: 6, w07: 7, w08
 let plateState = { on: false, show: 'name', name: '', hr: 1, title: [PLATE_NONE, PLATE_NONE, PLATE_NONE] };
 let plateWords = { words: [PLATE_NONE], joins: [PLATE_NONE] };
 let plateTitleRows = { words: [], joins: [], note: '' };   // {w, req, id} per word, the table's order
+// The Guild Card's title menu is a 4 x 2 grid, so eight entries to a page (Raven, 2026-09-09).
+const PAGE_ROWS = 8;
 function plateTitle(){ return plateState.title.filter(w => w && w !== PLATE_NONE).join(' '); }
 // the plate's own name (Raven, 2026-09-05: several slots may hold one hunter), else the slot's, live
 function plateName(){ return plateState.name || (HUNTERS[hunterIndex] ? HUNTERS[hunterIndex].name : 'Hunter'); }
@@ -1599,15 +1604,30 @@ function paintTitleModal(){
   const frag = document.createDocumentFragment();
   let shown = 0;
   const head = t => { const h = document.createElement('div'); h.className = 'title-h'; h.textContent = t; frag.appendChild(h); };
-  const row = (w, req) => {
-    if (q && !(w.toLowerCase().includes(q) || (req || '').toLowerCase().includes(q))) return;
-    const a = document.createElement('div'), b = document.createElement('div');
-    a.className = 'title-w' + (chosen.has(w) ? ' sel' : ''); b.className = 'title-r' + (chosen.has(w) ? ' sel' : '');
-    a.textContent = w; b.textContent = req || '';
-    frag.appendChild(a); frag.appendChild(b); shown++;
+  const divider = t => { const h = document.createElement('div'); h.className = 'title-pg'; h.textContent = t; frag.appendChild(h); };
+  // The page a word sits on in the game's own menu (Raven, 2026-09-09: "In Game, the menu is
+  // broken up into pages, with eight entries per page ... I want to be able to tell the user
+  // what page a title is on", and on the shape of it: "157 Pages, 4 rows, 2 columns"). The
+  // order here is the table's, which is the order the menu walks, so the page is just the
+  // entry's place in it. Each list is numbered from its own page 1, since the connectors are
+  // their own menu. A divider heads each page while the list is whole; filtered, the rows
+  // carry their page instead, which is the whole point of being able to search it.
+  const rows = (list, req) => {
+    let page = 0;
+    list.forEach((x, i) => {
+      const p = Math.floor(i / PAGE_ROWS) + 1;
+      const text = req === undefined ? x.req : req;
+      if (q && !(x.w.toLowerCase().includes(q) || (text || '').toLowerCase().includes(q))) return;
+      if (!q && p !== page){ divider('Page ' + p); page = p; }
+      const on = chosen.has(x.w);
+      const a = document.createElement('div'), n = document.createElement('div'), b = document.createElement('div');
+      a.className = 'title-w' + (on ? ' sel' : ''); n.className = 'title-p'; b.className = 'title-r' + (on ? ' sel' : '');
+      a.textContent = x.w; n.textContent = 'p. ' + p; b.textContent = text || '';
+      frag.appendChild(a); frag.appendChild(n); frag.appendChild(b); shown++;
+    });
   };
-  head('Titles'); for (const x of plateTitleRows.words) row(x.w, x.req);
-  head('Connectors'); for (const x of plateTitleRows.joins) row(x.w, plateTitleRows.note);
+  head('Titles'); rows(plateTitleRows.words);
+  head('Connectors'); rows(plateTitleRows.joins, plateTitleRows.note);
   list.textContent = ''; list.appendChild(frag);
   document.getElementById('titleCount').textContent = shown + ' of ' + (plateTitleRows.words.length + plateTitleRows.joins.length);
 }
