@@ -1569,14 +1569,20 @@ document.getElementById('plateHr').innerHTML = HR_BANDS.map(b => '<option value=
 for (const id of ['plateOn', 'plateHr', 'plateShow', 'plateT1', 'plateT2', 'plateT3']) document.getElementById(id).onchange = plateEdit;
 { const n = document.getElementById('plateName'); n.oninput = () => { plateState.name = n.value.trim().slice(0, 24); platePaint(); }; n.onchange = plateEdit; }
 fetch('guild-card-titles.json?v=20260906').then(r => r.json()).then(j => {
-  // The game's table order, (None) first (Raven, 2026-09-06: "this list should use the In Game
-  // order as they appear in the Guild Card"; it replaces the alphabetical order of 2026-09-05).
-  // Each word carries the unlock text the game shows for it (build-guild-card-titles.py), read
-  // by the Unlock Requirements modal below.
+  // TWO ORDERS, one per place they are read, because the two asks are different (Raven,
+  // 2026-09-05: "List the Titles in the drop downs in alphabetical order"; 2026-09-06, of the
+  // Unlock Requirements modal: "this list should use the In Game order as they appear in the
+  // Guild Card"). plateTitleRows keeps the game's table order and the modal reads it; the
+  // dropdowns sort a copy alphabetically, (None) first. Reading the second ask as covering the
+  // dropdowns too undid the first one, which is what Raven caught on 2026-09-08: "the Nameplate
+  // titles are not in alphabetical order".
+  // Each word carries the unlock text the game shows for it (build-guild-card-titles.py).
   const rows = list => (list || []).map(x => typeof x === 'string' ? { w: x } : x)
     .filter(x => x && typeof x.w === 'string' && x.w !== PLATE_NONE && x.w !== 'Reserve cell');
   plateTitleRows = { words: rows(j.words), joins: rows(j.joins), note: typeof j.note === 'string' ? j.note : '' };
-  plateWords = { words: [PLATE_NONE].concat(plateTitleRows.words.map(x => x.w)), joins: [PLATE_NONE].concat(plateTitleRows.joins.map(x => x.w)) };
+  const az = list => [PLATE_NONE].concat(list.map(x => x.w)
+    .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true })));
+  plateWords = { words: az(plateTitleRows.words), joins: az(plateTitleRows.joins) };
   fillPlateWords(); paintPlate();
 }).catch(e => console.warn('name plate: the title words did not load', e));
 // The Unlock Requirements modal (Raven, 2026-09-06: "can we have a modal that list the unlock
