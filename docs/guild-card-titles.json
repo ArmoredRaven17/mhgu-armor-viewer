@@ -1,9 +1,15 @@
 {
- "version": 2,
+ "version": 8,
  "src": "eng/arc/village/common_eng.arc eng/table/GC_Title_1_eng (name1_NNN + name1_TXT_NNN: the base game's 952; RabbitName1_N + RabbitName1_TXT_N: the 357 G-rank additions) and GC_Title_2_eng (name2_NNN, the connectors), in the tables' order; build-guild-card-titles.py",
- "dropped": "the (None) heads, the DUMMY and @ placeholder slots, the Reserve cell connectors",
+ "dropped": "the DUMMY and @ placeholder slots and the Reserve cell connectors; the (None) head of each pool is dropped from these lists too but shipped as `noneReq`, since the game's menu shows it as slot 1 and the page numbering counts it",
  "order": "the game's table order: the base words by number, then the G-rank additions by number",
+ "pages": "The in-game title menu is a 4 x 2 grid, eight slots to a page. It lists only titles the save has UNLOCKED -- confirmed by Raven 2026-09-09, \"yes, the menu hides titles\". So a page number from this table is the page on a card that holds every title in it, and is an upper bound for any real card: each title a save lacks shifts the rest one slot earlier.\nWHY Raven's card is 157 pages against 158 here is NOT settled. Seven slots differ. ONE is confirmed unearned: Red-hot, 'Hunted a Lavasioth 50 times' (Raven: \"Red-Hot, I don't have; but not a bug\", \"That's one of the six\"). The other six are unidentified and could be unearned as well, or titles this release does not carry at all -- Raven: \"We don't know if they are absences or MHXX content or not\". `hidden` is the hook for any that turn out to be the second kind; it stays empty until one is actually shown to be missing from the game rather than from the save.",
  "note": "Available from the start.",
+ "noneReq": "Available from the start.",
+ "hidden": [
+  "name1_864"
+ ],
+ "hiddenWhy": "Table slots MHGU carries but no MHGU card can ever show, so the page numbering skips them. name1_864 'Brain' is a leftover of the Universal Studios collaboration: of that promotion's six titles -- Brain, Universal, Studios, USJ, Wonder, World's Best -- only Brain still exists in these tables, the other five having been stripped from every pool. Raven confirmed it is not grantable: the collaboration bonuses come down through Download All, and Brain never appeared (2026-09-09). Every other gap found while walking Raven's card against this table was an unearned hunt or slay tier, which is per-save and belongs nowhere here.",
  "words": [
   {
    "w": "Noob",

@@ -326,11 +326,22 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 #pigModal .modal-card{width:min(420px,92vw)}
 #titleModal .modal-card{width:min(760px,94vw)}
 #titleFilter{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--text);font:inherit}
+#titlePage{width:4.5em;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg2);color:var(--text);font:inherit}
+/* the native spinner reads backwards against a list: its up arrow raises the number, which
+   moves you DOWN the page (Raven, 2026-09-09: "going down goes up"). Hidden, and replaced by a
+   < number > pager, which carries no vertical sense to get backwards (Raven: "We would want
+   something like < Number > for normal use"). */
+#titlePage::-webkit-inner-spin-button,#titlePage::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+#titlePage{-moz-appearance:textfield;text-align:center}
+.pager{display:inline-flex;align-items:center;gap:4px}
+.pager .btn{padding:4px 9px;line-height:1}
+#titleList .title-pg.hit{color:var(--accent);border-top-color:var(--accent)}
 /* lighter than the browser's placeholder gray (Raven, 2026-09-06), mixed from the theme's text so it holds on either theme */
 #titleFilter::placeholder{color:color-mix(in srgb, var(--text) 85%, var(--bg2));opacity:1}
 #titleCount{white-space:nowrap;align-self:center}
 #titleList{display:grid;grid-template-columns:max-content max-content 1fr;gap:3px 14px;margin-top:12px;font-size:13px;line-height:1.35;max-height:56vh;overflow-y:auto;padding-right:4px}
 #titleList .title-p{color:var(--text-hint);font-variant-numeric:tabular-nums;white-space:nowrap}
+#titleList .title-none{font-weight:400;font-style:italic;color:var(--text-hint)}
 #titleList .title-pg{grid-column:1/-1;margin:8px 0 2px;padding-top:6px;border-top:1px solid var(--line);
   font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-hint)}
 #titleList .title-h{grid-column:1/-1;margin:10px 0 2px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim)}
@@ -755,7 +766,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div id="titleModal" class="modal hidden">
   <div class="modal-card">
     <h2>Guild Card Titles</h2>
-    <div class="row gap"><input id="titleFilter" type="search" placeholder="Filter by word or requirement" autocomplete="off"><span id="titleCount" class="muted"></span></div>
+    <div class="row gap"><input id="titleFilter" type="search" placeholder="Filter by word or requirement" autocomplete="off"><span class="pager"><button id="titlePagePrev" class="btn tiny" title="Previous page" aria-label="Previous page">&lt;</button><input id="titlePage" type="number" min="1" placeholder="Page" title="Jump to a page of the in-game menu" aria-label="Page"><button id="titlePageNext" class="btn tiny" title="Next page" aria-label="Next page">&gt;</button></span><span id="titleCount" class="muted"></span></div>
+    <p class="hint" id="titlePageNote">Pages match a card holding every title listed here. The game shows only titles you have earned, so each one you are missing shifts the rest earlier and your own page may be lower.</p>
     <div id="titleList"></div>
     <div class="row end gap"><button id="titleClose" class="btn">Close</button></div>
   </div>
@@ -1586,9 +1598,15 @@ fetch('guild-card-titles.json?v=20260906').then(r => r.json()).then(j => {
   // dropdowns too undid the first one, which is what Raven caught on 2026-09-08: "the Nameplate
   // titles are not in alphabetical order".
   // Each word carries the unlock text the game shows for it (build-guild-card-titles.py).
+  // `hidden` names table slots shown to be absent from the GAME rather than from a save. It is
+  // empty: the menu hides titles the save has not unlocked (confirmed), which accounts for at
+  // least one of the seven slots Raven's card differs by, and whether any of the rest are
+  // missing from the release itself is not established.
+  const gone = new Set(Array.isArray(j.hidden) ? j.hidden : []);
   const rows = list => (list || []).map(x => typeof x === 'string' ? { w: x } : x)
-    .filter(x => x && typeof x.w === 'string' && x.w !== PLATE_NONE && x.w !== 'Reserve cell');
-  plateTitleRows = { words: rows(j.words), joins: rows(j.joins), note: typeof j.note === 'string' ? j.note : '' };
+    .filter(x => x && typeof x.w === 'string' && x.w !== PLATE_NONE && x.w !== 'Reserve cell' && !gone.has(x.id));
+  plateTitleRows = { words: rows(j.words), joins: rows(j.joins), note: typeof j.note === 'string' ? j.note : '',
+                     noneReq: typeof j.noneReq === 'string' ? j.noneReq : '' };
   const az = list => [PLATE_NONE].concat(list.map(x => x.w)
     .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base', numeric: true })));
   plateWords = { words: az(plateTitleRows.words), joins: az(plateTitleRows.joins) };
@@ -1604,7 +1622,10 @@ function paintTitleModal(){
   const frag = document.createDocumentFragment();
   let shown = 0;
   const head = t => { const h = document.createElement('div'); h.className = 'title-h'; h.textContent = t; frag.appendChild(h); };
-  const divider = t => { const h = document.createElement('div'); h.className = 'title-pg'; h.textContent = t; frag.appendChild(h); };
+  const divider = (t, which, n) => {
+    const h = document.createElement('div'); h.className = 'title-pg'; h.textContent = t;
+    h.dataset.list = which; h.dataset.page = n; frag.appendChild(h);
+  };
   // The page a word sits on in the game's own menu (Raven, 2026-09-09: "In Game, the menu is
   // broken up into pages, with eight entries per page ... I want to be able to tell the user
   // what page a title is on", and on the shape of it: "157 Pages, 4 rows, 2 columns"). The
@@ -1612,30 +1633,64 @@ function paintTitleModal(){
   // entry's place in it. Each list is numbered from its own page 1, since the connectors are
   // their own menu. A divider heads each page while the list is whole; filtered, the rows
   // carry their page instead, which is the whole point of being able to search it.
-  const rows = (list, req) => {
+  const rows = (list, req, which) => {
     let page = 0;
-    list.forEach((x, i) => {
+    // Every pool opens with (None), which the game's menu shows as slot 1 (Raven, 2026-09-09:
+    // "(None) should be the first slot in the Modal ... It doesn't need to be an option.
+    // However, it should be displayed in the modal to ensure we display the correct pages").
+    // It is a row here and nothing else: the dropdowns supply their own (None) for clearing a
+    // word, and this one is never selectable. Counting it is the point -- leave it out and
+    // every page number after slot 8 is one too high.
+    const slots = [{ w: PLATE_NONE, req: plateTitleRows.noneReq, none: true }].concat(list);
+    slots.forEach((x, i) => {
       const p = Math.floor(i / PAGE_ROWS) + 1;
-      const text = req === undefined ? x.req : req;
+      const text = x.none ? x.req : (req === undefined ? x.req : req);
       if (q && !(x.w.toLowerCase().includes(q) || (text || '').toLowerCase().includes(q))) return;
-      if (!q && p !== page){ divider('Page ' + p); page = p; }
-      const on = chosen.has(x.w);
+      if (!q && p !== page){ divider('Page ' + p, which, p); page = p; }
+      const on = !x.none && chosen.has(x.w);
       const a = document.createElement('div'), n = document.createElement('div'), b = document.createElement('div');
-      a.className = 'title-w' + (on ? ' sel' : ''); n.className = 'title-p'; b.className = 'title-r' + (on ? ' sel' : '');
+      a.className = 'title-w' + (on ? ' sel' : '') + (x.none ? ' title-none' : '');
+      n.className = 'title-p'; b.className = 'title-r' + (on ? ' sel' : '');
       a.textContent = x.w; n.textContent = 'p. ' + p; b.textContent = text || '';
       frag.appendChild(a); frag.appendChild(n); frag.appendChild(b); shown++;
     });
   };
-  head('Titles'); rows(plateTitleRows.words);
-  head('Connectors'); rows(plateTitleRows.joins, plateTitleRows.note);
+  head('Titles'); rows(plateTitleRows.words, undefined, 'words');
+  head('Connectors'); rows(plateTitleRows.joins, plateTitleRows.note, 'joins');
   list.textContent = ''; list.appendChild(frag);
-  document.getElementById('titleCount').textContent = shown + ' of ' + (plateTitleRows.words.length + plateTitleRows.joins.length);
+  // + 2 for the (None) slot each pool opens with, which is a row here like any other
+  document.getElementById('titleCount').textContent = shown + ' of ' + (plateTitleRows.words.length + plateTitleRows.joins.length + 2);
 }
 function openTitleModal(){ document.getElementById('titleFilter').value = ''; paintTitleModal(); titleModal.classList.remove('hidden'); document.getElementById('titleFilter').focus(); }
 function closeTitleModal(){ titleModal.classList.add('hidden'); }
 document.getElementById('plateUnlocks').onclick = openTitleModal;
 document.getElementById('titleClose').onclick = closeTitleModal;
 document.getElementById('titleFilter').oninput = paintTitleModal;
+// Jump to a page of the titles list. There is no in-game list to diff against here, so
+// finding which slots MHGU leaves out is a matter of walking the two side by side (Raven,
+// 2026-09-09: "I need to find where the pages line up still until they stop", "You also don't
+// have the in game list to compare"); scrolling 1,376 rows by hand to reach page 94 is what
+// this avoids. Clearing the filter first, since the dividers only exist on the whole list.
+function titlePageMax(){ return Math.max(1, Math.ceil((plateTitleRows.words.length + 1) / PAGE_ROWS)); }
+function goTitlePage(n){
+  const box = document.getElementById('titlePage'), list = document.getElementById('titleList');
+  const p = Math.min(titlePageMax(), Math.max(1, n | 0));
+  const prev = document.getElementById('titlePagePrev'), next = document.getElementById('titlePageNext');
+  prev.disabled = p <= 1; next.disabled = p >= titlePageMax();
+  const f = document.getElementById('titleFilter');
+  if (f.value){ f.value = ''; paintTitleModal(); }
+  box.value = String(p);
+  list.querySelectorAll('.title-pg.hit').forEach(h => h.classList.remove('hit'));
+  const hit = list.querySelector('.title-pg[data-list="words"][data-page="' + p + '"]');
+  if (hit){ hit.classList.add('hit'); hit.scrollIntoView({ block: 'start' }); }
+}
+{
+  const box = document.getElementById('titlePage');
+  const cur = () => parseInt(box.value, 10) || 1;
+  box.oninput = () => { const n = parseInt(box.value, 10); if (n) goTitlePage(n); };
+  document.getElementById('titlePagePrev').onclick = () => goTitlePage(cur() - 1);
+  document.getElementById('titlePageNext').onclick = () => goTitlePage(cur() + 1);
+}
 titleModal.onclick = e => { if (e.target === titleModal) closeTitleModal(); };
 document.querySelectorAll('#fxRow .btn').forEach(b => b.onclick = () => { applyFxPreset(b.dataset.fx); saveState(); });
 for (const path in FX_IDS){
