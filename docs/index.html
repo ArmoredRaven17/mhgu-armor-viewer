@@ -492,15 +492,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </section>
 
       <section class="panel" id="platePanel" data-open="false">
-        <button class="panel-head">Name plate <span class="chev">&#9662;</span></button>
+        <button class="panel-head">Guild Info <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <label class="chk"><input type="checkbox" id="plateOn">Show the name plate</label>
           <div class="field"><label for="plateName">Name</label><input id="plateName" type="text" maxlength="24" placeholder="this slot's name" title="The name on the plate. Empty uses the slot's name from the Hunters list, so several slots can share one hunter"></div>
           <div class="field"><label for="plateHr">Hunter Rank</label><select id="plateHr" title="The rank band sets the plate's colour, as the game does"></select></div>
           <div class="field"><label for="plateShow">Shows</label><select id="plateShow" title="What the plate reads: the name, the guild card title alone (only the icon until words are chosen), or the name with the title under it in brackets"><option value="name">Name</option><option value="title">Guild card title</option><option value="both">Name and title</option></select></div>
-          <div class="field"><label for="plateT1">Title</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT1">Title #1</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
           <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
-          <div class="field"><label for="plateT3">Second word</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT3">Title #2</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
           <button id="plateUnlocks" class="btn block" title="Every title word in the Guild Card's order, with what unlocks it">Unlock Requirements</button>
         </div>
       </section>
@@ -767,7 +767,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   <div class="modal-card">
     <h2>Guild Card Titles</h2>
     <div class="row gap"><input id="titleFilter" type="search" placeholder="Filter by word or requirement" autocomplete="off"><span class="pager"><button id="titlePagePrev" class="btn tiny" title="Previous page" aria-label="Previous page">&lt;</button><input id="titlePage" type="number" min="1" placeholder="Page" title="Jump to a page of the in-game menu" aria-label="Page"><button id="titlePageNext" class="btn tiny" title="Next page" aria-label="Next page">&gt;</button></span><span id="titleCount" class="muted"></span></div>
-    <p class="hint" id="titlePageNote">Pages match a card holding every title listed here. The game shows only titles you have earned, so each one you are missing shifts the rest earlier and your own page may be lower.</p>
+    <p class="hint" id="titlePageNote">Page numbers assume you have every title unlocked.<br><br>The requirements are listed.<br><br>Hopefully this helps you find the titles in-game</p>
     <div id="titleList"></div>
     <div class="row end gap"><button id="titleClose" class="btn">Close</button></div>
   </div>
