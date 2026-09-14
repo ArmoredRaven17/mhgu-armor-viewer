@@ -149,6 +149,13 @@ export function applyTint(mat){
       // is the gloss that scales the sphere map
       uSpec: { value: null },
       uSpecOn: { value: 0 },
+      // An iris mask for the character colour, sampled at the albedo UV: 1 on the iris, 0 on
+      // everything else. Off, the tint covers the whole material as it always has, which is
+      // right for skin, hair and fur. On, only the iris takes the eye colour -- the hunter's
+      // eye texture paints sclera, pupil, glint and lids into the same material, and the old
+      // whole-material tint coloured the white of the eye hardest (Raven, 2026-09-14).
+      uIris: { value: null },
+      uIrisOn: { value: 0 },
       // the albedo sampled by the view-space normal (uvAlbedoMap UVViewNormal, the glow
       // materials) instead of the mesh's UVs
       uViewUv: { value: 0 },
@@ -170,6 +177,7 @@ export function applyTint(mat){
                  ' uniform vec3 uChar; uniform float uCharAmt; uniform float uRegion;' +
                  ' uniform float uAlphaCut;' +
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform float uF0;' +
+                 ' uniform sampler2D uIris; uniform float uIrisOn;' +
                  ' uniform float uDark;' +
                  ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 );' +
                  ' vec3 mhguSrgbOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }' +
@@ -224,7 +232,8 @@ export function applyTint(mat){
              // the color itself) keeps the strand and shading detail while actually
              // changing the hue.
              if ( uCharAmt > 0.0 ) {
-               base = mix( base, uChar * luma * 2.0, uCharAmt );
+               float irisW = uIrisOn > 0.5 ? texture2D( uIris, vMapUv ).r : 1.0;
+               base = mix( base, uChar * luma * 2.0, uCharAmt * irisW );
              }
                gBase = base;           // the dyed albedo, for the glow below
                diffuseColor.rgb *= base;
@@ -444,6 +453,13 @@ export function setEnvTexture(mat, t){
   if (!mat.userData.u) return;                 // an unlit additive material takes none
   mat.userData.u.uEnv.value = t;
   mat.userData.u.uEnvAmt.value = envStrength(mat);
+  mat.needsUpdate = true;
+}
+// the iris mask, once loaded: the character colour then reaches only the iris
+export function setIrisMask(mat, t){
+  if (!mat.userData.u) return;
+  mat.userData.u.uIris.value = t;
+  mat.userData.u.uIrisOn.value = 1;
   mat.needsUpdate = true;
 }
 // the separate specular map, once loaded: its luminance is the gloss

@@ -4,9 +4,17 @@
 // the static pose) arrives through `opt` and `ctx`.
 import { loadGlb, getTexture } from './assets.js';
 import { skeletonClone, meshGroupId } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, allMats, armorMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setIrisMask, allMats, armorMats } from './material.js';
 import { specFor, refForPiece } from './materials-db.js';
 import { poseObject } from './pose.js';
+
+// The iris mask for each hunter eye atlas (dev/build-iris-masks.py), keyed by the albedo it
+// belongs to. Every one of the 36 hunter faces uses one of these two textures, female then
+// male. Loaded linear: it is a weight, not a colour.
+const IRIS_MASKS = {
+  'tex/44b07b0ea36bdc5f.png': 'tex/iris/44b07b0ea36bdc5f.png',
+  'tex/9f45a8304abd0bcf.png': 'tex/iris/9f45a8304abd0bcf.png'
+};
 
 // A harvested piece IS one slot of one set, so its texture is known from the key --
 // no need to parse material names. That matters because the game's own naming is
@@ -244,6 +252,9 @@ export async function loadCharPart(entry, opt, ctx){
       if (rom.spec && !rom.specIsAlbedo) jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
     }
     if (file) jobs.push(getTexture(file).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
+    // the eye colour reaches the iris only, where a mask exists for this eye texture
+    if (mat.userData.tintClass === 'eye' && file && IRIS_MASKS[file])
+      jobs.push(getTexture(IRIS_MASKS[file], { linear: true }).then(t => setIrisMask(mat, t)));
   });
   await Promise.all(jobs);
   root.userData.joints = entry.joints || [];
