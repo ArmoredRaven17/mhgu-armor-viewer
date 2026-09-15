@@ -1176,6 +1176,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
 <script src="mount-rom.js?v=1"></script>
 
+<script>
+// Once MHFU has swapped in, Chrome still draws each select's text too low, its bottom clipped,
+// until the select is restyled: zooming the page does it, a repaint does not. A font-family round
+// trip restyles them; the serif step is styled but never laid out. Kept out of the module so it is
+// armed before the module's first await.
+if (document.fonts) document.fonts.load('1em MHFU').then(() => {
+  const selects = document.querySelectorAll('select');
+  selects.forEach(s => { s.style.fontFamily = 'serif'; });
+  selects.forEach(s => getComputedStyle(s).fontFamily);
+  selects.forEach(s => { s.style.fontFamily = ''; });
+}, () => {});
+</script>
+
 <script type="importmap">
 {"imports":{
   "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
