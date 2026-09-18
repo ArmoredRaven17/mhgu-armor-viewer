@@ -615,7 +615,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="camLens">Lens</label><select id="camLens" title="Standard is the plain lens. Fisheye is a true curved wide angle. Orthographic has no perspective at all (orbit only; the focal length then makes no difference). Anamorphic is the widescreen squeeze with oval bokeh and streak flares. Tilt-shift keeps a band sharp and blurs above and below it"><option value="standard">Standard</option><option value="fisheye">Fisheye</option><option value="ortho">Orthographic</option><option value="anamorphic">Anamorphic</option><option value="tiltshift">Tilt-shift</option></select></div>
           <div class="field" id="lensP1Field" hidden><label for="lensP1"><span id="lensP1Label"></span> <span class="hx" id="lensP1Val"></span></label><input id="lensP1" type="range" min="0" max="1000" step="1"></div>
           <div class="field" id="lensP2Field" hidden><label for="lensP2"><span id="lensP2Label"></span> <span class="hx" id="lensP2Val"></span></label><input id="lensP2" type="range" min="0" max="1000" step="1"></div>
-          <p class="hint" id="camFlyHint" hidden>Click the view to look around; Esc frees the mouse. W/S move where you look, A/D strafe, Q/E (or C/Space) go down and up, Shift is three times faster and the wheel changes the speed. With Face the hunter on, every key orbits: A/D round, E/Q up and down, W/S closer and farther, and the wheel zooms. The lens zooms like a scope here: the camera stays put.</p>
           <div class="field"><label for="camFocal">Focal length <span class="hx" id="camFocalVal"></span></label><input id="camFocal" type="range" min="0" max="1000" step="1" title="5 mm is a fisheye-wide view with the deepest perspective, 300 mm a long lens that has flattened it; 35 mm is the default"></div>
           <div class="field" id="camSpeedField" hidden><label for="camSpeed">Move speed <span class="hx" id="camSpeedVal"></span></label><input id="camSpeed" type="range" min="0" max="1000" step="1" title="How fast the keys move the camera, 0.05 to 20 metres a second; the wheel changes it too while the mouse is locked"></div>
           <div class="field" id="camTrackField">
@@ -1943,7 +1942,8 @@ function paintCamMode(){
   document.getElementById('spinBtn').disabled = on; document.getElementById('orbitLock').disabled = on;
   for (const id of ['camSpin', 'camSpinRev']) document.getElementById(id).disabled = on;
   const sel = document.getElementById('camMode'); if (document.activeElement !== sel) sel.value = camMode;
-  document.getElementById('camFlyHint').hidden = !on;
+  // the first-person controls are shown over the view itself (flyHint below), so the panel does
+  // not repeat them (Raven, 2026-09-18: "remove the tool tip under Lens for First person")
   document.getElementById('camSpeedField').hidden = !on;
   document.getElementById('camFace').disabled = !on;          // the lock is a first-person thing
   const oo = document.querySelector('#camLens option[value=ortho]'); if (oo) oo.disabled = on;
@@ -2103,12 +2103,51 @@ function paintFocal(){
   if (document.activeElement !== sl) sl.value = String(Math.round(sliderOfFocal(Math.min(FOCAL_MAX, Math.max(FOCAL_MIN, mmExact)))));
   document.getElementById('camFocalVal').textContent = mm + ' mm \u00b7 ' + (camera.fov < 10 ? camera.fov.toFixed(1) : camera.fov.toFixed(0)) + '\u00b0';
 }
+// THE LENS HOLDS WHAT IT FRAMES, IN BOTH MODES (Raven, 2026-09-18: "First Person Camera has
+// some issues since it doesn't maintain framing", reworking the Monster Viewer's quick fix).
+// A field of view change on its own is only a crop: the picture scales and the perspective
+// never moves, which is what first person did here, camera fixed. So the camera steps along
+// the line to a pivot by the factor the field of view changed by. That holds the pivot EXACTLY
+// -- the same spot on screen and the same size -- and changes only the depth of the
+// perspective, the reason to reach for a focal length at all. Orbit pivots on its target, as
+// it always has.
+//
+// The question first person raises is WHICH point to hold. The Monster Viewer's quick fix
+// holds the figure's centre, and its math is right; but up close in first person you are
+// usually framing something else -- a face, a weapon -- and pinning the waist lets the thing
+// you aimed at slide and resize. So the pivot is what the view is actually on:
+//   face lock on  the locked aim point, since the camera is held on it (the head or chest here,
+//                 not the centre, so the centre would disagree with the lock);
+//   otherwise     the surface at the centre of the view, by the same visible-only raycast the
+//                 focus follow uses;
+//   nothing there the figure's centre -- the quick fix exactly, so looking away still holds it.
+function framingPivot(out){
+  if (camMode !== 'fly') return out.copy(controls.target);
+  if (faceLock) return aimPoint(out);
+  camera.getWorldDirection(_fwd);
+  _ray.set(camera.position, _fwd); _ray.near = 0; _ray.far = 1000;
+  const shown = o => { for (let p = o; p; p = p.parent) if (p.visible === false) return false; return !(o.material && o.material.visible === false); };
+  for (const h of _ray.intersectObjects(world.children, true)){
+    if (shown(h.object)) return out.copy(h.point);
+  }
+  return figureCenter(out);
+}
 function setFov(fov, keepFraming){
   fov = Math.min(150, Math.max(1, fov));
-  if (keepFraming && camMode !== 'fly'){        // in first person the lens zooms like a scope
-    const dir = camera.position.clone().sub(controls.target);
+  if (keepFraming){
     const k = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) / Math.tan(THREE.MathUtils.degToRad(fov) / 2);
-    camera.position.copy(controls.target).add(dir.multiplyScalar(k));
+    if (camMode === 'fly'){
+      // stops a fifth of a metre short of the pivot on the way in, so it never flies through
+      const q = framingPivot(new THREE.Vector3());
+      const off = camera.position.clone().sub(q), len = off.length();
+      if (len > 1e-4){
+        camera.position.copy(q).addScaledVector(off.divideScalar(len), Math.max(0.2, len * k));
+        fly.moved = true;                         // rides the first-person save, as flying does
+      }
+    } else {
+      const dir = camera.position.clone().sub(controls.target);
+      camera.position.copy(controls.target).add(dir.multiplyScalar(k));
+    }
   }
   camera.fov = fov; camera.updateProjectionMatrix();
   fitPlanes();
