@@ -515,6 +515,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
+          <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
+          <div class="field" id="kinsectMotField" style="display:none"><label for="kinsectMot">Kinsect motion</label><select id="kinsectMot" title="Perched on the arm, or one of the Kinsect's own motions in free flight"></select></div>
 
         </div>
       </section>
@@ -1207,6 +1209,7 @@ import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
 import { ROM as MOUNT_ROM, prowlerMountFor, localMatrix as mountLocalMatrix, idsAt } from './render/mount.js';
 import { WeaponRig } from './render/weapon.js';
+import { ELEMENTS as KINSECT_ELEMENTS } from './render/kinsect.js';
 import { classes as weaponClasses, loadClass as loadWeaponClass, loadKinsects, modelIdOf, rowFor } from './render/weapons-index.js';
 import { loadMaterialsDb } from './render/materials-db.js';
 import { createFx } from './render/fx.js';
@@ -2241,7 +2244,8 @@ function saveState(){
       wireOn, hideCursor, ...lightingSaveState(), effects: effectsState(), plate: plateFileState(),
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
-      weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, arrow: arrowSel.value,
+      weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value,
+      kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
                  preset:devPreset.value },
@@ -2794,11 +2798,21 @@ function figureBounds(){
   // A game pose is animated, so its bounds come from the whole loop (computed once when
   // the pose starts), not from the frame currently on screen.
   if (pose.bounds && !pose.bounds.isEmpty()) box.copy(pose.bounds);
+  // A Kinsect in free flight hovers off the hunter (render/weapon.js mounts: 2.2 m above the
+  // ground, 1.5 m to the side); take in its hover point with a margin for the wings so Fit to
+  // View shows both, aimed between them -- aimed at the body, the fit had to reach twice as far.
+  const km = weapon.kinsectMotion && weapon.parts.kinsect && weapon.parts.kinsect.visible
+    ? weapon.parts.kinsect.userData.mount : null;
+  const withKinsect = !!(km && km.free && km.anchor);
+  if (withKinsect){
+    const a = new THREE.Vector3().fromArray(km.anchor);
+    box.expandByPoint(a.clone().addScalar(0.9)); box.expandByPoint(a.clone().addScalar(-0.9));
+  }
   const size = box.getSize(new THREE.Vector3());
   const c = box.getCenter(new THREE.Vector3());
   // size from the union, but aim at the body itself
-  if (pose.center) c.copy(pose.center);
-  return { box, size, c };
+  if (pose.center && !withKinsect) c.copy(pose.center);
+  return { box, size, c, withKinsect };
 }
 function frameAll(){
   if (camMode === 'fly') leaveFly({ keepTarget: true });   // Fit to View is an orbit view
@@ -3628,7 +3642,20 @@ const weaponClassSel = document.getElementById('weaponClass'),
       weaponPoseSel  = document.getElementById('weaponPose'),
       weaponFormSel  = document.getElementById('weaponForm'),
       kinsectSel     = document.getElementById('kinsect'),
+      kinsectElSel   = document.getElementById('kinsectEl'),
+      kinsectMotSel  = document.getElementById('kinsectMot'),
       arrowSel       = document.getElementById('arrow');
+// The Kinsect's strongest element, which picks its channel-6 colour (render/kinsect.js; Raven,
+// 2026-09-18: "add the Kinsect and IG pigment"). The value is the ELEMENTS index, '' for none.
+kinsectElSel.innerHTML = '<option value="">— none —</option>' +
+  KINSECT_ELEMENTS.map((n, i) => '<option value="' + i + '">' + n + '</option>').join('');
+// a saved element -- its name ('Fire') in a file or slot, its index in the session -- as the
+// select's value; anything else is none
+const kinsectElValue = v => {
+  if (v === null || v === undefined || v === '') return '';
+  const i = typeof v === 'string' && isNaN(+v) ? KINSECT_ELEMENTS.findIndex(n => n.toLowerCase() === v.toLowerCase()) : +v;
+  return (i >= 0 && i < KINSECT_ELEMENTS.length) ? String(i) : '';
+};
 weaponClassSel.innerHTML = '<option value="none">— none —</option>' +
   weaponClasses(manifest).map(w => '<option value="' + w.key + '">' + w.class + '</option>').join('');
 const rarityTag = r => r ? ' (R' + r + ')' : '';
@@ -3672,13 +3699,22 @@ async function buildWeaponLists(){
   arrowSel.value = '';
   const ig = weaponClassSel.value === 'w13';
   document.getElementById('kinsectField').style.display = ig ? '' : 'none';
+  document.getElementById('kinsectElField').style.display = ig ? '' : 'none';
+  document.getElementById('kinsectMotField').style.display = ig ? '' : 'none';
   if (ig && !kinsectSel.options.length){
     const kj = await loadKinsects();
     const ids = Object.keys(kj.models).sort();
     kinsectSel.innerHTML = '<option value="">— none —</option>' +
       ids.map(id => '<option value="' + id + '">' + ((kj.names && kj.names[id]) || ('Kinsect ' + id)) + '</option>').join('');
+    // The Kinsect's own list (docs/weapons/bug.json motion): Perched is the state the game puts
+    // it in on the arm (clip 6); every other clip is shown in free flight (render/weapon.js
+    // setKinsectMotion). Named by number until Raven names them, like the stances.
+    const mo = kj.motion || {};
+    const lab = n => n.replace(/^Motion\[(\d+)\](_loop)?$/, (_, d, l) => 'Motion ' + d + (l ? ' (loop)' : ''));
+    kinsectMotSel.innerHTML = '<option value="">Perched</option>' +
+      (mo.clips || []).filter(n => n !== mo.perched).map(n => '<option value="' + n + '">' + lab(n) + '</option>').join('');
   }
-  if (!ig) kinsectSel.value = '';
+  if (!ig){ kinsectSel.value = ''; kinsectElSel.value = ''; kinsectMotSel.value = ''; }
   paintChain();          // the chain keeps its links; stances of another class show muted
 }
 // The Form select never offers "automatic": a restored value that is not in the list (a
@@ -3711,8 +3747,11 @@ async function applyWeaponState(){
   // game's own logic fires for the clip (Raven, 2026-09-03)
   weapon.setForm(weapon.formSelectable() && weaponFormSel.value !== '' ? +weaponFormSel.value : null);
   weapon.setArrow(arrowSel.value || null);
+  // the element first: setKinsect colours the new Kinsect with whatever the rig holds
+  weapon.setKinsectElement(weaponClassSel.value === 'w13' ? kinsectElSel.value : null);
   if (weaponClassSel.value === 'w13') await weapon.setKinsect(kinsectSel.value || null);
   else if (weapon.kinsectId) await weapon.setKinsect(null);
+  await weapon.setKinsectMotion(weaponClassSel.value === 'w13' ? (kinsectMotSel.value || null) : null);
   await weapon.rebindMotion();
   if (p) await pose.play(p);
   else await playPlayerPose();
@@ -3739,7 +3778,12 @@ function weaponFileState(){
            name: row ? row.name : null, drawn: weaponDrawnSel.value === '1',
            stance: p ? p.label : null,
            form: weaponFormSel.value === '' ? null : +weaponFormSel.value,
-           kinsect: kinsectSel.value || null, arrow: arrowSel.value || null };
+           kinsect: kinsectSel.value || null,
+           // the Kinsect's strongest element by name ('Fire'), null for none
+           kinsectElement: kinsectElSel.value === '' ? null : KINSECT_ELEMENTS[+kinsectElSel.value],
+           // the Kinsect's clip in free flight ('Motion[7]_loop'), null perched
+           kinsectMotion: kinsectMotSel.value || null,
+           arrow: arrowSel.value || null };
 }
 weaponClassSel.onchange = async () => {
   await weapon.set(weaponClassSel.value, null);
@@ -4047,6 +4091,8 @@ if (SAVED && Array.isArray(SAVED.chain)){
 weaponFormSel.onchange  = () => { weapon.setForm(weaponFormSel.value === '' ? null : +weaponFormSel.value); weapon.step(); saveState(); };
 arrowSel.onchange       = () => { weapon.setArrow(arrowSel.value || null); saveState(); };
 kinsectSel.onchange     = async () => { await weapon.setKinsect(kinsectSel.value || null); saveState(); };
+kinsectElSel.onchange   = () => { weapon.setKinsectElement(kinsectElSel.value); saveState(); };
+kinsectMotSel.onchange  = async () => { await weapon.setKinsectMotion(kinsectMotSel.value || null); saveState(); };
 
 buildPoseList();
 // ---- one RGB pigment per armour piece --------------------------------------
@@ -5192,6 +5238,9 @@ if (weaponClassSel.value !== 'none'){
     weaponFormSel.value = String(SAVED.weaponForm);
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
     kinsectSel.value = SAVED.kinsect;
+  if (SAVED && SAVED.kinsectEl !== undefined) kinsectElSel.value = kinsectElValue(SAVED.kinsectEl);
+  if (SAVED && SAVED.kinsectMot && [...kinsectMotSel.options].some(o => o.value === SAVED.kinsectMot))
+    kinsectMotSel.value = SAVED.kinsectMot;
   if (SAVED && SAVED.arrow && [...arrowSel.options].some(o => o.value === String(SAVED.arrow)))
     arrowSel.value = String(SAVED.arrow);
 }
@@ -5283,6 +5332,16 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   setWeaponForm: trg => { setFormValue(trg);
                           weapon.setForm(trg); return weapon.audit().trigger; },
   setArrow: key => { arrowSel.value = key ? String(key) : ''; weapon.setArrow(key || null); return weapon.audit().arrow; },
+  // the Kinsect's strongest element (a name, an index, or null), and the channel colours as
+  // applied: per part, each channel material with the [r, g, b] it holds (null = its own)
+  setKinsectElement: e => { kinsectElSel.value = kinsectElValue(e); weapon.setKinsectElement(kinsectElSel.value);
+                            return weapon.audit().kinsectElement; },
+  // the Kinsect's motion: a clip name ('Motion[7]_loop') or null for perched, and optionally a
+  // fixed time in seconds for deterministic shots (null lets it run)
+  setKinsectMotion: async (name, t) => { kinsectMotSel.value = name || ''; weapon.kinsectTime = (typeof t === 'number') ? t : null;
+                                         await weapon.setKinsectMotion(kinsectMotSel.value || null); return weapon.audit().kinsectMotion; },
+  channelColours: () => Object.fromEntries(Object.entries(weapon.parts).map(([k, p]) =>
+    [k, (p.userData.chanMats || []).map(m => ({ name: m.name, ch: m.userData.rom.ch, rgb: m.userData.chanRgb }))])),
   weaponParts: () => weapon.parts_(),
   setWeapon: async (cls, model) => { weaponClassSel.value = cls || 'none';
                                      await weapon.set(weaponClassSel.value, model);
@@ -5600,6 +5659,10 @@ async function applyWeaponFile(w){
     weaponPoseSel.value = si >= 0 ? String(si) : '';
     setFormValue(w.form);
     if (w.kinsect && [...kinsectSel.options].some(o => o.value === w.kinsect)) kinsectSel.value = w.kinsect;
+    // a set saved before the element existed carries none, which is what it showed then
+    kinsectElSel.value = kinsectElValue(w.kinsectElement);
+    // and one saved before the Kinsect's motions, perched
+    kinsectMotSel.value = (w.kinsectMotion && [...kinsectMotSel.options].some(o => o.value === w.kinsectMotion)) ? w.kinsectMotion : '';
     arrowSel.value = (w.arrow && [...arrowSel.options].some(o => o.value === String(w.arrow))) ? String(w.arrow) : '';
   }
   await applyWeaponState();
@@ -6156,6 +6219,8 @@ async function runScene(name){
     weaponPoseSel.value = held ? String(sc.stance || 0) : '';
     setFormValue(sc.form);
     if (sc.kinsect && [...kinsectSel.options].some(o => o.value === sc.kinsect)) kinsectSel.value = sc.kinsect;
+    kinsectElSel.value = kinsectElValue(sc.kinsectElement);
+    kinsectMotSel.value = (sc.kinsectMotion && [...kinsectMotSel.options].some(o => o.value === sc.kinsectMotion)) ? sc.kinsectMotion : '';
     arrowSel.value = (sc.arrow && [...arrowSel.options].some(o => o.value === String(sc.arrow))) ? String(sc.arrow) : '';
     await applyWeaponState();
     if (!held){

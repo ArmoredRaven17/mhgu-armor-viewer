@@ -163,7 +163,10 @@ export function applyTint(mat){
       uF0: { value: 1 },
       // 0..1: how far the dye region (and the material's glow) is pulled toward black.
       // The Esurient animation drives it (setRegionDark); nothing else touches it.
-      uDark: { value: 0 }
+      uDark: { value: 0 },
+      // The game's colour for this material's CHANNEL (setChannelColor), white when it has
+      // none. It multiplies the texel, so it reaches the lit colour and the glow alike.
+      uChan: { value: new THREE.Color(1,1,1) }
     };
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, mat.userData.u);
@@ -178,7 +181,7 @@ export function applyTint(mat){
                  ' uniform float uAlphaCut;' +
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform float uF0;' +
                  ' uniform sampler2D uIris; uniform float uIrisOn;' +
-                 ' uniform float uDark;' +
+                 ' uniform float uDark; uniform vec3 uChan;' +
                  ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 );' +
                  ' vec3 mhguSrgbOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }' +
                  ' vec3 mhguSrgbEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }' +
@@ -235,6 +238,8 @@ export function applyTint(mat){
                float irisW = uIrisOn > 0.5 ? texture2D( uIris, vMapUv ).r : 1.0;
                base = mix( base, uChar * luma * 2.0, uCharAmt * irisW );
              }
+               // the channel colour stands in for fAlbedoColor, a plain multiply (setChannelColor)
+               base *= uChan;
                gBase = base;           // the dyed albedo, for the glow below
                diffuseColor.rgb *= base;
              }
@@ -468,6 +473,28 @@ export function setSpecTexture(mat, t){
   mat.userData.u.uSpec.value = t;
   mat.userData.u.uSpecOn.value = 1;
   mat.needsUpdate = true;
+}
+
+// The colour the game hands to this material's CHANNEL (spec.rom.ch), as [r, g, b] 0-255, or
+// null for the material's own constants. What the game does with it, read from the ROM
+// (Raven, 2026-09-18, the Kinsect and Insect Glaive colours): 0x0053a0e4 walks the model's
+// materials and, on each whose channel matches, calls the material's vfunc +0x2c or +0x24,
+// picked by the model byte +0x1368, which the model constructor (0x00538b34) sets to 1 and
+// nothing a hunter, weapon or Kinsect builds clears. +0x2c (0x00b0ad0c) writes the colour's
+// RGB over $Globals.fAlbedoColor and its alpha over CBMaterial.fTransparency. So the colour
+// REPLACES fAlbedoColor: it drops out of mat.color (fAlbedoColor x fDiffuseColor) and
+// multiplies the texel instead, where it reaches the glow as well -- the glow takes
+// fAlbedoColor in game, which is what the Esurient pigment showed. The alpha is 255 on every
+// colour the game writes here, the fTransparency every such material already has.
+export function setChannelColor(mat, rgb){
+  const u = mat.userData.u;
+  if (!u || !u.uChan) return;                  // the unlit paths take no channel colour
+  const rom = mat.userData.rom, gl = rom && rom.glob, cb = rom && rom.cbm;
+  const alb = (rgb || !gl) ? [1, 1, 1] : gl.albedo, dif = cb ? cb.diffuse : [1, 1, 1];
+  if (gl && cb) mat.color.setRGB(alb[0] * dif[0], alb[1] * dif[1], alb[2] * dif[2]);
+  if (rgb) u.uChan.value.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+  else u.uChan.value.setRGB(1, 1, 1);
+  mat.userData.chanRgb = rgb || null;
 }
 
 // hair / eye / skin / fur colour: a '#rrggbb' string or a THREE.Color, or null for the

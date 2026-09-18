@@ -63,6 +63,12 @@ export function specFor(ref, name){
            // it (Nerscylla's mail among them) are drawn whole in game (Raven, 2026-09-03)
            fb: parseInt(m.fb || '0', 16) >>> 0,
            alphaTest: !!(parseInt(m.fb || '0', 16) & 0x00100000),
+           // The colour CHANNEL (bits 21-28 of the MRL word at +24; `flags` is its low three bits
+           // shifted by 5, which is why 0x20 and 0x40 looked like flags). The game writes a runtime
+           // colour into every material of a model whose channel matches (0x0053a0e4): 1 hair,
+           // 2 skin, 3 armour pigment, 4 eyes, 5 and 6 the Kinsect's species and element colours,
+           // 5 the Insect Glaive's (Raven, 2026-09-18). 0 = none.
+           ch: m.ch || 0,
            pigment: !!(m.flags & 0x20),                       // the dyeable region
            override: !!(m.flags & 0x40) && !(m.flags & 0x20) }; // skin / fur / face colour
 }

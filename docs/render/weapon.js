@@ -15,7 +15,8 @@
 import * as THREE from 'three';
 import { loader, loadGlb, getTexture, weaponMotCache } from './assets.js';
 import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, allMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, allMats } from './material.js';
+import { kinsectColours, ELEMENTS } from './kinsect.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
 // Whether a weapon clip's bone-0 (root) track moves the part relative to its joint. Off:
@@ -40,6 +41,11 @@ export function weaponMountNode(skel, stop){
 }
 
 const _local = new THREE.Matrix4(), _rootM = new THREE.Matrix4();
+const _fp = new THREE.Vector3(), _fq = new THREE.Quaternion(), _fs = new THREE.Vector3();
+// Where a Kinsect in free flight is shown: the point the game's flight code steers a free
+// Kinsect to when it has no target (0x00480428), in metres from the hunter's unit position,
+// which stands on the ground (see mounts()).
+export const KINSECT_HOVER = [1.5, 2.2, 0];
 
 // The joint frame a proof-effect model sees (0x0031d16c, mode 0 / sub-mode 0): the joint's
 // translation as it is, but its rotation taken apart into Euler angles with the parent's
@@ -86,6 +92,10 @@ export class WeaponRig {
     this.events = opt.events || {};
     this.cls = 'none'; this.modelId = null; this.cj = null;
     this.kinsectId = null;
+    this.kinsectElement = null;                // its strongest element (ELEMENTS index), null none
+    this.kinsectMotion = null;                 // a clip of its own list in free flight, null perched
+    this.kinsectTime = null;                   // a fixed time for that clip (the harness), null = run
+    this._kinT = 0; this._kinLast = 0;
     this.arrowKey = null;                      // no arrow until a PEL record is chosen
     this.playerOrder = 0;                      // the player's angle order (MT enum): unit default
     this.parts = {};                 // kind -> root, for the parts currently built
@@ -161,6 +171,7 @@ export class WeaponRig {
     for (const [kind, root] of built){ this.scene.add(root); this.parts[kind] = root; }
     if (this.kinsectId && cls === 'w13') await this.setKinsect(this.kinsectId, seq);
     if (seq !== this._seq) return;
+    this.applyKinsectColours();
     await this.rebindMotion();
     this.step();
   }
@@ -170,6 +181,7 @@ export class WeaponRig {
     const token = (this._kseq = (this._kseq || 0) + 1);
     if (this.parts.kinsect){ this.scene.remove(this.parts.kinsect); delete this.parts.kinsect; }
     this.kinsectId = id || null;
+    this.applyKinsectColours();                // the glaive follows the Kinsect, or loses its colour
     if (!id || this.cls !== 'w13') return;
     const stale = () => token !== this._kseq || (seq !== undefined && seq !== this._seq) || this.cls !== 'w13';
     const kj = await loadKinsects();
@@ -182,18 +194,43 @@ export class WeaponRig {
     if (stale()) return;                       // a later call (or a class change) won
     if (this.parts.kinsect) this.scene.remove(this.parts.kinsect);
     for (const [kind, root] of built){ this.scene.add(root); this.parts[kind] = root; }
-    // The perched form: the shell's perch handler (0x0048288c) calls 0x0047f754 after the
-    // motion request, which sets the scale of the joint the model's id map lists under
-    // id 3 to 0.1 (0x3dcccccd) -- the wings, in bug001 the only bone with wing vertices.
-    // Take-off (0x0047eb48) restores 1.0. The viewer only shows the perched form.
-    const fold = kj.perch && kj.perch.fold;
-    if (fold){
-      for (const [, root] of built){
-        root.userData.joints = m.joints || [];              // the gid table (bug.json models[id].joints)
-        for (const b of gidBonesOf(root)) if (b.gid === fold.gid) b.node.scale.setScalar(fold.scale);
-      }
-    }
+    for (const [, root] of built) root.userData.joints = m.joints || [];   // the gid table (bug.json models[id].joints)
+    this.applyKinsectWings();
+    this.applyKinsectColours();
+    await this.bindMotion('kinsect');
+    if (stale()) return;
     this.step();
+  }
+
+  // ---- the Kinsect's own motion ----------------------------------------------------------
+  // Raven, 2026-09-18: "let's focus on seeing if we can animate the Kinsects. They can leave
+  // the hunter ... we are simply displaying the Kinsects." The shell's state machine
+  // (0x00481870: mode +0x15bc, state +0x15be) requests every clip of its list; what it does
+  // around them, read from the ROM (build/notes and the board carry the table):
+  //   perched  mode 0 states 3/8/9 (0x0048288c): clip 6, a static pose; on the hunter's
+  //            joint 11 (state 3), scale 0.8 (+0x60..+0x68), wings folded (0x0047f754)
+  //   flying   take-off (0x0047eb48) opens the wings again and the flight handlers set the
+  //            scale to 1.0 (0x00482ad0, 0x00483ae0, 0x00483d4c, 0x00484740); clips 0 and 7
+  //            are the mode-0 flight near the hunter (0x00481e64, 0x0048244c), 21 the mode-0
+  //            handler 0x00482ad0, 1-5, 10, 20 and 30-33 the mode-1 handlers; 40 has no
+  //            request in this machine
+  // null = perched, else a clip of the list shown in free flight (render: placePart `free`).
+  async setKinsectMotion(name){
+    const mo = this._bugJson && this._bugJson.motion;
+    const ok = !name || !mo || ((mo.clips || []).includes(name) && name !== mo.perched);
+    this.kinsectMotion = (name && ok && !(mo && name === mo.perched)) ? name : null;
+    this._kinT = 0; this._kinLast = 0;
+    this.applyKinsectWings();
+    await this.bindMotion('kinsect');
+    this.step();
+  }
+  // The wings: the joint the model's id map lists under id 3 goes to 0.1 while perched
+  // (0x0047f754, called by the perch handler) and back to 1.0 at take-off (0x0047eb48) --
+  // in bug001 the only bone with wing vertices. Models whose map has no id 3 have no fold.
+  applyKinsectWings(){
+    const part = this.parts.kinsect, fold = this._bugJson && this._bugJson.perch && this._bugJson.perch.fold;
+    if (!part || !fold) return;
+    for (const b of gidBonesOf(part)) if (b.gid === fold.gid) b.node.scale.setScalar(this.kinsectMotion ? 1 : fold.scale);
   }
 
   // one weapon piece: the weapon, a shield, the arrows, the scabbard, the kinsect
@@ -205,6 +242,7 @@ export class WeaponRig {
     let ref = matsRef;
     if (!entryFor(ref)) ref = refForGlb(glb) || ref;
     const jobs = [];
+    const chan = [];                           // the materials that name a colour channel
     root.traverse(o => {
       if (!(o.isMesh || o.isSkinnedMesh)) return;
       const srcName = (o.material && o.material.name) || '';
@@ -224,9 +262,10 @@ export class WeaponRig {
       const tx = rom || texturesFor(ref, srcName);
       const mat = createMaterial({
         srcName, rom, alphaCut: rom ? 0 : (/^XfBA/.test(srcName) ? 0.5 : 0),
-        noTint: true,          // weapons are not dyed
+        noTint: true,          // no armour pigment; the Kinsect colours are applyKinsectColours
         wire: this.ctx.wire });
       o.material = mat; allMats.push(mat);
+      if (rom && rom.ch) chan.push(mat);
       if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
       if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
       if (rom){
@@ -235,6 +274,7 @@ export class WeaponRig {
       } else if (tx && tx.sphere) jobs.push(getTexture(tx.sphere).then(t => setEnvTexture(mat, t)));
     });
     await Promise.all(jobs);
+    root.userData.chanMats = chan;
     // Drive the weapon's OWN root BONE, never the group that holds it. glTF says a skinned
     // mesh node's transform is ignored, but three.js still multiplies it in and cancels it
     // with bindMatrixInverse -- so moving a parent that contains BOTH the mesh nodes and the
@@ -257,6 +297,27 @@ export class WeaponRig {
   setDrawn(b){ this.drawn = !!b; this._appliedTrg = null; }
   // the arrow placement: a key of shared.arrow.records ('520' ...) or null for none
   setArrow(key){ this.arrowKey = (key === null || key === undefined || key === '') ? null : String(key); this.step(); }
+  // the Kinsect's strongest element: an index into ELEMENTS (render/kinsect.js), or null for none
+  setKinsectElement(e){
+    this.kinsectElement = (e === null || e === undefined || e === '' || !(+e >= 0 && +e < ELEMENTS.length)) ? null : +e;
+    this.applyKinsectColours();
+  }
+  // The Insect Glaive's and its Kinsect's colours (render/kinsect.js), as 0x002876a8 hands them
+  // out: the glaive's channel-5 materials take the Kinsect's species colour, the Kinsect's own
+  // channel 5 the same and its channel 6 the element colour. With no Kinsect the game colours
+  // nothing, so every channel material keeps its own constants -- as it does on every other
+  // weapon, whose channels (3, 8, 30 ...) are fed by other code this app does not model yet.
+  applyKinsectColours(){
+    const cols = (this.cls === 'w13' && this.kinsectId) ? kinsectColours(modelIdOf(this.kinsectId), this.kinsectElement) : null;
+    for (const kind of Object.keys(this.parts)){
+      const mats = (this.parts[kind] && this.parts[kind].userData.chanMats) || [];
+      for (const mat of mats){
+        const ch = mat.userData.rom.ch;
+        const own = kind === 'kinsect' ? (ch === 5 || ch === 6) : (kind === 'main' && ch === 5);
+        setChannelColor(mat, (cols && own) ? cols[ch] : null);
+      }
+    }
+  }
   // the player's angle order the arrow's joint is decomposed with (MT enum 0..5; see mounts())
   setPlayerOrder(n){ n = Number(n); this.playerOrder = (n >= 0 && n < MT_ORDER.length) ? n : 0; this.step(); return MT_ORDER[this.playerOrder]; }
   arrowOptions(){ const r = this.cj && this.cj.shared.arrow && this.cj.shared.arrow.records; return r ? Object.keys(r) : []; }
@@ -351,6 +412,22 @@ export class WeaponRig {
                           (MT_ORDER[this.playerOrder] || 'ZYX') + '->' + order + ' (0x0031d16c)' } : null;
         continue;
       }
+      if (kind === 'kinsect' && this.kinsectMotion){
+        // In flight the Kinsect is its own unit, off the hunter: at the point the flight code
+        // steers a free Kinsect to when it has no target (0x00480428): the hunter's position
+        // plus (150 cos a, 220, -150 sin a) cm for the hunter's yaw a (+0xfec; 0x013ecc20 is
+        // sinf, 0x013ecc2c cosf, read from the import table), i.e. 1.5 m along the hunter's
+        // own +X -- the left side, joint 11 on -X being the right arm -- and 2.2 m up. The
+        // hunter's position is on the ground; the viewer's hunter faces +Z with its pelvis at
+        // the origin and its feet at the pose driver's rest ground (the lowest bone at rest,
+        // pose.js), so the point is measured from there. Scale 1.0, as every flight handler
+        // sets it.
+        const g = (this.pose && Number.isFinite(this.pose.ground)) ? this.pose.ground : 0;
+        out[kind] = { free: true, type: null, index: null, joint: null,
+                      anchor: [KINSECT_HOVER[0], g + KINSECT_HOVER[1], KINSECT_HOVER[2]], scale: 1,
+                      prov: 'rom: hover point 0x00480428 (no target) above the rest ground, flight scale 1.0 (0x00482ad0 ..), clip from the Kinsect list' };
+        continue;
+      }
       out[kind] = mountFor({ cls: this.cls, part: kind, ids: at.ids, drawn: this.drawn, axe, synthetic: at.synthetic,
                              carry: this.carry() });
     }
@@ -371,6 +448,22 @@ export class WeaponRig {
   }
   placePart(part, m){
     const b = part.userData.bone;
+    if (m && m.free){
+      // A free unit (the Kinsect in flight): its own frame at the anchor, then the clip's
+      // reference track, then bone 0's own motion -- the model's node chain
+      // reference -> 0:0, which the perched path skips because clip 6 moves neither.
+      part.userData.mount = m;
+      part.visible = !!b && this.visible;
+      if (!part.visible) return;
+      b.matrixAutoUpdate = false; b.matrixWorldAutoUpdate = false;
+      b.matrix.compose(_fp.fromArray(m.anchor), _fq.identity(), _fs.setScalar(m.scale));
+      const mot = part.userData.mot;
+      if (mot && mot.refSrc) b.matrix.multiply(_rootM.compose(mot.refSrc.position, mot.refSrc.quaternion, mot.refSrc.scale));
+      if (mot && mot.rootSrc) b.matrix.multiply(_rootM.compose(mot.rootSrc.position, mot.rootSrc.quaternion, mot.rootSrc.scale));
+      b.matrixWorld.copy(b.matrix);
+      b.children.forEach(c => c.updateMatrixWorld(true));
+      return;
+    }
     const mount = (m && m.joint !== null && m.joint !== undefined) ? playerBone(this.roots(), m.joint) : null;
     part.userData.mount = m;
     part.visible = !!(b && mount) && this.visible;
@@ -482,7 +575,7 @@ export class WeaponRig {
     if (!sets.length) return;
     // find(name) -> [clip, gltf] from the first list that has it
     const find = (name, list) => { for (const g of (list || sets)){ const c = g.animations.find(c => c.name === name); if (c) return [c, g]; } return null; };
-    const want = kind === 'kinsect' ? recs[0].perched : (this.stance && this.stance.clip);
+    const want = kind === 'kinsect' ? (this.kinsectMotion || recs[0].perched) : (this.stance && this.stance.clip);
     // Carry: the weapon's Motion[0] loop. The hunter's weapon list has no clip 0 (the rest
     // idle is a common motion), and the weapon's clip 0 is the shape that pairs with it --
     // the Switch Axe's Motion[0]_loop holds its blade bones where Motion[3] (the sheathe)
@@ -498,6 +591,8 @@ export class WeaponRig {
     const drawSets = kind === 'kinsect' ? [] : await this.loadSets(this.motionRecsFor(kind, 'draw'));
     const restHit = find('Motion[0]_loop') || find('Motion[0]') || find('Motion[0]_loop', drawSets) || find('Motion[0]', drawSets);
     let hit = want ? find(want) : restHit;
+    // a flight clip this Kinsect's list lacks: back to the perch
+    if (!hit && kind === 'kinsect' && this.kinsectMotion){ this.kinsectMotion = null; this.applyKinsectWings(); hit = find(recs[0].perched); }
     const ids0 = want ? this.activeIds(0) : null;
     // The idle of the clip's MODE: an axe-mode Charge Blade action without a shield clip
     // (33 of its 53 axe clips) keeps the shield where the axe idle holds it, bone 0 at
@@ -588,10 +683,14 @@ export class WeaponRig {
       const f = flagsFor(driven, from.name);
       if (f.pos || f.rot || f.scl) pairs.push([from, o, f]);
     });
-    // bone 0's track (or its layered state) rides on the mount in placePart
-    part.userData.mot = (pairs.length || rootSrc)
-      ? { mixer, pairs, rootSrc, clip: clip.name, dur: Math.max(clip.duration - 1e-3, 0),
-          loop: /_loop$/.test(clip.name), len: clip.duration } : null;
+    // bone 0's track (or its layered state) rides on the mount in placePart. A Kinsect in free
+    // flight also carries its list's `reference` track (the LMT's bone-255 absolute position,
+    // clips 21 and 30-33) and runs on its own clock, looping so every clip can be watched.
+    const free = kind === 'kinsect' && !!this.kinsectMotion;
+    const refSrc = free ? (src.get('reference') || null) : null;
+    part.userData.mot = (pairs.length || rootSrc || refSrc)
+      ? { mixer, pairs, rootSrc, refSrc, free, clip: clip.name, dur: Math.max(clip.duration - 1e-3, 0),
+          loop: free || /_loop$/.test(clip.name), len: clip.duration } : null;
   }
   async rebindMotion(){
     for (const kind of ['main', 'second', 'kinsect']) await this.bindMotion(kind);
@@ -612,7 +711,15 @@ export class WeaponRig {
       const src = (synced && this.pose.action) ? this.pose.action.time : null;
       // a `_loop` clip wraps; anything else holds its last frame
       const at = tt => m.loop ? (m.len > 0 ? tt % m.len : 0) : Math.min(tt, m.dur);
-      if (src !== null) m.mixer.setTime(at(src));
+      if (m.free){
+        // the Kinsect in flight keeps its own time: it has left the hunter's action
+        const now = performance.now();
+        const dtk = this._kinLast ? Math.min((now - this._kinLast) / 1000, 0.1) : 0;
+        this._kinLast = now;
+        this._kinT = this.kinsectTime !== null ? this.kinsectTime : this._kinT + dtk;
+        m.mixer.setTime(at(this._kinT));
+      }
+      else if (src !== null) m.mixer.setTime(at(src));
       else if (synced) m.mixer.setTime(at(this.pose.mixer.time));
       else m.mixer.update(dt);
       for (const [from, to, f] of m.pairs){
@@ -693,7 +800,8 @@ export class WeaponRig {
       parts[kind] = Object.assign({ glb: p.userData.glb, visible: p.visible,
                                     motion: p.userData.mot ? p.userData.mot.clip : null }, m);
     }
-    return { cls: this.cls, model: this.modelId, kinsect: this.kinsectId, arrow: this.arrowKey,
+    return { cls: this.cls, model: this.modelId, kinsect: this.kinsectId, kinsectElement: this.kinsectElement,
+             kinsectMotion: this.kinsectMotion, arrow: this.arrowKey,
              playerOrder: MT_ORDER[this.playerOrder], drawn: this.drawn,
              stance: this.stance ? this.stance.clip : null, ids: Array.from(ids).sort((a, b) => a - b),
              synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, gmkGroup: this.gmkGroup, parts };
