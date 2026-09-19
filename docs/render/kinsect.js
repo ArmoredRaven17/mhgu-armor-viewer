@@ -21,7 +21,11 @@
 //
 // Colours are the bytes the game stores, [r, g, b] (alpha 255 on every one). Black rows are
 // what the game has for 0 and 23 (no model) and for 30-32, the three Kinsects with no dye
-// materials -- a glaive carrying one of those takes the black on its channel-5 region.
+// materials: the DLC Kinsects Rukh of Light, Barrett Hawk and Tora. Raven, 2026-09-18:
+// "These are DLC Kinsects that are assigned to just the one IG they come with. I don't think
+// have Species color". Their glaives are the three with no channel-5 region at all (Aladdin's
+// Wand 069, Conviction Glaive J 070, Spear of the Beast 104), so the game never shows that
+// black; kinsectColours treats those rows as no colour.
 
 // A, by Kinsect model (0x0188ac3c)
 export const SPECIES = [
@@ -108,9 +112,13 @@ export const ELEMENTS = ['Fire', 'Water', 'Thunder', 'Ice', 'Dragon'];
 // kinsectColours(model, element) -> { 5: [r, g, b], 6: [r, g, b] } by channel, or null.
 //   model    the Kinsect's model number (1 = bug/001 Culldrone) or its '001' string
 //   element  the index of its strongest element in ELEMENTS, or null for none
+// null for a Kinsect with no species colour (the black rows above): the viewer lets any
+// Kinsect ride any glaive, and a DLC Kinsect on a glaive it never comes with would otherwise
+// paint that glaive's region black -- it keeps its own look instead.
 export function kinsectColours(model, element){
   const k = parseInt(model, 10);
   if (!(k >= 0 && k < SPECIES.length)) return null;
+  if (SPECIES[k].every(v => v === 0)) return null;
   const e = (element === null || element === undefined || element === '') ? -1 : +element;
   return { 5: SPECIES[k], 6: (e >= 0 && e < ELEMENT.length) ? ELEMENT[e] : PLAIN[k] };
 }
