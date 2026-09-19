@@ -52,7 +52,8 @@ export const KINSECT_HOVER = [1.5, 2.2, 0];
 // order (0x007c3638 for order 0 .. 0x007c3a38 for order 4), put back together as single-axis
 // rotations in the record's order (0x0031eb84: x Rz, x Rx, x Ry for order 4), scale dropped
 // (the rows are normalised; the effect's scale is the record's times the PLAYER's, not the
-// joint's). Identical to the joint matrix only when the two orders agree.
+// joint's). Identical to the joint matrix only when the two orders agree -- as they do for
+// the hunter, whose order is 4 like every arrow record's (WeaponRig.playerOrder).
 const _jp = new THREE.Vector3(), _jq = new THREE.Quaternion(), _js = new THREE.Vector3(), _jone = new THREE.Vector3(1, 1, 1);
 const _je = new THREE.Euler(), _je2 = new THREE.Euler(), _jm = new THREE.Matrix4();
 function recomposedJoint(world, frame, out){
@@ -82,6 +83,101 @@ const FORM_NAMES = {
 // triggers the game fires by itself from the player's state: 0 at rest, 1 drawn, 2 display,
 // 3 hold -- never an attachment, so never offered in the select
 const STATE_TRIGGERS = new Set([0, 1, 2, 3]);
+// The Bow's nocked arrow: which record, and when.
+// The record: the code that requests the arrow was not found (no motion schedule asks for any
+// of the arrow records, and none of the request calls found passes their numbers; 2026-09-19,
+// the board), so it is picked by where the ROM's own placement puts the arrow: 521 (joint 12,
+// the drawing hand, 120 cm along its -X, turned -90 deg about Y) lays it along the draw line,
+// nock 4 cm from the hand. 520 (the same hand, 45 cm along +Z, no turn) stands 90 deg across
+// it, which is what Raven saw ("the orientation of the arrow is incorrect"). 620 is 521's
+// placement with a particle parameter; 621 (the bow hand) is as straight but leaves the nock
+// 21-27 cm behind the drawing hand.
+const ARROW_RECORD = '521';
+// When: Raven, 2026-09-19, "Bow Stand 5 and 10 are two stances where the arrow should be
+// shown", then "Some draw animations lack the arrow, while others have it". Every Bow stance
+// was reviewed frame by frame (30 a second) for where record 521 would put the arrow; it is
+// NOCKED where that arrow lies on the bow's own arrow line (joint 8's +X, where 621 lays it):
+// within 20 deg of it, the grip within 12 cm of the arrow and ahead of the nock, the drawing
+// hand 0.08-1.45 m from the grip. Gaps of up to 2 frames are merged, runs under 3 frames
+// dropped unless they touch the clip's first or last frame. The windows below (seconds of the
+// stance clip; END = its end) are that rule's output: every draw from the nock -- the hand at
+// the bow, before the string moves -- to the release. It agrees with the bow's own string
+// where the bow has the clip: the string starts stretching at the nock or up to 0.2 s after
+// it (Motion[16]: both at 0.14 s; Motion[105]_start: nock 0.23 s, string 0.40 s). A shot clip
+// opens on the full draw it releases, so it keeps the arrow for its first frame only (133-136,
+// sa 7-9 and 18-20); the rest of every shot, the idles, walks, dodges and the coating action
+// (Motion[114], the hand at the bow 0.7 s without drawing) have none. Stance 5 and Stance 10
+// are among them (Stance 10 from its nock at 0.14 s). The review and the rule's script:
+// C:\MHGU-Extract\bow-arrow-review (arrow-windows.py prints this table).
+const END = Infinity;
+const ARROW_WINDOWS = {
+  w10: {
+    'Motion[5]_loop': [[0, END]],        'Motion[16]': [[0.138, END]],        'Motion[20]': [[0.515, END]],
+    'Motion[60]': [[0, END]],            'Motion[105]_start': [[0.232, END]], 'Motion[105]_loop': [[0, END]],
+    'Motion[106]_start': [[0.266, END]], 'Motion[106]_loop': [[0, END]],      'Motion[107]_start': [[0.232, END]],
+    'Motion[107]_loop': [[0, END]],      'Motion[118]': [[0.171, END]],       'Motion[119]': [[0.24, END]],
+    'Motion[120]': [[0.171, END]],       'Motion[122]': [[0, END]],           'Motion[123]': [[0, END]],
+    'Motion[124]': [[0, END]],           'Motion[125]': [[0.105, END]],       'Motion[126]': [[0, END]],
+    'Motion[127]': [[0, END]],           'Motion[128]': [[0, END]],           'Motion[133]': [[0, 0.034]],
+    'Motion[134]': [[0, 0.034]],         'Motion[135]': [[0, 0.034]],         'Motion[136]': [[0, 0.034]],
+    'Motion[185]': [[0.356, END]],       'Motion[189]': [[0.486, END]],       'Motion[190]': [[0.518, END]],
+    'Motion[191]': [[0.486, END]],       'Motion[192]_start': [[0.699, END]], 'Motion[192]_loop': [[0, END]],
+    'Motion[193]_start': [[0.666, END]], 'Motion[193]_loop': [[0, END]],      'Motion[194]_start': [[0.632, END]],
+    'Motion[194]_loop': [[0, END]],      'Motion[197]_start': [[0.499, END]], 'Motion[197]_loop': [[0, END]],
+    'Motion[198]_start': [[0.432, END]], 'Motion[198]_loop': [[0, END]],      'Motion[199]_start': [[0.499, END]],
+    'Motion[199]_loop': [[0, END]],      'Motion[253]': [[0.356, END]],
+  },
+  w10_sa: {
+    'Motion[1]': [[0.31, END]],          'Motion[2]': [[0.31, END]],          'Motion[3]': [[0.31, END]],
+    'Motion[4]': [[0, 0.034], [0.487, END]], 'Motion[5]': [[0, 0.034], [0.487, END]], 'Motion[6]': [[0, 0.034], [0.487, END]],
+    'Motion[7]': [[0, 0.034]],           'Motion[8]': [[0, 0.034]],           'Motion[9]': [[0, 0.034]],
+    'Motion[10]': [[0.814, END]],        'Motion[11]': [[0.814, END]],        'Motion[12]': [[0.814, END]],
+    'Motion[15]': [[0, END]],            'Motion[16]': [[0, END]],            'Motion[17]': [[0.105, END]],
+    'Motion[18]': [[0, 0.034]],          'Motion[19]': [[0, 0.034]],          'Motion[20]': [[0, 0.034]],
+    'Motion[51]': [[0.805, 1.109]],      'Motion[151]': [[0.455, END]],       'Motion[152]': [[0, END]],
+    'Motion[153]': [[0, 0.068]],
+  },
+};
+// Hunter clips a weapon's own list has no clip for, and the weapon clip they take instead of
+// the drawn idle bindMotion falls back to, by stance file (w10 and w10_sa share clip names).
+// The Bow's string is its bone 2 SCALED along Z by the list (x2.2 in Motion[16], x2.65 in the
+// aim, Motion[105]), so a draw the list lacks would hold the arrow on a slack string.
+//   * Motion[5] (Stance 5), an aim walk (its schedule fires footsteps 251/252 at frames 20
+//     and 44) and Motion[60] (Stance 18) hold the drawing hand on the draw line for the whole
+//     clip; the lists have no clip 5 or 60, so the bow keeps the aim (Raven, 2026-09-19:
+//     Stance 5 "will need the bowstring to be pulled back"). Not Motion[4], the other walk:
+//     its drawing hand points 150 deg off the line.
+//   * The hunter's lists hold two or three versions of most actions (105/106/107, 118/119/120,
+//     189/190/191 ...) and the bow's lists only the first. Their drawing hands follow the
+//     first's path (RMS 3-17 cm and 0.5-31 deg apart over the clip; 127/128, 130/131, 150
+//     and sa 3, 5, 6, 8, 9 are the first's animation exactly), so each takes the first's bow
+//     clip (review of 2026-09-19; which clip the game gives the bow is not read -- the bow's
+//     LMT has no entries for them at all).
+const WEAPON_CLIP = {
+  w10: {
+    'Motion[5]_loop': 'Motion[105]_loop', 'Motion[60]': 'Motion[105]_loop',
+    'Motion[106]_start': 'Motion[105]_start', 'Motion[107]_start': 'Motion[105]_start',
+    'Motion[106]_loop': 'Motion[105]_loop',   'Motion[107]_loop': 'Motion[105]_loop',
+    'Motion[109]': 'Motion[108]', 'Motion[110]': 'Motion[108]',
+    'Motion[116]': 'Motion[115]', 'Motion[117]': 'Motion[115]',
+    'Motion[119]': 'Motion[118]', 'Motion[120]': 'Motion[118]',
+    'Motion[124]': 'Motion[123]', 'Motion[125]': 'Motion[122]',
+    'Motion[127]': 'Motion[126]', 'Motion[128]': 'Motion[126]',
+    'Motion[130]': 'Motion[129]', 'Motion[131]': 'Motion[129]',
+    'Motion[135]': 'Motion[134]', 'Motion[136]': 'Motion[134]',
+    'Motion[150]_start': 'Motion[233]_start', 'Motion[150]_loop': 'Motion[233]_loop',
+    'Motion[190]': 'Motion[189]', 'Motion[191]': 'Motion[189]',
+    'Motion[193]_start': 'Motion[192]_start', 'Motion[194]_start': 'Motion[192]_start',
+    'Motion[193]_loop': 'Motion[192]_loop',   'Motion[194]_loop': 'Motion[192]_loop',
+    'Motion[198]_start': 'Motion[197]_start', 'Motion[199]_start': 'Motion[197]_start',
+    'Motion[198]_loop': 'Motion[197]_loop',   'Motion[199]_loop': 'Motion[197]_loop',
+  },
+  w10_sa: {
+    'Motion[2]': 'Motion[1]', 'Motion[3]': 'Motion[1]', 'Motion[5]': 'Motion[4]', 'Motion[6]': 'Motion[4]',
+    'Motion[8]': 'Motion[7]', 'Motion[9]': 'Motion[7]', 'Motion[11]': 'Motion[10]', 'Motion[12]': 'Motion[10]',
+    'Motion[16]': 'Motion[15]', 'Motion[17]': 'Motion[15]', 'Motion[19]': 'Motion[18]', 'Motion[20]': 'Motion[18]',
+  },
+};
 
 export class WeaponRig {
   constructor(opt){
@@ -97,7 +193,10 @@ export class WeaponRig {
     this.kinsectTime = null;                   // a fixed time for that clip (the harness), null = run
     this._kinT = 0; this._kinLast = 0;
     this.arrowKey = null;                      // no arrow until a PEL record is chosen
-    this.playerOrder = 0;                      // the player's angle order (MT enum): unit default
+    // the player's angle order (MT enum, uCoord +0x38): 4, written by the player's action
+    // reset 0x000a50dc (reached from the player update 0x000ad6f8); the action-step
+    // interpreter 0x0009ee80 sets 1 only while its work flag 0x400 is on (commands 42 / 41, 43)
+    this.playerOrder = 4;
     this.parts = {};                 // kind -> root, for the parts currently built
     this.drawn = true;               // the player's drawn flag
     this.stance = null;              // { file, clip, dur, label } from the class's stance list
@@ -319,8 +418,17 @@ export class WeaponRig {
     }
   }
   // the player's angle order the arrow's joint is decomposed with (MT enum 0..5; see mounts())
-  setPlayerOrder(n){ n = Number(n); this.playerOrder = (n >= 0 && n < MT_ORDER.length) ? n : 0; this.step(); return MT_ORDER[this.playerOrder]; }
+  setPlayerOrder(n){ n = Number(n); this.playerOrder = (n >= 0 && n < MT_ORDER.length) ? n : 4; this.step(); return MT_ORDER[this.playerOrder]; }
   arrowOptions(){ const r = this.cj && this.cj.shared.arrow && this.cj.shared.arrow.records; return r ? Object.keys(r) : []; }
+  // the record the current stance shows at time t (default: now) -- ARROW_RECORD inside one of
+  // the stance clip's ARROW_WINDOWS, else null
+  stanceArrow(t){
+    const byFile = this.drawn && this.stance && ARROW_WINDOWS[this.stanceKey()];
+    const wins = byFile && byFile[this.stance.clip];
+    if (!wins) return null;
+    const at = t === undefined ? this.poseTime() : t;
+    return wins.some(([t0, t1]) => at >= t0 && at <= t1) ? ARROW_RECORD : null;
+  }
   // the select's label for a record: its number, joint, position (cm) and rotation (deg)
   arrowLabel(k){
     const r = this.cj && this.cj.shared.arrow && this.cj.shared.arrow.records && this.cj.shared.arrow.records[k];
@@ -382,7 +490,8 @@ export class WeaponRig {
   }
   // every part's mount at time t (default: now)
   mounts(t){
-    const at = this.activeIds(t === undefined ? this.poseTime() : t);
+    const now = t === undefined ? this.poseTime() : t;
+    const at = this.activeIds(now);
     const axe = this.axeMode(at);
     const out = {};
     for (const kind of Object.keys(this.parts)){
@@ -391,25 +500,29 @@ export class WeaponRig {
         // One of the proof-effect records of docs/weapons/wNN.json shared.arrow.records --
         // joint, position (cm), rotation (deg) and its angle order as the PEL says. Which
         // record an animation requests could not be read from the ROM (no request site
-        // found), so nothing is shown until a record is chosen (setArrow / the Arrow select).
+        // found): ARROW_WINDOWS shows ARROW_RECORD from each draw's nock to its release, and
+        // the hidden Arrow select picks one by hand everywhere else.
         // The game composes a joint-following model effect (uProofEffect, 0x0031d16c with
         // mode 0 / sub-mode 0) as: position = the joint's world matrix applied to the
         // record's position; rotation = the joint's rows normalised, DECOMPOSED into angles
-        // with the PLAYER's angle order (0x007c3638..), re-applied as single-axis
-        // rotations in the record's order (0x0031eb84 for order 4), times the record's
-        // rotation; then the sum is rebuilt in the record's order (0x00320ed4) and the
-        // effect keeps that order (+0x38, set at creation 0x009b3308). The joint is
-        // rebuilt exactly only when both orders agree, so `frame` carries both: the
-        // player's order is the unit default 0 unless an action state changes it (states
-        // writing 1 and 4 exist; which the Bow's shots use was not read), settable with
-        // setPlayerOrder for Raven's comparison.
+        // with the PLAYER's angle order (uCoord +0x38; 0x007c3638..), re-applied as
+        // single-axis rotations in the record's order (0x0031eb84 for order 4), times the
+        // record's rotation; then the sum is rebuilt in the record's order (0x00320ed4) and
+        // the effect keeps that order (+0x38, set at creation 0x009b3308). The player's order
+        // is 4 (see the constructor) and so is every arrow record's, so the joint comes
+        // through unchanged; `frame` keeps both for setPlayerOrder's comparison. (Read as the
+        // unit default 0 until 2026-09-19, which stood every record across the draw line.)
         const recs = this.cj.shared.arrow && this.cj.shared.arrow.records;
-        const a = recs && this.arrowKey ? recs[this.arrowKey] : null;
+        const byStance = this.stanceArrow(now);
+        const key = byStance || this.arrowKey;
+        const a = recs && key ? recs[key] : null;
         const order = a && MT_ORDER.includes(a.order) ? a.order : 'YXZ';
+        const pord = MT_ORDER[this.playerOrder] || 'YXZ';
         out[kind] = a ? { type: null, index: null, joint: a.joint, rec: { pos: a.pos, rot: a.rot, order },
-                          frame: { decompose: MT_ORDER[this.playerOrder] || 'ZYX', rebuild: order },
-                          scale: a.scale || 1, prov: a.prov + '; chosen by the user; joint re-composed ' +
-                          (MT_ORDER[this.playerOrder] || 'ZYX') + '->' + order + ' (0x0031d16c)' } : null;
+                          frame: { decompose: pord, rebuild: order },
+                          scale: a.scale || 1, record: key,
+                          prov: a.prov + (byStance ? '; shown by the stance (Raven, 2026-09-19)' : '; chosen by the user') +
+                                '; joint re-composed ' + pord + '->' + order + ' (0x0031d16c; player order 0x000a50dc)' } : null;
         continue;
       }
       if (kind === 'kinsect' && this.kinsectMotion){
@@ -602,6 +715,12 @@ export class WeaponRig {
       ? ['Motion[20]_loop', 'Motion[20]', 'Motion[1]_loop', 'Motion[1]'] : ['Motion[1]_loop', 'Motion[1]'];
     let idleHit = null;
     for (const n of idleNames){ idleHit = find(n, drawSets); if (idleHit) break; }
+    // a stance the list lacks that plays another clip of the list rather than the idle
+    // (WEAPON_CLIP: the Bow's aim walk keeps the aim; a second or third version of an action
+    // takes the first's clip -- string drawn with the arrow on it)
+    const byFile = WEAPON_CLIP[this.stanceKey()];
+    const holdName = !hit && want && kind !== 'kinsect' && byFile && byFile[want];
+    if (holdName) hit = find(holdName) || find(holdName, drawSets);
     if (!hit && want && idleHit) hit = idleHit;
     if (!hit) return;
     const [clip, src_gltf] = hit;
@@ -801,7 +920,7 @@ export class WeaponRig {
                                     motion: p.userData.mot ? p.userData.mot.clip : null }, m);
     }
     return { cls: this.cls, model: this.modelId, kinsect: this.kinsectId, kinsectElement: this.kinsectElement,
-             kinsectMotion: this.kinsectMotion, arrow: this.arrowKey,
+             kinsectMotion: this.kinsectMotion, arrow: this.arrowKey, arrowByStance: this.stanceArrow(),
              playerOrder: MT_ORDER[this.playerOrder], drawn: this.drawn,
              stance: this.stance ? this.stance.clip : null, ids: Array.from(ids).sort((a, b) => a - b),
              synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, gmkGroup: this.gmkGroup, parts };
