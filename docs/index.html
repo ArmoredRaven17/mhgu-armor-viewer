@@ -477,6 +477,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
             <option value="m">Male</option></select></div>
           <label class="chk"><input type="checkbox" id="face" checked>Face</label>
           <div class="field"><select id="faceStyle"></select></div>
+          <div class="field"><label for="facePaint">Face Paint</label><select id="facePaint" title="The face paints the game paints on this face: fourteen per gender, the same set on every face of that gender. In game they are Type 1 to Type 14"></select></div>
+          <div class="field"><label for="paintColor">Face Paint Color</label><div class="row gap"><select id="paintColor" title="The face paint's own colour. The game gives it one, as it does hair and skin; Default leaves the paint as it was drawn"></select><input type="color" id="paintColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
           <div class="field"><label for="eyeColor">Eye Color</label><div class="row gap"><select id="eyeColor"></select><input type="color" id="eyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
           <label class="chk"><input type="checkbox" id="hair" checked>Hair</label>
           <div class="field"><select id="hairStyle"></select></div>
@@ -1203,8 +1205,8 @@ import * as THREE from 'three';
 import { createStage } from './render/stage.js';
 import { initAssets, loadJson, getTexture } from './render/assets.js';
 import { playerBone } from './render/skeleton.js';
-import { tint, applyTint, allMats, armorMats, setCharColor, setWire, setDebug, setMaskWindow, setAlphaOverride,
-         setBiasUnitsPerStep, setRegionDark }
+import { tint, applyTint, allMats, armorMats, setCharColor, setChannelColor, setWire, setDebug, setMaskWindow,
+         setAlphaOverride, setBiasUnitsPerStep, setRegionDark }
   from './render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
@@ -2233,13 +2235,14 @@ function saveState(){
       clothingExplicit: true,        // this save knows Type 1 is the default; a '' is a choice
       faceStyle: document.getElementById('faceStyle').value,
       hairStyle: document.getElementById('hairStyle').value,
+      facePaint,
       mask: ['sat0','sat1','val0'].map(i=>document.getElementById(i).value),
       maskVer: MASK_VER,
       defpig: document.getElementById('defpig').checked,
       face: document.getElementById('face').checked,
       hair: document.getElementById('hair').checked,
       charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair,
-                   fur: charColor.fur, oeye: charColor.oeye },
+                   paint: charColor.paint, fur: charColor.fur, oeye: charColor.oeye },
       otomo: otCapture(),
       orbitLocked, spinStep, spinRev, camDamp: controls.enableDamping, camZoomCursor: !!controls.zoomToCursor,
       camMode, flySpeed: fly.speed, camFace: faceLock,   // camMode is a mirror: the mode comes back with the camera state
@@ -2316,6 +2319,13 @@ let gender = SAVED && (SAVED.gender === 'f' || SAVED.gender === 'm')
              ? SAVED.gender : DEFAULT_SET.gender;
 let pigmentIndex = null;
 let showBody = true;     // the hunter's body, textured with the skin map
+// The face paint on the hunter's face: 0-based as the game counts them (mesh group 200 + it,
+// render/piece.js PAINT_GROUP), null for none -- the game's own "14 = none". Raven, 2026-09-24:
+// "In game they are simply Type N, no actual names", and for the colour "We can simply offer
+// all the pigments and RGB as well, more fun than limited options", so its colour is the same
+// Default / 24 pigments / RGB control the skin, eyes and hair have (charColor.paint), not the
+// shorter list the game itself offers.
+let facePaint = null;
 // tint.useDefaults (render/material.js): apply each piece's OWN authored pigment instead of
 // one global color
 
@@ -2450,7 +2460,7 @@ const CHAR_COLORS = [
   ['White','#f2f0ea'], ['Black','#232326'], ['Rainbow', null]
 ];
 const CHAR_PARTS = [
-  ['skinColor','skin'], ['eyeColor','eye'], ['hairColor','hair']
+  ['skinColor','skin'], ['eyeColor','eye'], ['hairColor','hair'], ['paintColor','paint']
 ];
 // The Palico's two are the same kind of control -- one texture per gender, recoloured at
 // runtime -- so they run through the same palette, the same shader path and the same
@@ -2462,7 +2472,7 @@ const ALL_CHAR_PARTS = CHAR_PARTS.concat(OT_CHAR_PARTS);
 // null = the authored color; a NUMBER indexes CHAR_COLORS; a '#rrggbb' STRING is a
 // custom RGB pick. Keeping the game's palette and a free colour in one field means every
 // path -- render, save, export -- handles both without a second flag.
-const charColor = { skin:null, eye:null, hair:null, fur:null, oeye:null };
+const charColor = { skin:null, eye:null, hair:null, paint:null, fur:null, oeye:null };
 
 // applyTint, the pigment shader and the material registries (allMats, armorMats) live in
 // render/material.js; the loaders and caches in render/assets.js.
@@ -2539,7 +2549,8 @@ const pieceCtx = {
   get wire(){ return wireOn; },
   get showBody(){ return showBody; },
   get poseName(){ return pose.staticPose; },
-  get furTex(){ return otFurTex(); }
+  get furTex(){ return otFurTex(); },
+  facePaint: () => facePaint          // which face paint a freshly built face shows
 };
 async function loadPiece(id, slot){
   const key = gender + id + '_' + slot;      // gender is part of the cache key
@@ -2661,11 +2672,26 @@ function applyCharColors(t){
     if (hex) cols[part] = hex;
     else { rainbowOn = true; cols[part] = new THREE.Color().setHSL(((t||0)*0.12)%1, .8, .55); }
   }
+  // the face paint takes the colour the game gives it: its materials' colour channel (4),
+  // the same multiply the Kinsect's colours use, not the skin/hair tint above
+  const paintRgb = rgb255(cols.paint);
   scene.traverse(o => {
     const m = o.material, ud = m && m.userData;
-    if (!ud || !ud.tintClass || !ud.u) return;
+    if (!ud || !ud.u) return;
+    if (ud.rom && ud.rom.ch === 4){ setChannelColor(m, paintRgb); return; }
+    if (!ud.tintClass) return;
     setCharColor(m, cols[ud.tintClass]);
   });
+}
+// a colour as applyCharColors holds it ('#rrggbb', or a THREE.Color for Rainbow) as the
+// [r, g, b] bytes setChannelColor takes -- through the hex, so a picked colour reaches the
+// channel exactly as the ROM's own channel colours do (render/kinsect.js), digit for digit
+function rgb255(c){
+  if (!c) return null;
+  const m = /^#?([0-9a-f]{6})$/i.exec(typeof c === 'string' ? c : '#' + c.getHexString());
+  if (!m) return null;
+  const v = parseInt(m[1], 16);
+  return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
 }
 function buildStyleLists(){
   for (const part of ['face','hair']){
@@ -2677,6 +2703,29 @@ function buildStyleLists(){
     if (want !== undefined && +want < list.length){ sel.value = want; delete sel.dataset.want; }
     else if (cur && +cur < list.length) sel.value = cur;
   }
+  buildPaintList();
+}
+// How many paints this face ships: one `_make###` texture per paint layer (fourteen on every
+// face of both genders, but counted rather than assumed). They have no names in game, so they
+// are Type 1..N here as the faces and hairs are (Raven, 2026-09-24).
+function paintCount(){
+  const list = (manifest.chars && manifest.chars[gender] || {}).face || [];
+  const e = list[+document.getElementById('faceStyle').value] || list[0];
+  return Object.keys((e && e.textures) || {}).filter(k => /_make\d+/.test(k)).length;
+}
+function buildPaintList(){
+  const sel = document.getElementById('facePaint'), n = paintCount();
+  sel.innerHTML = '<option value="">None</option>' +
+    Array.from({ length: n }, (_, i) => '<option value="' + i + '">Type ' + (i + 1) + '</option>').join('');
+  if (facePaint !== null && facePaint >= n) facePaint = null;
+  sel.value = facePaint === null ? '' : String(facePaint);
+}
+// Show the chosen paint and hide the rest, as the game's parts display does. The meshes are
+// already built (render/piece.js), so this needs no reload -- and the colour rides along.
+function applyFacePaint(){
+  const root = charMounted.face;
+  if (root) root.traverse(o => { if (o.userData && o.userData.paint !== undefined) o.visible = o.userData.paint === facePaint; });
+  applyCharColors(performance.now() / 1000);
 }
 
 async function refreshChar(){
@@ -3068,12 +3117,13 @@ function captureGender(){
   return { slots, hunterType,
     faceStyle: document.getElementById('faceStyle').value,
     hairStyle: document.getElementById('hairStyle').value,
+    facePaint,
     face: document.getElementById('face').checked,
     hair: document.getElementById('hair').checked,
     body: document.getElementById('body').checked,
     clothing: document.getElementById('clothing').value,
     pose: document.getElementById('pose').value,
-    charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair },
+    charColor: { skin: charColor.skin, eye: charColor.eye, hair: charColor.hair, paint: charColor.paint },
     slotPig: SLOTS.map(sl => [document.getElementById('pgOn_'+sl).checked,
                               document.getElementById('pg_'+sl).value]),
     slotDev: slotDevState(),
@@ -3129,6 +3179,8 @@ async function setGenderBody(g){
   const fs = document.getElementById('faceStyle'), hs = document.getElementById('hairStyle');
   if (want.faceStyle !== undefined) fs.dataset.want = want.faceStyle;
   if (want.hairStyle !== undefined) hs.dataset.want = want.hairStyle;
+  // the paint number carries over; the artwork for it is the other body's own
+  if (want.facePaint !== undefined) facePaint = want.facePaint;
   // the toggles have to land BEFORE refreshChar -- that is what reads them
   for (const k of ['face', 'hair', 'body'])
     if (typeof want[k] === 'boolean') document.getElementById(k).checked = want[k];
@@ -3210,8 +3262,10 @@ function genderStateToSet(g, st){
     hunter: { face: st.face === false ? null : 'Type ' + ((+st.faceStyle || 0) + 1),
               hair: st.hair === false ? null : 'Type ' + ((+st.hairStyle || 0) + 1),
               body: st.body !== false, faceStyle: +st.faceStyle || 0, hairStyle: +st.hairStyle || 0,
+              facePaint: Number.isInteger(st.facePaint) ? 'Type ' + (st.facePaint + 1) : null,
               clothing: ci >= 0 ? 'Type ' + (ci + 1) : (st.clothing || null),
-              skinColor: col(cc.skin), eyeColor: col(cc.eye), hairColor: col(cc.hair) },
+              skinColor: col(cc.skin), eyeColor: col(cc.eye), hairColor: col(cc.hair),
+              paintColor: col(cc.paint) },
     pose: st.pose || 'g:0', weapon: st.weapon || null, camera: st.camera || null };
 }
 const validHunter = h => h && typeof h === 'object' && typeof h.name === 'string' && h.set && typeof h.set === 'object' && h.set.pieces;
@@ -3414,6 +3468,10 @@ for (const [id, part] of ALL_CHAR_PARTS){
   sel.dataset.syncRgb = '1';
   CHAR_SYNC.push(syncRgbVisibility);
 }
+document.getElementById('facePaint').onchange = e => {
+  facePaint = e.target.value === '' ? null : +e.target.value;
+  applyFacePaint(); saveState();
+};
 document.getElementById('faceStyle').onchange = () => refreshChar().then(saveState);
 document.getElementById('hairStyle').onchange = () => refreshChar().then(saveState);
 document.getElementById('face').onchange = () => refreshChar().then(saveState);
@@ -4716,6 +4774,7 @@ if (SAVED) {
   ['faceStyle','hairStyle'].forEach(k => {
     if (SAVED[k] !== undefined && SAVED[k] !== null) document.getElementById(k).dataset.want = SAVED[k];
   });
+  if (Number.isInteger(SAVED.facePaint)) facePaint = SAVED.facePaint;   // the list is built with the face
   if (typeof SAVED.body === 'boolean') {
     document.getElementById('body').checked = SAVED.body;
     showBody = SAVED.body;
@@ -5378,6 +5437,23 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   // record, rest scale and provenance
   mount: () => weapon.audit(),
   resetSlot,
+  // the face paint: n is 0-based (null = none), colour an index into the palette, a
+  // '#rrggbb' or null for the paint as it was drawn
+  setFacePaint: (n, colour) => {
+    facePaint = (n === null || n === undefined || n === '') ? null : +n;
+    buildPaintList();
+    if (colour !== undefined){
+      charColor.paint = colour;
+      const sel = document.getElementById('paintColor'), rgbIn = document.getElementById('paintColorRGB');
+      if (typeof colour === 'string'){ sel.value = 'rgb'; rgbIn.value = colour; }
+      else sel.value = colour === null ? '' : String(colour);
+      CHAR_SYNC.forEach(f => f());
+    }
+    applyFacePaint();
+    const shown = [];
+    if (charMounted.face) charMounted.face.traverse(o => { if (o.userData && o.userData.paint !== undefined && o.visible) shown.push(o.userData.paint); });
+    return { paint: facePaint, colour: charColor.paint, shown, of: paintCount() };
+  },
   setAlphaOverride,    // null = the ROM's alpha threshold, a number forces it on every cutout
   setWeaponForm: trg => { setFormValue(trg);
                           weapon.setForm(trg); return weapon.audit().trigger; },
@@ -5469,10 +5545,13 @@ function currentSet(){
       body: document.getElementById('body').checked,
       faceStyle: +document.getElementById('faceStyle').value,
       hairStyle: +document.getElementById('hairStyle').value,
+      // by its Type, like the styles: the game gives the paints no names (Raven, 2026-09-24)
+      facePaint: facePaint === null ? null : 'Type ' + (facePaint + 1),
       // the label, like the styles above, so the file stays readable and a reordered
       // CLOTHING list cannot silently shift which outfit a shared set means
       clothing: clothSel.value ? clothSel.selectedOptions[0].textContent : null,
-      skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair')
+      skinColor: colorOf('skin'), eyeColor: colorOf('eye'), hairColor: colorOf('hair'),
+      paintColor: colorOf('paint')
     },
     pose: document.getElementById('pose').value,
     // version 3: the weapon, by class and model id with their names, the carry state, the
@@ -5743,7 +5822,8 @@ const RESET_HUNTER = {
   pigment: { helm: null, body: null, arm: null, wst: null, leg: null },
   deviant: {}, devAnim: {},
   hunter: { face: 'Type 1', hair: 'Type 1', body: true, faceStyle: 0, hairStyle: 0,
-            clothing: 'Type 1', skinColor: null, eyeColor: null, hairColor: null },
+            facePaint: null, clothing: 'Type 1', skinColor: null, eyeColor: null,
+            hairColor: null, paintColor: null },
   pose: 'g:0', weapon: null, lighting: { preset: 'studio' }, effects: { preset: 'off' },
   plate: { on: false, show: 'name', name: '', hr: 1, title: [] },
   camera: { p: [-0.0159, 0.403, 3.2224], t: [-0.137, -0.3196, -0.0258] }
@@ -5789,6 +5869,14 @@ async function applySet(d, opt){
   };
   buildStyleLists();
   setIdx('faceStyle', h.faceStyle); setIdx('hairStyle', h.hairStyle);
+  // 'Type 3' as the file writes it, or a plain 0-based number; anything else is no paint
+  {
+    const p = h.facePaint;
+    const n = typeof p === 'string' ? (/^\s*type\s*(\d+)\s*$/i.test(p) ? +/^\s*type\s*(\d+)\s*$/i.exec(p)[1] - 1 : NaN)
+            : Number.isInteger(p) ? p : NaN;
+    facePaint = Number.isInteger(n) && n >= 0 && n < paintCount() ? n : null;
+    buildPaintList();
+  }
   document.getElementById('face').checked = h.face !== null && h.face !== undefined ? true : !!h.face;
   document.getElementById('hair').checked = h.hair !== null && h.hair !== undefined ? true : !!h.hair;
   if (typeof h.body === 'boolean') { document.getElementById('body').checked = h.body; showBody = h.body; }

@@ -211,6 +211,14 @@ export async function loadEntry(entry, opt, ctx){
   return root;
 }
 
+// FACE PAINT: a face model carries the face itself and then one mesh GROUP per face paint,
+// numbered from here (200..213 -- fourteen of them, on every face of both genders). The game
+// shows group 200 + the chosen paint and treats 14 as none (0x00286c28, off the appearance
+// object), and colours it through the MRL colour channel 4 (0x0028726c -> 0x0053a0e4), which
+// every one of those materials carries. They are in the manifest's `hide` list, so this
+// module builds them before that check and hands the choice to the caller.
+export const PAINT_GROUP = 200;
+
 // The player character's face and hair: face000 + hair000 are standalone assets (the BODY
 // is not -- it ships inside every armor body.arc, and is what loadEntry's `isSkin` shows).
 //
@@ -218,6 +226,8 @@ export async function loadEntry(entry, opt, ctx){
 //   `superseded` is checked once the GLB is in, so a stale request drops its result;
 //   `hideGroups` is read after that, so it sees the helm worn at build time -- both exactly
 //   as the inline code did. hairHideSet / faceHideSet read the DOM and stay in index.html.
+// ctx.facePaint() -> the paint to show (0-based) or null; read live, and index.html's
+//   applyFacePaint flips the meshes afterwards without a reload.
 export async function loadCharPart(entry, opt, ctx){
   const gltf = await loadGlb(entry.glb, opt.key);
   if (opt.superseded && opt.superseded()) return null;   // superseded while loading
@@ -233,17 +243,26 @@ export async function loadCharPart(entry, opt, ctx){
     if (!(o.isMesh || o.isSkinnedMesh)) return;
     const srcName = (o.material && o.material.name) || '';
     const verts = o.geometry.attributes.position.count;
-    if (hideSet.has(srcName + '#' + verts)) { o.visible = false; return; }
-    if (hideGroups && hideGroups.has(meshGroupId(o))) { o.visible = false; return; }
+    const group = meshGroupId(o);
+    const paint = group >= PAINT_GROUP ? group - PAINT_GROUP : null;
+    if (paint === null && hideSet.has(srcName + '#' + verts)) { o.visible = false; return; }
+    if (hideGroups && hideGroups.has(group)) { o.visible = false; return; }
     const rom = specFor(ref, srcName);
     const file = (rom && rom.albedo) || textureForMaterial(srcName, entry);
     const mat = createMaterial({
       srcName, rom, alphaCut: 0,
-      // never dyed by armor pigment, but it does take the hair/eye/skin selectors
+      // never dyed by armor pigment, but it does take the hair/eye/skin selectors -- a face
+      // paint takes none of them: its colour is the channel the game gives it (index.html
+      // applyCharColors), and the skin tone reaching it would paint it with the face
       noTint: true,
-      tintClass: opt.part === 'hair' ? 'hair'
+      tintClass: paint !== null ? null
+               : opt.part === 'hair' ? 'hair'
                : /eye/i.test(srcName) ? 'eye' : 'skin',
       wire: ctx.wire });
+    if (paint !== null){
+      o.userData.paint = paint;
+      o.visible = (ctx.facePaint ? ctx.facePaint() : null) === paint;
+    }
     o.frustumCulled = false;     // same bind-pose culling problem as the armour
     o.material = mat; allMats.push(mat);
     if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
