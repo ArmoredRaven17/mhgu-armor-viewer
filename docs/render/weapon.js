@@ -23,8 +23,9 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // see placePart. Raven, 2026-09-03: the sheathed Sword & Shield's shield "is moved away
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
-import { loadClass, loadKinsects, defaultModel, modelIdOf } from './weapons-index.js';
+import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
+import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -200,6 +201,7 @@ export class WeaponRig {
     this.parts = {};                 // kind -> root, for the parts currently built
     this.drawn = true;               // the player's drawn flag
     this.stance = null;              // { file, clip, dur, label } from the class's stance list
+    this.modeWord = null;            // player+0x3328 for the Switch Axe: 'sword' / 'axe' as the last declaring stance set it, carried
     this.form = null;                // gimmick trigger override, null = the game's rule
     this.motGroup = 0;
     this.visible = true;             // the figure on screen is the hunter
@@ -213,6 +215,24 @@ export class WeaponRig {
   // the model's carry type (pl_wNN.plweplist mCarryType, shipped as models[id].carry)
   carry(){ const m = this.cj && this.modelId && this.cj.models[this.modelId]; return (m && m.carry) || 0; }
   gmk(){ return (this.cj && this.cj.shared.gmk) || null; }
+  // THE PHIAL this Switch Axe fires ('Power' | 'Element' | 'Paralysis' | 'Dragon' | 'Exhaust' |
+  // 'Poison'), or null for a class that ships none. The game's own effects for a sword-mode attack
+  // are chosen by it (Raven, 2026-09-27: "When doing Sword Mode attacks, they use the effect"), so
+  // the effect layer will read this; nothing draws from it yet.
+  phial(){ return phialFor(this.cj, this.modelId, this.weaponName); }
+  // more than one means the model alone cannot say and the name decided it
+  phialAmbiguous(){ return phialsFor(this.cj, this.modelId).length > 1; }
+  // THE ELEMENT this weapon carries, by name, or null (weapons-index.js elementFor): the game's player parameter 17
+  element(){ return elementFor(this.cj, this.modelId, this.weaponName); }
+  // THE WEAPON ON THE BACK, AS THE GAME TESTS IT. The weapon unit's state word +0x13d4 is its mount INDEX (0x316edc switches
+  // on it; build/notes/palico-weapon.md), and the game's test is (index | 0x10) == 0x12: index 2 (the carry on the back) or
+  // 18 (the rest record) -- the effect holder's stop policy (0x454f6c) and Tempest Axe's gate (0x11a5db0) both ask it.
+  // Read from the mount step() placed this frame, so it follows the clip's own events: a sheathe stance goes to the back
+  // at the frame its LMT ids say, not at its end. false with no main part (no weapon is not "on the back").
+  onBack(){
+    const p = this.parts && this.parts.main, m = p && p.userData.mount;
+    return !!(m && typeof m.index === 'number' && ((m.index | 0x10) === 0x12));
+  }
   modelRows(){ return (this.cj && this.cj.weapons) || []; }
   classJson(){ return this.cj; }
 
@@ -227,8 +247,11 @@ export class WeaponRig {
 
   // set(cls, modelId): load the class index, pick the model (null = the class's first named
   // Smithy row, its Petrified weapon), build every part it ships, bind the motion sets.
-  async set(cls, modelId){
+  // `name` is the NAMED WEAPON the caller picked, where it knows one. It is only consulted for a
+  // model that several named weapons share and that they disagree about -- the phial (phialFor).
+  async set(cls, modelId, name){
     const seq = ++this._seq;
+    this.weaponName = name || null;
     this.clearParts();
     this.cls = cls || 'none'; this.cj = null; this.modelId = null;
     if (!cls || cls === 'none' || !classInfo(cls)) return;
@@ -436,7 +459,16 @@ export class WeaponRig {
     const v = a => '(' + a.map(x => Math.round(x)).join(', ') + ')';
     return k + ' · joint ' + r.joint + ' · ' + v(r.pos) + ' cm' + (r.rot.some(x => x) ? ' · rot ' + v(r.rot) : '');
   }
-  setStance(entry){ this.stance = entry || null; this._appliedTrg = null; }
+  setStance(entry){
+    this.stance = entry || null; this._appliedTrg = null;
+    // THE MODE WORD (player+0x3328): every Switch Axe action start writes it (vtable +0x84c) and the base's own
+    // idle/run picks read it (render/weapon-fx.js MODES); a stance that declares nothing leaves it as it was
+    if (entry && entry.clip){
+      const m = /Motion\[(\d+)\]/.exec(entry.clip), set = /_sa\.glb$/.test(entry.file || '') ? 'sa' : 'draw';
+      const word = m ? modeOf(set, +m[1]) : null;
+      if (word) this.modeWord = word;
+    }
+  }
   setForm(trg){ this.form = (trg === null || trg === undefined || trg === '') ? null : +trg; this._appliedTrg = null; this.applyForm(); }
   setVisible(v){ this.visible = !!v; for (const p of Object.values(this.parts)) if (p && !v) p.visible = false; if (v) this.step(); }
 
@@ -711,7 +743,15 @@ export class WeaponRig {
     // (33 of its 53 axe clips) keeps the shield where the axe idle holds it, bone 0 at
     // 1.8 m up the weapon, not where the sword idle has it (Raven, 2026-09-03: the shield
     // sat at the sword's base through axe mode). Motion[20]_loop is the axe idle.
-    const idleNames = (ids0 && this.axeMode(ids0))
+    //   THE SWITCH AXE'S IS THE GAME'S OWN RULE, read 2026-09-28 (the weapon part unit's update
+    // 0x30837c): the unit plays its own clip N when its list has it (0x950b48), else the idle clip
+    // of the MODE the player's word holds -- Motion[20] in sword mode, Motion[1] otherwise (the
+    // type-8 branch; the Charge Blade's, type 14, is the reverse) -- not "the pose it already
+    // had". The word is this rig's modeWord (setStance). Raven: "Still seeing Demon Riot effect
+    // on Axe Mode animations" -- a hit reaction after a sword stance drew the axe idle under the
+    // sword-mode aura.
+    const swordIdle = this.cls === 'w08' && this.modeWord === 'sword';
+    const idleNames = (swordIdle || (ids0 && this.axeMode(ids0)))
       ? ['Motion[20]_loop', 'Motion[20]', 'Motion[1]_loop', 'Motion[1]'] : ['Motion[1]_loop', 'Motion[1]'];
     let idleHit = null;
     for (const n of idleNames){ idleHit = find(n, drawSets); if (idleHit) break; }
@@ -721,6 +761,34 @@ export class WeaponRig {
     const byFile = WEAPON_CLIP[this.stanceKey()];
     const holdName = !hit && want && kind !== 'kinsect' && byFile && byFile[want];
     if (holdName) hit = find(holdName) || find(holdName, drawSets);
+    // THE GAME PAIRS BY MOTION NUMBER, NOT BY THE DECORATED NAME. A motion slot is one clip to the
+    // engine; the _start / _loop / bare suffixes are how the exporter names the LMT's segments, and the
+    // two lists do not always agree on them -- the Switch Axe's stance Motion[137] meets its weapon's
+    // Motion[137]_loop, its Motion[123]_start meets Motion[123]_loop, and 245 / 247 disagree the other
+    // way round. Matching on the exact string alone, those six stances (and the Charge Blade's
+    // Motion[189]) found nothing and fell back to the DRAWN IDLE -- which for a Switch Axe is the axe
+    // shape, so a sword-mode action showed the axe (Raven, 2026-09-27: "Switch Axes not entering Sword
+    // mode"). Measured across the shipped lists, only those seven stances are affected; every other
+    // stance either pairs exactly or has no weapon clip for its number at all.
+    //   The preference order is the segment's own kind first (a _start stance takes a _start clip),
+    // then the loop, then whatever the list has for that number -- never another number.
+    if (!hit && want && kind !== 'kinsect'){
+      const num = (/Motion\[(\d+)\]/.exec(want) || [])[1];
+      if (num !== undefined){
+        const suffix = (want.split(']')[1] || '');
+        const order = [suffix, '_loop', '_start', ''];
+        for (const suf of order){
+          const cand = 'Motion[' + num + ']' + suf;
+          if (cand === want) continue;
+          hit = find(cand) || find(cand, drawSets);
+          if (hit) break;
+        }
+        if (!hit) for (const g of sets){
+          const c = g.animations.find(c => c.name && c.name.startsWith('Motion[' + num + ']'));
+          if (c){ hit = [c, g]; break; }
+        }
+      }
+    }
     if (!hit && want && idleHit) hit = idleHit;
     if (!hit) return;
     const [clip, src_gltf] = hit;
@@ -742,7 +810,32 @@ export class WeaponRig {
     const drivenBy = c => new Set(c.tracks.map(t => t.name));
     const flagsFor = (set, name) => ({ pos: set.has(name + '.position'), rot: set.has(name + '.quaternion'), scl: set.has(name + '.scale') });
     const copyDriven = (from, to, f) => { if (f.pos) to.position.copy(from.position); if (f.rot) to.quaternion.copy(from.quaternion); if (f.scl) to.scale.copy(from.scale); };
-    const byName = root => { const m = new Map(); root.traverse(o => { const n = o.userData && o.userData.name; if (n) m.set(n, o); }); return m; };
+    // PAIR THE CLIP'S BONES TO THE MODEL'S BY GLOBAL ID, not by the whole node name.
+    // A node is named "<localIndex>:<globalId>", and a motion set is shared by every model in its
+    // motion GROUP -- but the models in a group do not all order their bones the same way. 23 of the
+    // Bow's 105 models name their two limbs `1:2` and `2:1` where the group's clip drives `1:1` and
+    // `2:2`: same bones, same global ids, the local indices swapped. Matching on the whole string,
+    // NEITHER limb was driven on those 23, so they kept their bind pose -- folded -- through every
+    // drawn stance (Raven, 2026-09-27: "Still seeing Bows not unfolding, review each bow"; Akantor
+    // Bow, Prominence Bow, Kelbi Stingshot, Diablos Coilbender and 19 more).
+    // The GLOBAL ID is what this app addresses bones by everywhere else -- the hunter's pose driver
+    // does (render/skeleton.js bonesByGid), and a model row carries `joints[i].gid` for exactly this
+    // reason. The local index is a position in one model's table and means nothing across models.
+    // The exact name is still tried first, so a set and a model that agree pair as they always did;
+    // the `_s` leaf duplicates keep their own key so a leaf can never take a real bone's track.
+    const gidKey = n => { const m = /^(\d+):(\d+)(_s)?$/.exec(n || ''); return m ? '#' + m[2] + (m[3] || '') : null; };
+    const byName = root => {
+      const m = new Map();
+      root.traverse(o => {
+        const n = o.userData && o.userData.name;
+        if (!n) return;
+        if (!m.has(n)) m.set(n, o);
+        const g = gidKey(n);
+        if (g && !m.has(g)) m.set(g, o);
+      });
+      return m;
+    };
+    const boneFor = (map, n) => { if (!n) return null; const hit = map.get(n); if (hit) return hit; const g = gidKey(n); return g ? (map.get(g) || null) : null; };
     const rootBone = part.userData.bone;
     const rootName = rootBone && rootBone.userData && rootBone.userData.name;
     // bone 0's layered state: the mount owns the node itself, placePart composes this on top.
@@ -771,8 +864,7 @@ export class WeaponRig {
       lmixer.update(atEnd ? Math.max(lclip.duration - 1e-3, 0) : 0);
       const lsrc = byName(lproxy), ldriven = drivenBy(lclip);
       part.traverse(o => {
-        const n = o.userData && o.userData.name;
-        const from = n && lsrc.get(n);
+        const from = boneFor(lsrc, o.userData && o.userData.name);
         if (from) copyDriven(from, o === rootBone ? rootBase : o, flagsFor(ldriven, from.name));
       });
     }
@@ -780,7 +872,7 @@ export class WeaponRig {
     const src = byName(proxy);
     // the live proxy's bone 0 starts from the layered state, so a clip without a root track
     // (an axe attack the shield's list covers without moving bone 0) keeps the idle's offset
-    const rootSrc = rootName ? (src.get(rootName) || null) : null;
+    const rootSrc = rootName ? boneFor(src, rootName) : null;
     if (rootSrc){ rootSrc.position.copy(rootBase.position); rootSrc.quaternion.copy(rootBase.quaternion); rootSrc.scale.copy(rootBase.scale); }
     const mixer = new THREE.AnimationMixer(proxy);
     const action = mixer.clipAction(clip);
@@ -796,8 +888,7 @@ export class WeaponRig {
     const driven = drivenBy(clip);                       // only the bones this clip animates
     part.traverse(o => {
       if (o === rootBone) return;                        // the mount owns this one
-      const n = o.userData && o.userData.name;
-      const from = n && src.get(n);
+      const from = boneFor(src, o.userData && o.userData.name);
       if (!from) return;
       const f = flagsFor(driven, from.name);
       if (f.pos || f.rot || f.scl) pairs.push([from, o, f]);
@@ -923,7 +1014,8 @@ export class WeaponRig {
              kinsectMotion: this.kinsectMotion, arrow: this.arrowKey, arrowByStance: this.stanceArrow(),
              playerOrder: MT_ORDER[this.playerOrder], drawn: this.drawn,
              stance: this.stance ? this.stance.clip : null, ids: Array.from(ids).sort((a, b) => a - b),
-             synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, gmkGroup: this.gmkGroup, parts };
+             synthetic, trigger: this._appliedTrg, motGroup: this.motGroup, gmkGroup: this.gmkGroup,
+             weaponName: this.weaponName, phial: this.phial(), phialAmbiguous: this.phialAmbiguous(), element: this.element(), parts };
   }
   // every mesh part and whether it is drawn
   parts_(){

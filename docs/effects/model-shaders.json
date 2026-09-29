@@ -1,0 +1,9650 @@
+{
+ "source": "AppShaderPackage.mfx, translated by efx/shader/glsl.py + FAmbientSH (cm200_109 / em082_04_020, glsl.py vec-index fix). Regenerated 2026-09-20 over EVERY effect/base .mrl in the extracts (223, deduped by name) plus every efx/engdraw-*.json, so the export covers each variant any effect material selects: `python efx/shader/glsl.py --material <out> <all effect/base *.mrl> -- <efx/engdraw-*.json>`. Needed because Nakarkos em084_00_007 (u.pel key 1400, MASK1=2) draws materials selecting FDiffuseVertexColor, which was not exported. Verified strictly additive against the previous file: +2 functions, +6 variant entries, 0 removed, 0 shared body changed.",
+ "states": {
+  "BSDefault": [
+   4,
+   512,
+   1
+  ],
+  "BSSolid": [
+   4,
+   512,
+   1
+  ],
+  "BSSolidEx": [
+   4,
+   514,
+   0
+  ],
+  "BSBlendAlpha": [
+   4,
+   657410,
+   1
+  ],
+  "BSComposite": [
+   4,
+   655874,
+   1
+  ],
+  "BSInvComposite": [
+   4,
+   524802,
+   1
+  ],
+  "BSBlendInvAlpha": [
+   4,
+   526850,
+   1
+  ],
+  "BSAdd": [
+   4,
+   131586,
+   1
+  ],
+  "BSMul": [
+   4,
+   262146,
+   1
+  ],
+  "BSAddAlpha": [
+   4,
+   133122,
+   1
+  ],
+  "BSAddInvAlpha": [
+   4,
+   133634,
+   1
+  ],
+  "BSBlendFactor": [
+   4,
+   5634,
+   1
+  ],
+  "BSBlendFactorAlpha": [
+   4,
+   1578498,
+   1
+  ],
+  "BSMax": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSNoWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSAZero": [
+   4,
+   514,
+   0
+  ],
+  "BSAAdd": [
+   4,
+   514,
+   257
+  ],
+  "BSASub": [
+   4,
+   514,
+   131329
+  ],
+  "BSAInvert": [
+   4,
+   514,
+   7
+  ],
+  "BSRGBWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSRWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSGWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSBWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSAWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSAddColor": [
+   4,
+   132098,
+   1
+  ],
+  "BSBlendColor": [
+   4,
+   656386,
+   1
+  ],
+  "BSRevSubAlpha": [
+   4,
+   67241986,
+   1
+  ],
+  "BSRevSubInvAlpha": [
+   4,
+   67242498,
+   1
+  ],
+  "BSRevSubBlendAlpha": [
+   4,
+   67766274,
+   1
+  ],
+  "BSRevSubColor": [
+   4,
+   67240962,
+   1
+  ],
+  "BSRevSubBlendColor": [
+   4,
+   67765250,
+   1
+  ],
+  "BSRevSub": [
+   4,
+   67240450,
+   1
+  ],
+  "BSAddAlphaRGB": [
+   4,
+   133122,
+   1
+  ],
+  "BSBlendAlphaRGB": [
+   4,
+   657410,
+   1
+  ],
+  "BSAddColorRGB": [
+   4,
+   132098,
+   1
+  ],
+  "BSBlendColorRGB": [
+   4,
+   656386,
+   1
+  ],
+  "BSAddRGB": [
+   4,
+   131586,
+   1
+  ],
+  "BSRevSubAlphaRGB": [
+   4,
+   67241986,
+   1
+  ],
+  "BSRevSubBlendAlphaRGB": [
+   4,
+   67766274,
+   1
+  ],
+  "BSRevSubColorRGB": [
+   4,
+   67240962,
+   1
+  ],
+  "BSRevSubBlendColorRGB": [
+   4,
+   67765250,
+   1
+  ],
+  "BSRevSubRGB": [
+   4,
+   67240450,
+   1
+  ],
+  "BSMinAlpha": [
+   4,
+   100796418,
+   1
+  ],
+  "BSMaxAlpha": [
+   4,
+   134350850,
+   1
+  ],
+  "BSMinAlphaRGB": [
+   4,
+   100796418,
+   1
+  ],
+  "BSMaxAlphaRGB": [
+   4,
+   134350850,
+   1
+  ],
+  "BSBlendAlphaEx": [
+   4,
+   657410,
+   1280
+  ],
+  "BSAddAlphaEx": [
+   4,
+   133122,
+   256
+  ],
+  "BSBlendColorEx": [
+   4,
+   656386,
+   1280
+  ],
+  "BSAddColorEx": [
+   4,
+   132098,
+   256
+  ],
+  "BSAccumulateColorAlpha": [
+   4,
+   131586,
+   257
+  ],
+  "DSDefault": [
+   5,
+   8388508,
+   7340144
+  ],
+  "DSZTestWrite": [
+   5,
+   8388495,
+   7340144
+  ],
+  "DSZTestWriteGT": [
+   5,
+   8388499,
+   7340144
+  ],
+  "DSZTest": [
+   5,
+   8388493,
+   7340144
+  ],
+  "DSZWrite": [
+   5,
+   8388511,
+   7340144
+  ],
+  "DSZWriteStencilWrite": [
+   5,
+   8355935,
+   7471218
+  ],
+  "DSZTestWriteStencilWrite": [
+   5,
+   8355919,
+   7471218
+  ],
+  "DSZTestStencilWrite": [
+   5,
+   8355917,
+   7471218
+  ],
+  "DSStencilWrite": [
+   5,
+   8355910,
+   7471218
+  ],
+  "RSDefault": [
+   6,
+   129,
+   0
+  ],
+  "RSMesh": [
+   6,
+   657,
+   0
+  ],
+  "RSMeshBias1": [
+   6,
+   657,
+   4294967264
+  ],
+  "RSMeshBias2": [
+   6,
+   657,
+   4294967232
+  ],
+  "RSMeshBias3": [
+   6,
+   657,
+   4294967200
+  ],
+  "RSMeshBias4": [
+   6,
+   657,
+   4294967168
+  ],
+  "RSMeshBias5": [
+   6,
+   657,
+   4294967136
+  ],
+  "RSMeshBias6": [
+   6,
+   657,
+   4294967104
+  ],
+  "RSMeshBias7": [
+   6,
+   657,
+   4294967072
+  ],
+  "RSMeshBias8": [
+   6,
+   657,
+   4294967040
+  ],
+  "RSMeshBias9": [
+   6,
+   657,
+   4294966976
+  ],
+  "RSMeshBias10": [
+   6,
+   657,
+   4294966912
+  ],
+  "RSMeshBias11": [
+   6,
+   657,
+   4294966848
+  ],
+  "RSMeshBias12": [
+   6,
+   657,
+   4294966784
+  ],
+  "RSMeshCF": [
+   6,
+   649,
+   0
+  ],
+  "RSMeshCN": [
+   6,
+   641,
+   0
+  ],
+  "RSPrim": [
+   6,
+   641,
+   0
+  ],
+  "RSPrimBias1": [
+   6,
+   641,
+   4294967264
+  ],
+  "RSScissorMesh": [
+   6,
+   913,
+   0
+  ],
+  "RSScissorPrim": [
+   6,
+   897,
+   0
+  ],
+  "RSWireFrame": [
+   6,
+   128,
+   0
+  ],
+  "BSMRTWrite0001": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0010": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0011": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0100": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0101": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0110": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite0111": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1000": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1001": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1010": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1011": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1100": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1101": [
+   4,
+   512,
+   1
+  ],
+  "BSMRTWrite1110": [
+   4,
+   512,
+   1
+  ],
+  "DSFilterStencilEqual": [
+   5,
+   8388572,
+   2097184
+  ],
+  "BSBlendAddAlpha": [
+   4,
+   133122,
+   260
+  ],
+  "BSBlendBlendAlpha": [
+   4,
+   657410,
+   1284
+  ],
+  "BSBlendAddColor": [
+   4,
+   132098,
+   260
+  ],
+  "BSBlendBlendColor": [
+   4,
+   656386,
+   1284
+  ],
+  "BSBlendAdd": [
+   4,
+   131586,
+   257
+  ],
+  "BSBlendRevSubAlpha": [
+   4,
+   67241986,
+   131332
+  ],
+  "BSBlendRevSubBlendAlpha": [
+   4,
+   67766274,
+   132356
+  ],
+  "BSBlendRevSubColor": [
+   4,
+   67240962,
+   131332
+  ],
+  "BSBlendRevSubBlendColor": [
+   4,
+   67765250,
+   132356
+  ],
+  "BSBlendRevSub": [
+   4,
+   67240450,
+   131329
+  ],
+  "BSBlendMinAlpha": [
+   4,
+   100796418,
+   196868
+  ],
+  "BSBlendMaxAlpha": [
+   4,
+   134350850,
+   262404
+  ],
+  "BSBlendNoBlend": [
+   4,
+   512,
+   1
+  ],
+  "BSBlendAddAlphaRGB": [
+   4,
+   133122,
+   260
+  ],
+  "BSBlendBlendAlphaRGB": [
+   4,
+   657410,
+   1284
+  ],
+  "BSBlendAddColorRGB": [
+   4,
+   132098,
+   260
+  ],
+  "BSBlendBlendColorRGB": [
+   4,
+   656386,
+   1284
+  ],
+  "BSBlendAddRGB": [
+   4,
+   131586,
+   257
+  ],
+  "BSBlendRevSubAlphaRGB": [
+   4,
+   67241986,
+   131332
+  ],
+  "BSBlendRevSubBlendAlphaRGB": [
+   4,
+   67766274,
+   132356
+  ],
+  "BSBlendRevSubColorRGB": [
+   4,
+   67240962,
+   131332
+  ],
+  "BSBlendRevSubBlendColorRGB": [
+   4,
+   67765250,
+   132356
+  ],
+  "BSBlendRevSubRGB": [
+   4,
+   67240450,
+   131329
+  ],
+  "BSBlendMinAlphaRGB": [
+   4,
+   100796418,
+   196868
+  ],
+  "BSBlendMaxAlphaRGB": [
+   4,
+   134350850,
+   262404
+  ],
+  "BSBlendAddDestColor": [
+   4,
+   135170,
+   262
+  ],
+  "BSBlendBlendAddDestColor": [
+   4,
+   659458,
+   1286
+  ],
+  "BSBlendBlendAddDestAlpha": [
+   4,
+   659458,
+   262
+  ],
+  "BSBlendAddDestColorRGB": [
+   4,
+   135170,
+   262
+  ],
+  "BSBlendBlendAddDestColorRGB": [
+   4,
+   659458,
+   1286
+  ],
+  "BSBlendBlendAddDestAlphaRGB": [
+   4,
+   659458,
+   262
+  ],
+  "BSBlendNoBlendRGB": [
+   4,
+   512,
+   1
+  ],
+  "BSFogBlend": [
+   4,
+   524802,
+   1
+  ],
+  "BSOutlineModulate": [
+   4,
+   655362,
+   1
+  ],
+  "BSOutlineBlend": [
+   4,
+   655874,
+   1
+  ],
+  "DSOutlineZTestStencilTest": [
+   5,
+   32717,
+   5242960
+  ],
+  "DSOutlineZTestWriteStencilTest": [
+   5,
+   32719,
+   5242960
+  ],
+  "BSShadowRecvSolidGroup0": [
+   4,
+   512,
+   1
+  ],
+  "BSShadowRecvSolidGroup1": [
+   4,
+   512,
+   1
+  ],
+  "BSShadowRecvTransparentGroup0": [
+   4,
+   134349312,
+   1
+  ],
+  "BSShadowRecvTransparentGroup1": [
+   4,
+   134349312,
+   1
+  ],
+  "BSShadowRecvMultiSolidGroup0": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSShadowRecvMultiSolidGroup1": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSShadowRecvMultiTransparentGroup0": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSShadowRecvMultiTransparentGroup1": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSShadowRecvZPass": [
+   4,
+   512,
+   1
+  ],
+  "DSDeferredLightingZWriteStencilTestRouted": [
+   5,
+   32719,
+   2097184
+  ],
+  "DSDeferredLightingZTestStencilWriteDepthFail": [
+   5,
+   276824013,
+   7348336
+  ],
+  "DSDeferredLightingZTestStencilWriteDepthPass": [
+   5,
+   8388557,
+   7471218
+  ],
+  "DSDeferredLightingZTestStencilTest": [
+   5,
+   32717,
+   1048592
+  ],
+  "DSDeferredLightingStencilTest": [
+   5,
+   32716,
+   1048592
+  ],
+  "BSAccumulateColorAlphaMRT2": [
+   4,
+   131590,
+   257
+  ],
+  "BSMultiplyColorAlpha": [
+   4,
+   4098,
+   6
+  ],
+  "BSMultiplyColorAlphaMRT2": [
+   4,
+   4102,
+   6
+  ],
+  "BSAmbientMaskGroup0": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSAmbientMaskGroup1": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSAmbientMaskGroup2": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSAmbientMaskGroup3": [
+   4,
+   134349314,
+   262401
+  ],
+  "BSAmbientMaskAlphaGroup0": [
+   4,
+   657410,
+   257
+  ],
+  "BSAmbientMaskAlphaGroup1": [
+   4,
+   657410,
+   257
+  ],
+  "BSAmbientMaskAlphaGroup2": [
+   4,
+   657410,
+   257
+  ],
+  "DSPrimStencilTestEQ": [
+   5,
+   32710,
+   2097184
+  ],
+  "DSPrimStencilTestNEQ": [
+   5,
+   32710,
+   5242960
+  ],
+  "DSPrimZTestStencilTestEQ": [
+   5,
+   32717,
+   2097184
+  ],
+  "DSPrimZTestStencilTestNEQ": [
+   5,
+   32717,
+   5242960
+  ],
+  "DSPrimZWriteStencilTestEQ": [
+   5,
+   32735,
+   2097184
+  ],
+  "DSPrimZWriteStencilTestNEQ": [
+   5,
+   32735,
+   5242960
+  ],
+  "DSPrimZTestWriteStencilTestEQ": [
+   5,
+   32719,
+   2097184
+  ],
+  "DSPrimZTestWriteStencilTestNEQ": [
+   5,
+   32719,
+   5242960
+  ],
+  "BSSSAO": [
+   4,
+   655874,
+   1
+  ],
+  "BSGodRays": [
+   4,
+   655874,
+   1
+  ],
+  "RSGUIScissorEnable": [
+   6,
+   385,
+   0
+  ],
+  "BSGUIAddColorRGB": [
+   4,
+   131586,
+   1
+  ],
+  "BSGUIAddInvColor": [
+   4,
+   133122,
+   1
+  ],
+  "BSGUIColorBlendAlphaAdd": [
+   4,
+   657410,
+   260
+  ],
+  "BSGUIAlphaMaskWrite": [
+   4,
+   514,
+   1
+  ],
+  "BSGUIAlphaMaskUpdate": [
+   4,
+   524290,
+   1024
+  ],
+  "BSGUIAlphaMaskAdd": [
+   4,
+   131586,
+   257
+  ],
+  "DSGUIStencilWrite": [
+   5,
+   8388572,
+   7471218
+  ],
+  "DSGUIStencilApply": [
+   5,
+   8388572,
+   3145776
+  ],
+  "DSGUIStencilApplyReverse": [
+   5,
+   8388572,
+   4194368
+  ],
+  "DSGUIStencilUpdate": [
+   5,
+   8388572,
+   2490406
+  ],
+  "DSGUIZTestStencilApply": [
+   5,
+   8388557,
+   3145776
+  ],
+  "DSGUIZTestStencilApplyReverse": [
+   5,
+   8388557,
+   4194368
+  ],
+  "DSGUIZTestStencilUpdate": [
+   5,
+   8388557,
+   2490406
+  ],
+  "DSGUIZWriteStencilApply": [
+   5,
+   8388575,
+   3145776
+  ],
+  "DSGUIZWriteStencilApplyReverse": [
+   5,
+   8388575,
+   4194368
+  ],
+  "DSGUIZWriteStencilUpdate": [
+   5,
+   8388575,
+   2490406
+  ],
+  "DSGUIZTestWriteStencilApply": [
+   5,
+   8388559,
+   3145776
+  ],
+  "DSGUIZTestWriteStencilApplyReverse": [
+   5,
+   8388559,
+   4194368
+  ],
+  "DSGUIZTestWriteStencilUpdate": [
+   5,
+   8388559,
+   2490406
+  ],
+  "BSAddRWrite": [
+   4,
+   131586,
+   1
+  ],
+  "BSAddGWrite": [
+   4,
+   131586,
+   1
+  ],
+  "BSAddBWrite": [
+   4,
+   131586,
+   1
+  ],
+  "BSAddAWrite": [
+   4,
+   131586,
+   1
+  ],
+  "BSSubRWrite": [
+   4,
+   67240450,
+   1
+  ],
+  "BSSubGWrite": [
+   4,
+   67240450,
+   1
+  ],
+  "BSSubBWrite": [
+   4,
+   67240450,
+   1
+  ],
+  "BSSubAWrite": [
+   4,
+   67240450,
+   1
+  ],
+  "BSAlphaToCoverage": [
+   4,
+   513,
+   1
+  ],
+  "BSRGWrite": [
+   4,
+   512,
+   1
+  ],
+  "BSBAWrite": [
+   4,
+   512,
+   1
+  ],
+  "DSZTestWriteBack": [
+   5,
+   8388507,
+   7340144
+  ],
+  "DSAmbientShadow": [
+   5,
+   8388505,
+   7340144
+  ],
+  "BSAddMRT": [
+   4,
+   131590,
+   257
+  ],
+  "BSLayoutWriteAlphaMask": [
+   4,
+   131074,
+   1
+  ],
+  "BSLayoutBlendAlphaMask": [
+   4,
+   131074,
+   6
+  ],
+  "BSLayoutBlendDstAlpha": [
+   4,
+   920578,
+   256
+  ]
+ },
+ "layouts": {
+  "IASystemCopy": {
+   "index": 1,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASystemClear": {
+   "index": 2,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Color",
+     12,
+     4,
+     1
+    ]
+   ]
+  },
+  "IAFilter": {
+   "index": 3,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     16,
+     2,
+     1
+    ],
+    [
+     "Color",
+     24,
+     1,
+     14
+    ]
+   ]
+  },
+  "IAFilter0": {
+   "index": 4,
+   "stride": 12,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Color",
+     8,
+     1,
+     14
+    ]
+   ]
+  },
+  "IAFilter1": {
+   "index": 5,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ],
+    [
+     "Color",
+     16,
+     1,
+     14
+    ]
+   ]
+  },
+  "IAFilter2": {
+   "index": 6,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ]
+   ]
+  },
+  "IADevelopPrim2D": {
+   "index": 7,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Color",
+     8,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     12,
+     2,
+     5
+    ]
+   ]
+  },
+  "IADevelopPrim3D": {
+   "index": 8,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Color",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     5
+    ]
+   ]
+  },
+  "IACollisionInput": {
+   "index": 9,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Color",
+     12,
+     1,
+     14
+    ]
+   ]
+  },
+  "IASwing": {
+   "index": 10,
+   "stride": 4,
+   "elements": [
+    [
+     "SWING_ORIGIN",
+     0,
+     3,
+     10
+    ],
+    [
+     "SWING_WEIGHT",
+     3,
+     1,
+     10
+    ]
+   ]
+  },
+  "IASwing2": {
+   "index": 11,
+   "stride": 4,
+   "elements": [
+    [
+     "SWING_ORIGIN",
+     0,
+     3,
+     10
+    ],
+    [
+     "SWING_WEIGHT",
+     3,
+     1,
+     10
+    ]
+   ]
+  },
+  "IASwingHighPrecision": {
+   "index": 12,
+   "stride": 8,
+   "elements": [
+    [
+     "SWING_ORIGIN",
+     0,
+     3,
+     5
+    ],
+    [
+     "SWING_WEIGHT",
+     6,
+     1,
+     5
+    ]
+   ]
+  },
+  "IASwing2HighPrecision": {
+   "index": 13,
+   "stride": 8,
+   "elements": [
+    [
+     "SWING_ORIGIN",
+     0,
+     3,
+     5
+    ],
+    [
+     "SWING_WEIGHT",
+     6,
+     1,
+     5
+    ]
+   ]
+  },
+  "IAInstancing": {
+   "index": 14,
+   "stride": 48,
+   "elements": [
+    [
+     "INSTANCE_MATRIX",
+     512,
+     4,
+     1
+    ]
+   ]
+  },
+  "IAInstancingColor": {
+   "index": 15,
+   "stride": 64,
+   "elements": [
+    [
+     "INSTANCE_MATRIX",
+     512,
+     4,
+     1
+    ],
+    [
+     "INSTANCE_COLOR",
+     560,
+     4,
+     1
+    ]
+   ]
+  },
+  "IALatticeDeform": {
+   "index": 16,
+   "stride": 64,
+   "elements": [
+    [
+     "LdVtx",
+     0,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     8,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     16,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     24,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     32,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     40,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     48,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     56,
+     2,
+     1
+    ]
+   ]
+  },
+  "IATetraDeform": {
+   "index": 17,
+   "stride": 32,
+   "elements": [
+    [
+     "LdVtx",
+     0,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     8,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     16,
+     2,
+     1
+    ],
+    [
+     "LdVtx",
+     24,
+     2,
+     1
+    ]
+   ]
+  },
+  "IATetraDeform2": {
+   "index": 18,
+   "stride": 24,
+   "elements": [
+    [
+     "LdVtx",
+     0,
+     2,
+     2
+    ],
+    [
+     "LdVtx",
+     4,
+     2,
+     2
+    ],
+    [
+     "LdVtx",
+     8,
+     2,
+     2
+    ],
+    [
+     "LdVtx",
+     12,
+     2,
+     2
+    ],
+    [
+     "LdVtx",
+     16,
+     2,
+     2
+    ],
+    [
+     "LdVtx",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinBridge1wt": {
+   "index": 19,
+   "stride": 12,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     1,
+     11
+    ]
+   ]
+  },
+  "IASkinBridge2wt": {
+   "index": 20,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     1,
+     11
+    ],
+    [
+     "Joint",
+     12,
+     2,
+     4
+    ]
+   ]
+  },
+  "IASkinBridge4wt": {
+   "index": 21,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     8,
+     4,
+     8
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Normal",
+     16,
+     1,
+     11
+    ]
+   ]
+  },
+  "IASkinBridge8wt": {
+   "index": 22,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     8,
+     0,
+     8
+    ],
+    [
+     "Weight",
+     16,
+     0,
+     10
+    ],
+    [
+     "Normal",
+     24,
+     1,
+     11
+    ]
+   ]
+  },
+  "IASkinBridge4wt4M": {
+   "index": 23,
+   "stride": 56,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     8,
+     4,
+     8
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Normal",
+     16,
+     1,
+     11
+    ],
+    [
+     "MorphPosition",
+     20,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     26,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     32,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     38,
+     3,
+     5
+    ],
+    [
+     "MorphNormal",
+     44,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     47,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     50,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     53,
+     3,
+     9
+    ]
+   ]
+  },
+  "IASkinTB1wt": {
+   "index": 24,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBN1wt": {
+   "index": 25,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBC1wt": {
+   "index": 26,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     20,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     23,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBNLA1wt": {
+   "index": 27,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     28,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBCNLA1wt": {
+   "index": 28,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     32,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     35,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     28,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTB2wt": {
+   "index": 29,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "Joint",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBN2wt": {
+   "index": 30,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "Joint",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBC2wt": {
+   "index": 31,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "Joint",
+     20,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     24,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     27,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBNLA2wt": {
+   "index": 32,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     32,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBCNLA2wt": {
+   "index": 33,
+   "stride": 40,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     36,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     39,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     32,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTB4wt": {
+   "index": 34,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBN4wt": {
+   "index": 35,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     28,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBC4wt": {
+   "index": 36,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     28,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     31,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBNLA4wt": {
+   "index": 37,
+   "stride": 40,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     36,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     36,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBCNLA4wt": {
+   "index": 38,
+   "stride": 44,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     36,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     40,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     43,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     36,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTB8wt": {
+   "index": 39,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Joint",
+     16,
+     0,
+     8
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     28,
+     2,
+     2
+    ],
+    [
+     "Tangent",
+     32,
+     4,
+     9
+    ],
+    [
+     "UV_Primary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBN8wt": {
+   "index": 40,
+   "stride": 40,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Joint",
+     16,
+     0,
+     8
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     28,
+     2,
+     2
+    ],
+    [
+     "Tangent",
+     32,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     36,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     36,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     36,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBC8wt": {
+   "index": 41,
+   "stride": 40,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Joint",
+     16,
+     0,
+     8
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     28,
+     2,
+     2
+    ],
+    [
+     "Tangent",
+     32,
+     4,
+     9
+    ],
+    [
+     "VertexColor",
+     36,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     39,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBNLA8wt": {
+   "index": 42,
+   "stride": 48,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Joint",
+     16,
+     0,
+     8
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     28,
+     2,
+     2
+    ],
+    [
+     "Tangent",
+     32,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     36,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     40,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     44,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     40,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     36,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     44,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinTBCNLA8wt": {
+   "index": 43,
+   "stride": 52,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     9
+    ],
+    [
+     "Weight",
+     12,
+     4,
+     10
+    ],
+    [
+     "Joint",
+     16,
+     0,
+     8
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     28,
+     2,
+     2
+    ],
+    [
+     "Tangent",
+     32,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     36,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     40,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     44,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     48,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     51,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     40,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     36,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     44,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTB": {
+   "index": 44,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBC": {
+   "index": 45,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     24,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     27,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBL": {
+   "index": 46,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "VertexAlpha",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Occlusion",
+     28,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBL_LA": {
+   "index": 47,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "VertexAlpha",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "Occlusion",
+     28,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBN": {
+   "index": 48,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBA": {
+   "index": 49,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNC": {
+   "index": 50,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     28,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     31,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNL": {
+   "index": 51,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "VertexAlpha",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "Occlusion",
+     32,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNL_LA": {
+   "index": 52,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "VertexAlpha",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "Occlusion",
+     32,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     28,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNA": {
+   "index": 53,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     28,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBLA": {
+   "index": 54,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBCA": {
+   "index": 55,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     28,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     31,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNCA": {
+   "index": 56,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     28,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     31,
+     1,
+     10
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBNLA": {
+   "index": 57,
+   "stride": 36,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     28,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     32,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     24,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinB": {
+   "index": 58,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBC": {
+   "index": 59,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     20,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     23,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBL": {
+   "index": 60,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     16,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBL_LA": {
+   "index": 61,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBA": {
+   "index": 62,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBLA": {
+   "index": 63,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinBCA": {
+   "index": 64,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     1,
+     11
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "VertexColor",
+     24,
+     3,
+     13
+    ],
+    [
+     "VertexAlpha",
+     27,
+     1,
+     10
+    ],
+    [
+     "UV_Primary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     16,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinOTB_4WT_4M": {
+   "index": 65,
+   "stride": 64,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Weight",
+     6,
+     1,
+     5
+    ],
+    [
+     "Normal",
+     8,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     11,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     12,
+     4,
+     9
+    ],
+    [
+     "Joint",
+     16,
+     4,
+     8
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "Weight",
+     24,
+     2,
+     2
+    ],
+    [
+     "MorphPosition",
+     28,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     34,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     40,
+     3,
+     5
+    ],
+    [
+     "MorphPosition",
+     46,
+     3,
+     5
+    ],
+    [
+     "MorphNormal",
+     52,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     55,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     58,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     61,
+     3,
+     9
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IANonSkinTBN_4M": {
+   "index": 66,
+   "stride": 64,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Normal",
+     12,
+     3,
+     9
+    ],
+    [
+     "Occlusion",
+     15,
+     1,
+     10
+    ],
+    [
+     "Tangent",
+     16,
+     4,
+     9
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     2
+    ],
+    [
+     "TexCoord",
+     24,
+     2,
+     2
+    ],
+    [
+     "MorphPosition",
+     28,
+     3,
+     2
+    ],
+    [
+     "MorphPosition",
+     34,
+     3,
+     2
+    ],
+    [
+     "MorphPosition",
+     40,
+     3,
+     2
+    ],
+    [
+     "MorphPosition",
+     46,
+     3,
+     2
+    ],
+    [
+     "MorphNormal",
+     52,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     55,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     58,
+     3,
+     9
+    ],
+    [
+     "MorphNormal",
+     61,
+     3,
+     9
+    ],
+    [
+     "UV_Primary",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Secondary",
+     24,
+     2,
+     2
+    ],
+    [
+     "UV_Unique",
+     20,
+     2,
+     2
+    ],
+    [
+     "UV_Extend",
+     20,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASkinVelocytyEdge": {
+   "index": 67,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     5
+    ],
+    [
+     "Joint",
+     6,
+     1,
+     3
+    ],
+    [
+     "Normal",
+     8,
+     1,
+     11
+    ],
+    [
+     "Tangent",
+     12,
+     3,
+     5
+    ]
+   ]
+  },
+  "IADualParaboloid": {
+   "index": 68,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Direction",
+     8,
+     3,
+     1
+    ]
+   ]
+  },
+  "IA_DeferredLighting_LightVolume": {
+   "index": 69,
+   "stride": 12,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ]
+   ]
+  },
+  "IAPrimitiveCloudBillboard": {
+   "index": 70,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "CldAspectRatio",
+     12,
+     1,
+     3
+    ],
+    [
+     "CldAlpha",
+     14,
+     1,
+     3
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     3
+    ],
+    [
+     "CldSize",
+     20,
+     1,
+     1
+    ],
+    [
+     "CldPosition",
+     24,
+     3,
+     3
+    ],
+    [
+     "CldScale",
+     30,
+     1,
+     3
+    ]
+   ]
+  },
+  "IAPrimitiveCloud": {
+   "index": 71,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "CldPosition",
+     12,
+     3,
+     1
+    ],
+    [
+     "CldAlpha",
+     24,
+     1,
+     1
+    ],
+    [
+     "TexCoord",
+     28,
+     2,
+     3
+    ]
+   ]
+  },
+  "IAPrimitiveSprite": {
+   "index": 72,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     3
+    ],
+    [
+     "ZOffset",
+     20,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     22,
+     1,
+     4
+    ],
+    [
+     "SprScale",
+     24,
+     1,
+     4
+    ],
+    [
+     "SprRot",
+     26,
+     1,
+     4
+    ],
+    [
+     "SprWidth",
+     28,
+     1,
+     7
+    ],
+    [
+     "SprHeight",
+     29,
+     1,
+     7
+    ],
+    [
+     "SprRatio",
+     30,
+     1,
+     7
+    ],
+    [
+     "SprVolume",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimRot",
+     26,
+     1,
+     4
+    ],
+    [
+     "PrimVol",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimPrScale",
+     31,
+     1,
+     7
+    ]
+   ]
+  },
+  "IAPrimitiveNT": {
+   "index": 73,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     3
+    ],
+    [
+     "ZOffset",
+     20,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     22,
+     1,
+     4
+    ],
+    [
+     "NTRot",
+     24,
+     1,
+     3
+    ],
+    [
+     "NTSize",
+     26,
+     2,
+     3
+    ],
+    [
+     "NTVolume",
+     30,
+     1,
+     3
+    ],
+    [
+     "PrimRot",
+     24,
+     1,
+     3
+    ],
+    [
+     "PrimVol",
+     30,
+     1,
+     3
+    ],
+    [
+     "PrimPrScale",
+     30,
+     1,
+     3
+    ]
+   ]
+  },
+  "IAPrimitivePolyline": {
+   "index": 74,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     3
+    ],
+    [
+     "ZOffset",
+     20,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     22,
+     1,
+     4
+    ],
+    [
+     "PlnWidth",
+     24,
+     1,
+     3
+    ],
+    [
+     "PlnReserved",
+     26,
+     1,
+     3
+    ],
+    [
+     "PlnTangent",
+     28,
+     3,
+     7
+    ],
+    [
+     "PlnVolume",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimVol",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimPrScale",
+     31,
+     1,
+     7
+    ]
+   ]
+  },
+  "IAPrimitivePolygon": {
+   "index": 75,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     3
+    ],
+    [
+     "ZOffset",
+     20,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     22,
+     1,
+     4
+    ],
+    [
+     "PlyNormal",
+     24,
+     3,
+     7
+    ],
+    [
+     "PlyBinormal",
+     27,
+     1,
+     7
+    ],
+    [
+     "PlyTangent",
+     28,
+     3,
+     7
+    ],
+    [
+     "PlyVolume",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimVol",
+     31,
+     1,
+     7
+    ],
+    [
+     "PrimPrScale",
+     31,
+     1,
+     7
+    ]
+   ]
+  },
+  "IACubeMapFilter": {
+   "index": 76,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "View",
+     8,
+     3,
+     1
+    ]
+   ]
+  },
+  "IAGSDOFFilter": {
+   "index": 77,
+   "stride": 4,
+   "elements": [
+    [
+     "SV_VertexID",
+     0,
+     1,
+     1
+    ],
+    [
+     "SV_InstanceID",
+     0,
+     1,
+     1
+    ]
+   ]
+  },
+  "IABokeh": {
+   "index": 78,
+   "stride": 8,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     4,
+     2
+    ]
+   ]
+  },
+  "IAWater": {
+   "index": 79,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "TexCoord",
+     12,
+     2,
+     2
+    ]
+   ]
+  },
+  "IAWaterRipple": {
+   "index": 80,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Height",
+     12,
+     1,
+     1
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     1
+    ]
+   ]
+  },
+  "IAGUI": {
+   "index": 81,
+   "stride": 24,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Color",
+     12,
+     1,
+     14
+    ],
+    [
+     "Texcoord",
+     16,
+     2,
+     1
+    ]
+   ]
+  },
+  "IATextureBlend": {
+   "index": 82,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ],
+    [
+     "Direction",
+     16,
+     3,
+     1
+    ]
+   ]
+  },
+  "IAGPUParticle": {
+   "index": 83,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "Scale",
+     16,
+     1,
+     4
+    ],
+    [
+     "Index",
+     18,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     20,
+     1,
+     4
+    ],
+    [
+     "Rotation",
+     22,
+     1,
+     4
+    ],
+    [
+     "TexCoordScl",
+     24,
+     2,
+     5
+    ],
+    [
+     "Reserved",
+     28,
+     1,
+     1
+    ]
+   ]
+  },
+  "IAGPULineParticle": {
+   "index": 84,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "Direction",
+     16,
+     3,
+     1
+    ],
+    [
+     "Scale",
+     28,
+     1,
+     4
+    ],
+    [
+     "Intensity",
+     30,
+     1,
+     4
+    ]
+   ]
+  },
+  "IAGPUPolylineParticle": {
+   "index": 85,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "Intensity",
+     16,
+     1,
+     4
+    ],
+    [
+     "Width",
+     18,
+     1,
+     4
+    ],
+    [
+     "TexCoord",
+     20,
+     2,
+     3
+    ],
+    [
+     "Tangent",
+     24,
+     4,
+     7
+    ],
+    [
+     "Scale",
+     28,
+     1,
+     1
+    ]
+   ]
+  },
+  "IALightShaftInput": {
+   "index": 86,
+   "stride": 12,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ]
+   ]
+  },
+  "IAGrass": {
+   "index": 87,
+   "stride": 12,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     3,
+     10
+    ],
+    [
+     "COLOR_BLEND",
+     3,
+     1,
+     10
+    ],
+    [
+     "COS_SIN",
+     4,
+     2,
+     9
+    ],
+    [
+     "LIGHTMAP",
+     6,
+     1,
+     10
+    ],
+    [
+     "VERTEX_NO",
+     7,
+     1,
+     10
+    ],
+    [
+     "WIDTH_HEIGHT",
+     8,
+     2,
+     10
+    ],
+    [
+     "GRASS_POWER",
+     10,
+     1,
+     10
+    ],
+    [
+     "AMBOCC",
+     11,
+     1,
+     10
+    ]
+   ]
+  },
+  "IAGrassHicomp": {
+   "index": 88,
+   "stride": 8,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     3,
+     10
+    ],
+    [
+     "VERTEX_NO",
+     3,
+     1,
+     10
+    ],
+    [
+     "ANGLE",
+     4,
+     1,
+     10
+    ],
+    [
+     "LIGHTMAP",
+     5,
+     1,
+     10
+    ],
+    [
+     "COLOR_BLEND",
+     6,
+     1,
+     10
+    ],
+    [
+     "AMBOCC",
+     7,
+     1,
+     10
+    ]
+   ]
+  },
+  "IAGrassHicomp2": {
+   "index": 89,
+   "stride": 8,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     3,
+     10
+    ],
+    [
+     "VNO_CB",
+     3,
+     1,
+     10
+    ],
+    [
+     "ANGLE",
+     4,
+     1,
+     10
+    ],
+    [
+     "LIGHTMAP",
+     5,
+     1,
+     10
+    ],
+    [
+     "SCALING",
+     6,
+     1,
+     10
+    ],
+    [
+     "AMBOCC",
+     7,
+     1,
+     10
+    ]
+   ]
+  },
+  "IAGrassPoint": {
+   "index": 90,
+   "stride": 16,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     4,
+     1
+    ]
+   ]
+  },
+  "IAGrassLowest": {
+   "index": 91,
+   "stride": 4,
+   "elements": [
+    [
+     "VERTEX_NO",
+     0,
+     1,
+     1
+    ]
+   ]
+  },
+  "IAGrassSPU": {
+   "index": 92,
+   "stride": 104,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     4,
+     1
+    ],
+    [
+     "GRASS_COLOR",
+     16,
+     4,
+     1
+    ],
+    [
+     "UV_BASEMAP",
+     32,
+     2,
+     1
+    ],
+    [
+     "WORLD_POSITION",
+     40,
+     3,
+     1
+    ],
+    [
+     "WORLD_NORMAL",
+     52,
+     3,
+     1
+    ],
+    [
+     "WORLD_TANGENT",
+     64,
+     3,
+     1
+    ],
+    [
+     "DIFFUSE",
+     76,
+     3,
+     1
+    ],
+    [
+     "SPECULAR",
+     88,
+     3,
+     1
+    ],
+    [
+     "AMBIENT_OCCLUSION",
+     100,
+     1,
+     1
+    ]
+   ]
+  },
+  "IAGrassOutsourcing": {
+   "index": 93,
+   "stride": 8,
+   "elements": [
+    [
+     "OS_POSITION",
+     0,
+     3,
+     2
+    ]
+   ]
+  },
+  "IAGrassOutsourcingF32": {
+   "index": 94,
+   "stride": 12,
+   "elements": [
+    [
+     "OS_POSITION",
+     0,
+     3,
+     1
+    ]
+   ]
+  },
+  "IAMirage": {
+   "index": 95,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Texcoord",
+     12,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASimWaterForViewInput": {
+   "index": 96,
+   "stride": 40,
+   "elements": [
+    [
+     "Position",
+     0,
+     4,
+     1
+    ],
+    [
+     "Color",
+     16,
+     4,
+     1
+    ],
+    [
+     "Texcoord",
+     32,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASoftBodyQuad": {
+   "index": 97,
+   "stride": 8,
+   "elements": [
+    [
+     "POSITION",
+     0,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASoftBodyVertex": {
+   "index": 98,
+   "stride": 4,
+   "elements": [
+    [
+     "SbTexCoord",
+     0,
+     2,
+     2
+    ]
+   ]
+  },
+  "IASoftBodyDecouple": {
+   "index": 99,
+   "stride": 24,
+   "elements": [
+    [
+     "SbTexCoord",
+     0,
+     2,
+     2
+    ],
+    [
+     "SbTexCoord",
+     4,
+     2,
+     2
+    ],
+    [
+     "SbTexCoord",
+     8,
+     2,
+     2
+    ],
+    [
+     "SbWeight",
+     12,
+     3,
+     2
+    ],
+    [
+     "SbOffset",
+     18,
+     3,
+     2
+    ]
+   ]
+  },
+  "IASoftBodyVertexNoVTF": {
+   "index": 100,
+   "stride": 20,
+   "elements": [
+    [
+     "SbPos",
+     0,
+     3,
+     1
+    ],
+    [
+     "SbQuat",
+     12,
+     4,
+     2
+    ]
+   ]
+  },
+  "IASoftBodyVertexPS3": {
+   "index": 101,
+   "stride": 32,
+   "elements": [
+    [
+     "SbQuat",
+     0,
+     4,
+     1
+    ],
+    [
+     "SbQuat",
+     16,
+     4,
+     1
+    ]
+   ]
+  },
+  "IASoftBodyDecoupleNoVTF": {
+   "index": 102,
+   "stride": 72,
+   "elements": [
+    [
+     "SbPos",
+     0,
+     3,
+     1
+    ],
+    [
+     "SbPos",
+     12,
+     3,
+     1
+    ],
+    [
+     "SbPos",
+     24,
+     3,
+     1
+    ],
+    [
+     "SbQuat",
+     36,
+     4,
+     2
+    ],
+    [
+     "SbQuat",
+     44,
+     4,
+     2
+    ],
+    [
+     "SbQuat",
+     52,
+     4,
+     2
+    ],
+    [
+     "SbWeight",
+     60,
+     3,
+     2
+    ],
+    [
+     "SbOffset",
+     66,
+     3,
+     2
+    ]
+   ]
+  },
+  "IATattooBlend2D": {
+   "index": 103,
+   "stride": 28,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ],
+    [
+     "Texcoord",
+     8,
+     2,
+     1
+    ],
+    [
+     "Direction",
+     16,
+     3,
+     1
+    ]
+   ]
+  },
+  "IABuilder": {
+   "index": 104,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "VertexColor",
+     12,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     16,
+     2,
+     1
+    ],
+    [
+     "Reserved",
+     24,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASky": {
+   "index": 105,
+   "stride": 8,
+   "elements": [
+    [
+     "Position",
+     0,
+     2,
+     1
+    ]
+   ]
+  },
+  "IAAstralBody": {
+   "index": 106,
+   "stride": 20,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "TexCoord",
+     12,
+     2,
+     1
+    ]
+   ]
+  },
+  "IASkyStar": {
+   "index": 107,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Color",
+     12,
+     3,
+     1
+    ],
+    [
+     "Offset",
+     24,
+     2,
+     1
+    ]
+   ]
+  },
+  "IAAmbientShadow": {
+   "index": 108,
+   "stride": 16,
+   "elements": [
+    [
+     "Position",
+     0,
+     4,
+     1
+    ]
+   ]
+  },
+  "IAVertexIndexF32": {
+   "index": 109,
+   "stride": 8,
+   "elements": [
+    [
+     "PROJECTION_INDEX",
+     0,
+     2,
+     1
+    ]
+   ]
+  },
+  "IAVertexIndexF16": {
+   "index": 110,
+   "stride": 4,
+   "elements": [
+    [
+     "PROJECTION_INDEX",
+     0,
+     2,
+     2
+    ]
+   ]
+  },
+  "IATriangleF32": {
+   "index": 111,
+   "stride": 24,
+   "elements": [
+    [
+     "TRIANGLE_INDEX",
+     0,
+     2,
+     1
+    ],
+    [
+     "TRIANGLE_INDEX",
+     8,
+     2,
+     1
+    ],
+    [
+     "TRIANGLE_INDEX",
+     16,
+     2,
+     1
+    ]
+   ]
+  },
+  "IATriangleF16": {
+   "index": 112,
+   "stride": 12,
+   "elements": [
+    [
+     "TRIANGLE_INDEX",
+     0,
+     2,
+     2
+    ],
+    [
+     "TRIANGLE_INDEX",
+     4,
+     2,
+     2
+    ],
+    [
+     "TRIANGLE_INDEX",
+     8,
+     2,
+     2
+    ]
+   ]
+  },
+  "IAInfParticle": {
+   "index": 113,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     4,
+     5
+    ],
+    [
+     "VertexColor",
+     8,
+     1,
+     14
+    ],
+    [
+     "Scale",
+     12,
+     2,
+     3
+    ],
+    [
+     "Life",
+     16,
+     2,
+     3
+    ],
+    [
+     "Attribute",
+     20,
+     4,
+     8
+    ],
+    [
+     "Attribute",
+     24,
+     2,
+     4
+    ],
+    [
+     "Reserved",
+     28,
+     1,
+     1
+    ]
+   ]
+  },
+  "IALayout": {
+   "index": 114,
+   "stride": 80,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Intensity",
+     12,
+     1,
+     1
+    ],
+    [
+     "Offset",
+     16,
+     2,
+     1
+    ],
+    [
+     "Offset",
+     24,
+     2,
+     1
+    ],
+    [
+     "Color",
+     32,
+     1,
+     14
+    ],
+    [
+     "Color",
+     36,
+     1,
+     14
+    ],
+    [
+     "Color",
+     40,
+     1,
+     14
+    ],
+    [
+     "Color",
+     44,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     48,
+     2,
+     1
+    ],
+    [
+     "TexOffset",
+     56,
+     2,
+     1
+    ],
+    [
+     "TexOffset",
+     64,
+     2,
+     1
+    ],
+    [
+     "Rotation",
+     72,
+     2,
+     1
+    ]
+   ]
+  },
+  "IALayoutUv2": {
+   "index": 115,
+   "stride": 80,
+   "elements": [
+    [
+     "Position",
+     0,
+     3,
+     1
+    ],
+    [
+     "Intensity",
+     12,
+     1,
+     1
+    ],
+    [
+     "Offset",
+     16,
+     2,
+     1
+    ],
+    [
+     "Offset",
+     24,
+     2,
+     1
+    ],
+    [
+     "Color",
+     32,
+     1,
+     14
+    ],
+    [
+     "Color",
+     36,
+     1,
+     14
+    ],
+    [
+     "Color",
+     40,
+     1,
+     14
+    ],
+    [
+     "Color",
+     44,
+     1,
+     14
+    ],
+    [
+     "TexCoord",
+     48,
+     2,
+     3
+    ],
+    [
+     "TexCoord",
+     52,
+     2,
+     3
+    ],
+    [
+     "TexOffset",
+     56,
+     2,
+     3
+    ],
+    [
+     "TexOffset",
+     60,
+     2,
+     3
+    ],
+    [
+     "TexOffset",
+     64,
+     2,
+     3
+    ],
+    [
+     "TexOffset",
+     68,
+     2,
+     3
+    ],
+    [
+     "Rotation",
+     72,
+     2,
+     1
+    ]
+   ]
+  }
+ },
+ "variants": {
+  "FVertexDisplacement": [
+   "FVertexDisplacement"
+  ],
+  "FUVTransformPrimary": [
+   "FUVTransformOffset"
+  ],
+  "FUVTransformSecondary": [
+   "FUVTransformOffset2"
+  ],
+  "FUVTransformUnique": [
+   "FUVTransformUnique"
+  ],
+  "FUVTransformExtend": [
+   "FUVTransformOffset3"
+  ],
+  "FOcclusion": [
+   "FOcclusion"
+  ],
+  "FBump": [
+   "FBump"
+  ],
+  "FAlbedo": [
+   "FAlbedoMap",
+   "FAlbedoMapColorOnly"
+  ],
+  "FUVAlbedoMap": [
+   "FUVPrimary"
+  ],
+  "FTransparency": [
+   "FTransparency",
+   "FTransparencyAlpha"
+  ],
+  "FShininess": [
+   "FShininess"
+  ],
+  "FLighting": [
+   "FLighting"
+  ],
+  "FBRDF": [
+   "FBRDF"
+  ],
+  "FDiffuse": [
+   "FDiffuse",
+   "FDiffuseMD",
+   "FDiffuseNone",
+   "FDiffuseVertexColor",
+   "FDiffuseVertexColorMD"
+  ],
+  "FAmbient": [
+   "FAmbientSH"
+  ],
+  "FSpecular": [
+   "FSpecularMap"
+  ],
+  "FReflect": [
+   "FReflect",
+   "FReflectGlobalCubeMap"
+  ],
+  "FUVSpecularMap": [
+   "FUVPrimary"
+  ],
+  "FChannelSpecularMap": [
+   "FChannelSpecularMap"
+  ],
+  "FFresnel": [
+   "FFresnelSchlick"
+  ],
+  "FEmission": [
+   "FEmission",
+   "FEmissionConstantEflEmu"
+  ],
+  "FDistortion": [
+   "FDistortion"
+  ],
+  "FSkinning": [
+   "FSkinningNone"
+  ],
+  "FLightMask": [
+   "FLightMask"
+  ],
+  "FColorModifier": [
+   "FColorModifier",
+   "FPrimiteveColorModifier",
+   "FPrimiteveColorModifierEmu"
+  ],
+  "FWorldCoordinate": [
+   "FWorldCoordinate"
+  ],
+  "FShadowReceiveFaceAttn": [
+   "FShadowReceiveFaceAttnCut"
+  ],
+  "FPrimitiveModelSceneSampler": [
+   "FPrimitiveModelSceneSampler"
+  ],
+  "FPrimitiveModelSmoothAlpha": [
+   "FPrimitiveModelSmoothAlpha"
+  ],
+  "FPrimitiveTransparency": [
+   "FPrimitiveTransparency",
+   "FPrimitiveTransparencyVolume"
+  ],
+  "FPrimitiveLevelCorrection": [
+   "FPrimitiveLevelCorrection"
+  ],
+  "FPrimitiveModifierEmu": [
+   "FPrimitiveModifierEflEmu",
+   "FPrimitiveModifierEmu"
+  ],
+  "FBlendFog": [
+   "FBlendFogPrimAlpha"
+  ],
+  "FMorph": [
+   "FMorph"
+  ],
+  "FShaderAttributes": [
+   "FShaderAttributes"
+  ],
+  "FShadowReceiveFaceAttn0": [
+   "FShadowReceiveFaceAttn0"
+  ],
+  "FShadowReceiveFaceAttn1": [
+   "FShadowReceiveFaceAttn1"
+  ],
+  "FShadowReceiveFaceAttn2": [
+   "FShadowReceiveFaceAttn2"
+  ],
+  "FShadowReceiveFaceAttn3": [
+   "FShadowReceiveFaceAttn3"
+  ]
+ },
+ "structs": {
+  "MATERIAL_OUTPUT": {
+   "glsl": "struct MATERIAL_OUTPUT {\n  vec4 position;\n  vec3 wnormal;\n  vec3 wposition;\n  vec3 wtangent;\n  vec3 wbinormal;\n  vec2 uv_primary;\n  vec2 uv_secondary;\n  vec2 uv_unique;\n  vec2 uv_extend;\n  vec4 vcolor;\n  float occlusion;\n  vec4 attributes;\n};\nMATERIAL_OUTPUT zero_MATERIAL_OUTPUT() { MATERIAL_OUTPUT z; z.position = vec4(0.0); z.wnormal = vec3(0.0); z.wposition = vec3(0.0); z.wtangent = vec3(0.0); z.wbinormal = vec3(0.0); z.uv_primary = vec2(0.0); z.uv_secondary = vec2(0.0); z.uv_unique = vec2(0.0); z.uv_extend = vec2(0.0); z.vcolor = vec4(0.0); z.occlusion = 0.0; z.attributes = vec4(0.0); return z; }\n",
+   "members": [
+    [
+     "position",
+     "vec4",
+     "SV_Position"
+    ],
+    [
+     "wnormal",
+     "vec3",
+     "WorldNormal"
+    ],
+    [
+     "wposition",
+     "vec3",
+     "WorldPosition"
+    ],
+    [
+     "wtangent",
+     "vec3",
+     "WorldTangent"
+    ],
+    [
+     "wbinormal",
+     "vec3",
+     "WorldBiNormal"
+    ],
+    [
+     "uv_primary",
+     "vec2",
+     "UV_Primary"
+    ],
+    [
+     "uv_secondary",
+     "vec2",
+     "UV_Secondary"
+    ],
+    [
+     "uv_unique",
+     "vec2",
+     "UV_Unique"
+    ],
+    [
+     "uv_extend",
+     "vec2",
+     "UV_Extend"
+    ],
+    [
+     "vcolor",
+     "vec4",
+     "VertexColor"
+    ],
+    [
+     "occlusion",
+     "float",
+     "Occlusion"
+    ],
+    [
+     "attributes",
+     "vec4",
+     "Attributes"
+    ]
+   ],
+   "uses": []
+  },
+  "MATERIAL_CONTEXT": {
+   "glsl": "struct MATERIAL_CONTEXT {\n  vec4 svposition;\n  vec3 wposition;\n  vec3 normal;\n  vec3 tangent;\n  vec3 binormal;\n  vec3 eye_dir;\n  vec3 reflect_dir;\n  vec2 uv_primary;\n  vec2 uv_secondary;\n  vec2 uv_unique;\n  vec2 uv_extend;\n  vec2 uv_screen;\n  vec2 light_mask;\n  vec3 vertex_color;\n  vec3 vertex_normal;\n  float transparency;\n  float shininess;\n  float fresnel;\n  float ambient_occlusion;\n  float occlusion;\n  vec3 albedo;\n  vec3 diffuse;\n  vec3 specular;\n  vec3 diffuse2;\n  vec3 specular2;\n  vec3 diffuse3;\n  vec3 tangent_primary;\n  vec3 tangent_secondary;\n  float global_transparency;\n  vec4 attributes;\n};\nMATERIAL_CONTEXT zero_MATERIAL_CONTEXT() { MATERIAL_CONTEXT z; z.svposition = vec4(0.0); z.wposition = vec3(0.0); z.normal = vec3(0.0); z.tangent = vec3(0.0); z.binormal = vec3(0.0); z.eye_dir = vec3(0.0); z.reflect_dir = vec3(0.0); z.uv_primary = vec2(0.0); z.uv_secondary = vec2(0.0); z.uv_unique = vec2(0.0); z.uv_extend = vec2(0.0); z.uv_screen = vec2(0.0); z.light_mask = vec2(0.0); z.vertex_color = vec3(0.0); z.vertex_normal = vec3(0.0); z.transparency = 0.0; z.shininess = 0.0; z.fresnel = 0.0; z.ambient_occlusion = 0.0; z.occlusion = 0.0; z.albedo = vec3(0.0); z.diffuse = vec3(0.0); z.specular = vec3(0.0); z.diffuse2 = vec3(0.0); z.specular2 = vec3(0.0); z.diffuse3 = vec3(0.0); z.tangent_primary = vec3(0.0); z.tangent_secondary = vec3(0.0); z.global_transparency = 0.0; z.attributes = vec4(0.0); return z; }\n",
+   "members": [
+    [
+     "svposition",
+     "vec4",
+     ""
+    ],
+    [
+     "wposition",
+     "vec3",
+     ""
+    ],
+    [
+     "normal",
+     "vec3",
+     ""
+    ],
+    [
+     "tangent",
+     "vec3",
+     ""
+    ],
+    [
+     "binormal",
+     "vec3",
+     ""
+    ],
+    [
+     "eye_dir",
+     "vec3",
+     ""
+    ],
+    [
+     "reflect_dir",
+     "vec3",
+     ""
+    ],
+    [
+     "uv_primary",
+     "vec2",
+     ""
+    ],
+    [
+     "uv_secondary",
+     "vec2",
+     ""
+    ],
+    [
+     "uv_unique",
+     "vec2",
+     ""
+    ],
+    [
+     "uv_extend",
+     "vec2",
+     ""
+    ],
+    [
+     "uv_screen",
+     "vec2",
+     ""
+    ],
+    [
+     "light_mask",
+     "vec2",
+     ""
+    ],
+    [
+     "vertex_color",
+     "vec3",
+     ""
+    ],
+    [
+     "vertex_normal",
+     "vec3",
+     ""
+    ],
+    [
+     "transparency",
+     "float",
+     ""
+    ],
+    [
+     "shininess",
+     "float",
+     ""
+    ],
+    [
+     "fresnel",
+     "float",
+     ""
+    ],
+    [
+     "ambient_occlusion",
+     "float",
+     ""
+    ],
+    [
+     "occlusion",
+     "float",
+     ""
+    ],
+    [
+     "albedo",
+     "vec3",
+     ""
+    ],
+    [
+     "diffuse",
+     "vec3",
+     ""
+    ],
+    [
+     "specular",
+     "vec3",
+     ""
+    ],
+    [
+     "diffuse2",
+     "vec3",
+     ""
+    ],
+    [
+     "specular2",
+     "vec3",
+     ""
+    ],
+    [
+     "diffuse3",
+     "vec3",
+     ""
+    ],
+    [
+     "tangent_primary",
+     "vec3",
+     ""
+    ],
+    [
+     "tangent_secondary",
+     "vec3",
+     ""
+    ],
+    [
+     "global_transparency",
+     "float",
+     ""
+    ],
+    [
+     "attributes",
+     "vec4",
+     ""
+    ]
+   ],
+   "uses": []
+  },
+  "FOG_OUT": {
+   "glsl": "struct FOG_OUT {\n  vec3 addfactor;\n  vec3 mulfactor;\n  float effect;\n};\nFOG_OUT zero_FOG_OUT() { FOG_OUT z; z.addfactor = vec3(0.0); z.mulfactor = vec3(0.0); z.effect = 0.0; return z; }\n",
+   "members": [
+    [
+     "addfactor",
+     "vec3",
+     ""
+    ],
+    [
+     "mulfactor",
+     "vec3",
+     ""
+    ],
+    [
+     "effect",
+     "float",
+     ""
+    ]
+   ],
+   "uses": []
+  },
+  "LIGHT_PARAM": {
+   "glsl": "struct LIGHT_PARAM {\n  vec3 fLightPos;\n  float fLightMask0;\n  vec3 fLightDir;\n  float fLightMask1;\n  vec3 fLightColor;\n  float fLightBalance;\n  vec4 fAttenuation;\n  vec4 fAttenuation2;\n  mat3x4 fLightRangeMat;\n  mat4 fLightProjMat;\n};\nLIGHT_PARAM zero_LIGHT_PARAM() { LIGHT_PARAM z; z.fLightPos = vec3(0.0); z.fLightMask0 = 0.0; z.fLightDir = vec3(0.0); z.fLightMask1 = 0.0; z.fLightColor = vec3(0.0); z.fLightBalance = 0.0; z.fAttenuation = vec4(0.0); z.fAttenuation2 = vec4(0.0); z.fLightRangeMat = mat3x4(0.0); z.fLightProjMat = mat4(0.0); return z; }\n",
+   "members": [
+    [
+     "fLightPos",
+     "vec3",
+     ""
+    ],
+    [
+     "fLightMask0",
+     "float",
+     ""
+    ],
+    [
+     "fLightDir",
+     "vec3",
+     ""
+    ],
+    [
+     "fLightMask1",
+     "float",
+     ""
+    ],
+    [
+     "fLightColor",
+     "vec3",
+     ""
+    ],
+    [
+     "fLightBalance",
+     "float",
+     ""
+    ],
+    [
+     "fAttenuation",
+     "vec4",
+     ""
+    ],
+    [
+     "fAttenuation2",
+     "vec4",
+     ""
+    ],
+    [
+     "fLightRangeMat",
+     "mat3x4",
+     ""
+    ],
+    [
+     "fLightProjMat",
+     "mat4",
+     ""
+    ]
+   ],
+   "uses": []
+  },
+  "LIGHT_OUTPUT": {
+   "glsl": "struct LIGHT_OUTPUT {\n  bool diffuse_enable;\n  bool specular_enable;\n  vec3 direction;\n  vec3 diffuse;\n  vec3 specular;\n  bool diffuse_back_enable;\n  vec3 diffuse_back;\n};\nLIGHT_OUTPUT zero_LIGHT_OUTPUT() { LIGHT_OUTPUT z; z.diffuse_enable = false; z.specular_enable = false; z.direction = vec3(0.0); z.diffuse = vec3(0.0); z.specular = vec3(0.0); z.diffuse_back_enable = false; z.diffuse_back = vec3(0.0); return z; }\n",
+   "members": [
+    [
+     "diffuse_enable",
+     "bool",
+     ""
+    ],
+    [
+     "specular_enable",
+     "bool",
+     ""
+    ],
+    [
+     "direction",
+     "vec3",
+     ""
+    ],
+    [
+     "diffuse",
+     "vec3",
+     ""
+    ],
+    [
+     "specular",
+     "vec3",
+     ""
+    ],
+    [
+     "diffuse_back_enable",
+     "bool",
+     ""
+    ],
+    [
+     "diffuse_back",
+     "vec3",
+     ""
+    ]
+   ],
+   "uses": []
+  },
+  "MATERIAL_INPUT": {
+   "glsl": "struct MATERIAL_INPUT {\n  vec3 position;\n  vec3 normal;\n  vec4 tangent;\n  vec2 uv_primary;\n  vec2 uv_secondary;\n  vec2 uv_unique;\n  vec2 uv_extend;\n  float weights[8];\n  float joints[8];\n  vec3 vcolor;\n  float valpha;\n  float occlusion;\n};\nMATERIAL_INPUT zero_MATERIAL_INPUT() { MATERIAL_INPUT z; z.position = vec3(0.0); z.normal = vec3(0.0); z.tangent = vec4(0.0); z.uv_primary = vec2(0.0); z.uv_secondary = vec2(0.0); z.uv_unique = vec2(0.0); z.uv_extend = vec2(0.0); z.weights = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); z.joints = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); z.vcolor = vec3(0.0); z.valpha = 0.0; z.occlusion = 0.0; return z; }\n",
+   "members": [
+    [
+     "position",
+     "vec3",
+     "Position"
+    ],
+    [
+     "normal",
+     "vec3",
+     "Normal"
+    ],
+    [
+     "tangent",
+     "vec4",
+     "Tangent"
+    ],
+    [
+     "uv_primary",
+     "vec2",
+     "UV_Primary"
+    ],
+    [
+     "uv_secondary",
+     "vec2",
+     "UV_Secondary"
+    ],
+    [
+     "uv_unique",
+     "vec2",
+     "UV_Unique"
+    ],
+    [
+     "uv_extend",
+     "vec2",
+     "UV_Extend"
+    ],
+    [
+     "weights",
+     "float",
+     "Weight"
+    ],
+    [
+     "joints",
+     "float",
+     "Joint"
+    ],
+    [
+     "vcolor",
+     "vec3",
+     "VertexColor"
+    ],
+    [
+     "valpha",
+     "float",
+     "VertexAlpha"
+    ],
+    [
+     "occlusion",
+     "float",
+     "Occlusion"
+    ]
+   ],
+   "uses": []
+  },
+  "SWING_INPUT": {
+   "glsl": "struct SWING_INPUT {\n  float weight;\n  vec3 origin;\n  float weight2;\n  vec3 origin2;\n};\nSWING_INPUT zero_SWING_INPUT() { SWING_INPUT z; z.weight = 0.0; z.origin = vec3(0.0); z.weight2 = 0.0; z.origin2 = vec3(0.0); return z; }\n",
+   "members": [
+    [
+     "weight",
+     "float",
+     "SWING_WEIGHT"
+    ],
+    [
+     "origin",
+     "vec3",
+     "SWING_ORIGIN"
+    ],
+    [
+     "weight2",
+     "float",
+     "SWING_WEIGHT"
+    ],
+    [
+     "origin2",
+     "vec3",
+     "SWING_ORIGIN"
+    ]
+   ],
+   "uses": []
+  },
+  "LATTICE_DEFORM_INPUT": {
+   "glsl": "struct LATTICE_DEFORM_INPUT {\n  vec2 vtx0;\n  vec2 vtx1;\n  vec2 vtx2;\n  vec2 vtx3;\n  vec2 vtx4;\n  vec2 vtx5;\n  vec2 vtx6;\n  vec2 vtx7;\n};\nLATTICE_DEFORM_INPUT zero_LATTICE_DEFORM_INPUT() { LATTICE_DEFORM_INPUT z; z.vtx0 = vec2(0.0); z.vtx1 = vec2(0.0); z.vtx2 = vec2(0.0); z.vtx3 = vec2(0.0); z.vtx4 = vec2(0.0); z.vtx5 = vec2(0.0); z.vtx6 = vec2(0.0); z.vtx7 = vec2(0.0); return z; }\n",
+   "members": [
+    [
+     "vtx0",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx1",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx2",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx3",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx4",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx5",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx6",
+     "vec2",
+     "LdVtx"
+    ],
+    [
+     "vtx7",
+     "vec2",
+     "LdVtx"
+    ]
+   ],
+   "uses": []
+  },
+  "MORPH_INPUT": {
+   "glsl": "struct MORPH_INPUT {\n  vec3 morphpos0;\n  vec3 morphpos1;\n  vec3 morphpos2;\n  vec3 morphpos3;\n  vec3 morphn0;\n  vec3 morphn1;\n  vec3 morphn2;\n  vec3 morphn3;\n};\nMORPH_INPUT zero_MORPH_INPUT() { MORPH_INPUT z; z.morphpos0 = vec3(0.0); z.morphpos1 = vec3(0.0); z.morphpos2 = vec3(0.0); z.morphpos3 = vec3(0.0); z.morphn0 = vec3(0.0); z.morphn1 = vec3(0.0); z.morphn2 = vec3(0.0); z.morphn3 = vec3(0.0); return z; }\n",
+   "members": [
+    [
+     "morphpos0",
+     "vec3",
+     "MorphPosition"
+    ],
+    [
+     "morphpos1",
+     "vec3",
+     "MorphPosition"
+    ],
+    [
+     "morphpos2",
+     "vec3",
+     "MorphPosition"
+    ],
+    [
+     "morphpos3",
+     "vec3",
+     "MorphPosition"
+    ],
+    [
+     "morphn0",
+     "vec3",
+     "MorphNormal"
+    ],
+    [
+     "morphn1",
+     "vec3",
+     "MorphNormal"
+    ],
+    [
+     "morphn2",
+     "vec3",
+     "MorphNormal"
+    ],
+    [
+     "morphn3",
+     "vec3",
+     "MorphNormal"
+    ]
+   ],
+   "uses": []
+  },
+  "SOFTBODY_INPUT": {
+   "glsl": "struct SOFTBODY_INPUT {\n  vec2 texcoord0;\n  vec2 texcoord1;\n  vec2 texcoord2;\n  vec3 pos0;\n  vec3 pos1;\n  vec3 pos2;\n  vec4 quat0;\n  vec4 quat1;\n  vec4 quat2;\n  vec3 weight;\n  vec3 offset;\n};\nSOFTBODY_INPUT zero_SOFTBODY_INPUT() { SOFTBODY_INPUT z; z.texcoord0 = vec2(0.0); z.texcoord1 = vec2(0.0); z.texcoord2 = vec2(0.0); z.pos0 = vec3(0.0); z.pos1 = vec3(0.0); z.pos2 = vec3(0.0); z.quat0 = vec4(0.0); z.quat1 = vec4(0.0); z.quat2 = vec4(0.0); z.weight = vec3(0.0); z.offset = vec3(0.0); return z; }\n",
+   "members": [
+    [
+     "texcoord0",
+     "vec2",
+     "SbTexCoord"
+    ],
+    [
+     "texcoord1",
+     "vec2",
+     "SbTexCoord"
+    ],
+    [
+     "texcoord2",
+     "vec2",
+     "SbTexCoord"
+    ],
+    [
+     "pos0",
+     "vec3",
+     "SbPos"
+    ],
+    [
+     "pos1",
+     "vec3",
+     "SbPos"
+    ],
+    [
+     "pos2",
+     "vec3",
+     "SbPos"
+    ],
+    [
+     "quat0",
+     "vec4",
+     "SbQuat"
+    ],
+    [
+     "quat1",
+     "vec4",
+     "SbQuat"
+    ],
+    [
+     "quat2",
+     "vec4",
+     "SbQuat"
+    ],
+    [
+     "weight",
+     "vec3",
+     "SbWeight"
+    ],
+    [
+     "offset",
+     "vec3",
+     "SbOffset"
+    ]
+   ],
+   "uses": []
+  },
+  "PROJECTION_INPUT": {
+   "glsl": "struct PROJECTION_INPUT {\n  vec2 proj_idx;\n};\nPROJECTION_INPUT zero_PROJECTION_INPUT() { PROJECTION_INPUT z; z.proj_idx = vec2(0.0); return z; }\n",
+   "members": [
+    [
+     "proj_idx",
+     "vec2",
+     "PROJECTION_INDEX"
+    ]
+   ],
+   "uses": []
+  },
+  "INSTANCING_INPUT": {
+   "glsl": "struct INSTANCING_INPUT {\n  mat3x4 instance_wmat;\n  vec4 instance_color;\n};\nINSTANCING_INPUT zero_INSTANCING_INPUT() { INSTANCING_INPUT z; z.instance_wmat = mat3x4(0.0); z.instance_color = vec4(0.0); return z; }\n",
+   "members": [
+    [
+     "instance_wmat",
+     "mat3x4",
+     "INSTANCE_MATRIX"
+    ],
+    [
+     "instance_color",
+     "vec4",
+     "INSTANCE_COLOR"
+    ]
+   ],
+   "uses": []
+  },
+  "WORLD_COORDINATE_INPUT": {
+   "glsl": "struct WORLD_COORDINATE_INPUT {\n  vec3 position;\n  vec3 normal;\n  vec4 tangent;\n  float weights[8];\n  float joints[8];\n  SWING_INPUT SWI;\n  MORPH_INPUT MI;\n  SOFTBODY_INPUT SI;\n  LATTICE_DEFORM_INPUT LDI;\n  PROJECTION_INPUT VPI;\n  INSTANCING_INPUT ISI;\n  int instance_id;\n};\nWORLD_COORDINATE_INPUT zero_WORLD_COORDINATE_INPUT() { WORLD_COORDINATE_INPUT z; z.position = vec3(0.0); z.normal = vec3(0.0); z.tangent = vec4(0.0); z.weights = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); z.joints = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); z.SWI = zero_SWING_INPUT(); z.MI = zero_MORPH_INPUT(); z.SI = zero_SOFTBODY_INPUT(); z.LDI = zero_LATTICE_DEFORM_INPUT(); z.VPI = zero_PROJECTION_INPUT(); z.ISI = zero_INSTANCING_INPUT(); z.instance_id = 0; return z; }\n",
+   "members": [
+    [
+     "position",
+     "vec3",
+     ""
+    ],
+    [
+     "normal",
+     "vec3",
+     ""
+    ],
+    [
+     "tangent",
+     "vec4",
+     ""
+    ],
+    [
+     "weights",
+     "float",
+     ""
+    ],
+    [
+     "joints",
+     "float",
+     ""
+    ],
+    [
+     "SWI",
+     "SWING_INPUT",
+     ""
+    ],
+    [
+     "MI",
+     "MORPH_INPUT",
+     ""
+    ],
+    [
+     "SI",
+     "SOFTBODY_INPUT",
+     ""
+    ],
+    [
+     "LDI",
+     "LATTICE_DEFORM_INPUT",
+     ""
+    ],
+    [
+     "VPI",
+     "PROJECTION_INPUT",
+     ""
+    ],
+    [
+     "ISI",
+     "INSTANCING_INPUT",
+     ""
+    ],
+    [
+     "instance_id",
+     "int",
+     ""
+    ]
+   ],
+   "uses": [
+    "INSTANCING_INPUT",
+    "LATTICE_DEFORM_INPUT",
+    "MORPH_INPUT",
+    "PROJECTION_INPUT",
+    "SOFTBODY_INPUT",
+    "SWING_INPUT"
+   ]
+  },
+  "SKINNING_INPUT": {
+   "glsl": "struct SKINNING_INPUT {\n  float weights[8];\n  float joints[8];\n};\nSKINNING_INPUT zero_SKINNING_INPUT() { SKINNING_INPUT z; z.weights = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); z.joints = float[8](0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0); return z; }\n",
+   "members": [
+    [
+     "weights",
+     "float",
+     ""
+    ],
+    [
+     "joints",
+     "float",
+     ""
+    ]
+   ],
+   "uses": []
+  }
+ },
+ "cbs": {
+  "CBROPTest": [
+   [
+    "fAlphaRef",
+    "float",
+    0,
+    1,
+    0
+   ],
+   [
+    "fStencilRef",
+    "float",
+    1,
+    1,
+    0
+   ],
+   [
+    "fDepthBias",
+    "float",
+    2,
+    1,
+    0
+   ],
+   [
+    "fAlphaToCoverageScale",
+    "float",
+    3,
+    1,
+    0
+   ],
+   [
+    "fGlobalTransparency",
+    "float",
+    4,
+    1,
+    0
+   ]
+  ],
+  "CBPrimEflEmu": [
+   [
+    "fPrimColor",
+    "vec4",
+    0,
+    4,
+    0
+   ]
+  ],
+  "CBScreen": [
+   [
+    "fScreenOffset",
+    "vec2",
+    0,
+    2,
+    0
+   ],
+   [
+    "fScreenScale",
+    "vec2",
+    2,
+    2,
+    0
+   ],
+   [
+    "fScreenSize",
+    "vec2",
+    4,
+    2,
+    0
+   ],
+   [
+    "fScreenInverseSize",
+    "vec2",
+    6,
+    2,
+    0
+   ],
+   [
+    "fScreenHalfPixelOffset",
+    "vec2",
+    8,
+    2,
+    0
+   ]
+  ],
+  "CBMaterial": [
+   [
+    "fDiffuseColor",
+    "vec3",
+    0,
+    3,
+    0
+   ],
+   [
+    "fTransparency",
+    "float",
+    3,
+    1,
+    0
+   ],
+   [
+    "fReflectiveColor",
+    "vec3",
+    4,
+    3,
+    0
+   ],
+   [
+    "fTransparencyVolume",
+    "float",
+    7,
+    1,
+    0
+   ],
+   [
+    "fUVTransform",
+    "mat2x4",
+    8,
+    8,
+    0
+   ],
+   [
+    "fUVTransform2",
+    "mat2x4",
+    16,
+    8,
+    0
+   ],
+   [
+    "fUVTransform3",
+    "mat2x4",
+    24,
+    8,
+    0
+   ]
+  ],
+  "CBViewProjection": [
+   [
+    "fViewProj",
+    "mat4",
+    0,
+    16,
+    0
+   ],
+   [
+    "fCameraPos",
+    "vec3",
+    16,
+    3,
+    0
+   ],
+   [
+    "fCameraNearClip",
+    "float",
+    19,
+    1,
+    0
+   ],
+   [
+    "fCameraDir",
+    "vec3",
+    20,
+    3,
+    0
+   ],
+   [
+    "fCameraTargetDist",
+    "float",
+    23,
+    1,
+    0
+   ],
+   [
+    "fCameraFarClipLog2",
+    "float",
+    24,
+    1,
+    0
+   ],
+   [
+    "fCameraFarClipLog2Inv",
+    "float",
+    25,
+    1,
+    0
+   ],
+   [
+    "fView",
+    "mat4",
+    28,
+    16,
+    0
+   ],
+   [
+    "fViewI",
+    "mat4",
+    44,
+    16,
+    0
+   ],
+   [
+    "fProj",
+    "mat4",
+    60,
+    16,
+    0
+   ],
+   [
+    "fProjI",
+    "mat4",
+    76,
+    16,
+    0
+   ],
+   [
+    "fViewProjI",
+    "mat4",
+    92,
+    16,
+    0
+   ]
+  ],
+  "$Globals": [
+   [
+    "fAlphaClipThreshold",
+    "float",
+    0,
+    1,
+    0
+   ],
+   [
+    "fAlbedoColor",
+    "vec3",
+    1,
+    3,
+    0
+   ],
+   [
+    "fAlbedoBlendColor",
+    "vec4",
+    4,
+    4,
+    0
+   ],
+   [
+    "fDetailNormalPower",
+    "float",
+    8,
+    1,
+    0
+   ],
+   [
+    "fDetailNormalUVScale",
+    "float",
+    9,
+    1,
+    0
+   ],
+   [
+    "fDetailNormal2Power",
+    "float",
+    10,
+    1,
+    0
+   ],
+   [
+    "fDetailNormal2UVScale",
+    "float",
+    11,
+    1,
+    0
+   ],
+   [
+    "fPrimaryShift",
+    "float",
+    12,
+    1,
+    0
+   ],
+   [
+    "fSecondaryShift",
+    "float",
+    13,
+    1,
+    0
+   ],
+   [
+    "fParallaxFactor",
+    "float",
+    14,
+    1,
+    0
+   ],
+   [
+    "fParallaxSelfOcclusion",
+    "float",
+    15,
+    1,
+    0
+   ],
+   [
+    "fParallaxMinSample",
+    "float",
+    16,
+    1,
+    0
+   ],
+   [
+    "fParallaxMaxSample",
+    "float",
+    17,
+    1,
+    0
+   ],
+   [
+    "fLightMapColor",
+    "vec3",
+    20,
+    3,
+    0
+   ],
+   [
+    "fThinMapColor",
+    "vec3",
+    24,
+    3,
+    0
+   ],
+   [
+    "fThinScattering",
+    "float",
+    27,
+    1,
+    0
+   ],
+   [
+    "fPreLightScale",
+    "vec3",
+    28,
+    3,
+    0
+   ],
+   [
+    "fScreenUVScale",
+    "vec2",
+    32,
+    2,
+    0
+   ],
+   [
+    "fScreenUVOffset",
+    "vec2",
+    34,
+    2,
+    0
+   ],
+   [
+    "fIndirectOffset",
+    "vec2",
+    36,
+    2,
+    0
+   ],
+   [
+    "fIndirectScale",
+    "vec2",
+    38,
+    2,
+    0
+   ],
+   [
+    "fFresnelSchlick",
+    "float",
+    40,
+    1,
+    0
+   ],
+   [
+    "fFresnelSchlickRGB",
+    "vec3",
+    41,
+    3,
+    0
+   ],
+   [
+    "fSpecularColor",
+    "vec3",
+    44,
+    3,
+    0
+   ],
+   [
+    "fShininess",
+    "float",
+    47,
+    1,
+    0
+   ],
+   [
+    "fEmissionColor",
+    "vec3",
+    48,
+    3,
+    0
+   ],
+   [
+    "fConstantColor",
+    "vec4",
+    52,
+    4,
+    0
+   ],
+   [
+    "fShadowScale",
+    "float",
+    56,
+    1,
+    0
+   ],
+   [
+    "fRoughness",
+    "float",
+    57,
+    1,
+    0
+   ],
+   [
+    "fRoughnessRGB",
+    "vec3",
+    60,
+    3,
+    0
+   ],
+   [
+    "fAnisotoropicDirection",
+    "vec3",
+    64,
+    3,
+    0
+   ],
+   [
+    "fSmoothness",
+    "float",
+    67,
+    1,
+    0
+   ],
+   [
+    "fAnistropicUV",
+    "vec2",
+    68,
+    2,
+    0
+   ],
+   [
+    "fPrimaryExpo",
+    "float",
+    70,
+    1,
+    0
+   ],
+   [
+    "fSecondaryExpo",
+    "float",
+    71,
+    1,
+    0
+   ],
+   [
+    "fPrimaryColor",
+    "vec3",
+    72,
+    3,
+    0
+   ],
+   [
+    "fSecondaryColor",
+    "vec3",
+    76,
+    3,
+    0
+   ]
+  ],
+  "CBAmbient": [
+   [
+    "fAmbientColor",
+    "vec3",
+    0,
+    3,
+    0
+   ],
+   [
+    "fLightMapMask",
+    "float",
+    3,
+    1,
+    0
+   ],
+   [
+    "fEnvMapMask",
+    "float",
+    4,
+    1,
+    0
+   ],
+   [
+    "fLightMask",
+    "vec2",
+    5,
+    2,
+    0
+   ],
+   [
+    "fDeferredLightingDiffuseLuminanceThreshold",
+    "float",
+    7,
+    1,
+    0
+   ],
+   [
+    "fSHCoef",
+    "vec4",
+    8,
+    4,
+    7
+   ],
+   [
+    "fDeferredLightingLogRangeCoeffDec",
+    "float",
+    36,
+    1,
+    0
+   ],
+   [
+    "fHalfLambertBlendCoeff",
+    "float",
+    37,
+    1,
+    0
+   ]
+  ],
+  "CBDynamicLighting": [
+   [
+    "sLightParam0",
+    "LIGHT_PARAM",
+    0,
+    0,
+    0
+   ],
+   [
+    "sLightParam1",
+    "LIGHT_PARAM",
+    48,
+    0,
+    0
+   ],
+   [
+    "sLightParam2",
+    "LIGHT_PARAM",
+    96,
+    0,
+    0
+   ],
+   [
+    "sLightParam3",
+    "LIGHT_PARAM",
+    144,
+    0,
+    0
+   ],
+   [
+    "sLightParam4",
+    "LIGHT_PARAM",
+    192,
+    0,
+    0
+   ],
+   [
+    "sLightParam5",
+    "LIGHT_PARAM",
+    240,
+    0,
+    0
+   ],
+   [
+    "sLightParam6",
+    "LIGHT_PARAM",
+    288,
+    0,
+    0
+   ],
+   [
+    "sLightParam7",
+    "LIGHT_PARAM",
+    336,
+    0,
+    0
+   ]
+  ],
+  "CBWorld": [
+   [
+    "fWorld",
+    "mat3x4",
+    0,
+    12,
+    0
+   ]
+  ]
+ },
+ "textures": [
+  "tAlbedoMap",
+  "tDepthMap",
+  "tGlobalEnvMap",
+  "tPointLightTexture0",
+  "tPointLightTexture1",
+  "tPointLightTexture2",
+  "tPointLightTexture3",
+  "tPointLightTexture4",
+  "tPointLightTexture5",
+  "tPointLightTexture6",
+  "tPointLightTexture7",
+  "tSpecularMap",
+  "tSpotLightTexture0",
+  "tSpotLightTexture1",
+  "tSpotLightTexture2",
+  "tSpotLightTexture3",
+  "tSpotLightTexture4",
+  "tSpotLightTexture5",
+  "tSpotLightTexture6",
+  "tSpotLightTexture7"
+ ],
+ "cubes": [
+  "tGlobalEnvMap",
+  "tPointLightTexture0",
+  "tPointLightTexture1",
+  "tPointLightTexture2",
+  "tPointLightTexture3",
+  "tPointLightTexture4",
+  "tPointLightTexture5",
+  "tPointLightTexture6",
+  "tPointLightTexture7"
+ ],
+ "functions": {
+  "PS_MaterialStd": {
+   "glsl": "vec4 PS_MaterialStd(MATERIAL_OUTPUT I, bool isfrontface) {\n  MATERIAL_CONTEXT mc = createMaterialContext(I, isfrontface);\n  mc = FLightMask(mc);\n  mc = FAmbientMask(mc);\n  mc = FOcclusion(mc);\n  mc = FBump(mc);\n  mc = FAlbedo(mc);\n  mc.transparency = FTransparency(mc);\n  mc.shininess = FShininess(mc);\n  mc = FLighting(mc);\n  mc = FDiffuse(mc);\n  mc = FSpecular(mc);\n  mc.diffuse += FEmission(mc);\n  mc = FDistortion(mc);\n  return FFinalCombiner(mc);\n}\n",
+   "calls": [
+    "FAlbedo",
+    "FAmbientMask",
+    "FBump",
+    "FDiffuse",
+    "FDistortion",
+    "FEmission",
+    "FFinalCombiner",
+    "FLightMask",
+    "FLighting",
+    "FOcclusion",
+    "FShininess",
+    "FSpecular",
+    "FTransparency",
+    "createMaterialContext"
+   ],
+   "ret": "vec4",
+   "params": [
+    [
+     "MATERIAL_OUTPUT",
+     "I",
+     "",
+     ""
+    ],
+    [
+     "bool",
+     "isfrontface",
+     "SV_IsFrontFace",
+     ""
+    ]
+   ]
+  },
+  "FFinalCombiner": {
+   "glsl": "vec4 FFinalCombiner(MATERIAL_CONTEXT mc) {\n  FDepthTest(mc.svposition);\n  FAlphaTest(mc.transparency);\n  vec4 color = vec4(((mc.albedo * mc.diffuse) + (mc.specular * mc.fresnel)), ((mc.transparency * CBROPTest_fGlobalTransparency) * mc.global_transparency));\n  FOG_OUT fog = FFog(mc.wposition, mc.svposition);\n  color = FBlendFog(color, fog, mc.diffuse);\n  FDissolve(color.w, mc);\n  color = FColorModifier(mc, color);\n  return color;\n}\n",
+   "calls": [
+    "FAlphaTest",
+    "FBlendFog",
+    "FColorModifier",
+    "FDepthTest",
+    "FDissolve",
+    "FFog"
+   ],
+   "ret": "vec4",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimiteveColorModifierEmu": {
+   "glsl": "vec4 FPrimiteveColorModifierEmu(MATERIAL_CONTEXT mc, vec4 color) {\n  return FPrimitiveModifierEmu(color);\n}\n",
+   "calls": [
+    "FPrimitiveModifierEmu"
+   ],
+   "ret": "vec4",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveModifierEmu": {
+   "glsl": "vec4 FPrimitiveModifierEmu(vec4 color) {\n  return color;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveModifierEflEmu": {
+   "glsl": "vec4 FPrimitiveModifierEflEmu(vec4 color) {\n  return (color * CBPrimEflEmu_fPrimColor);\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimiteveColorModifier": {
+   "glsl": "vec4 FPrimiteveColorModifier(MATERIAL_CONTEXT mc, vec4 color) {\n  color = FPrimitiveModelSceneSampler(color, mc);\n  color.w = FPrimitiveModelSmoothAlpha(color.w, mc);\n  color.w *= FPrimitiveTransparency(mc);\n  color = FPrimitiveLevelCorrection(color);\n  return FPrimitiveModifierEmu(color);\n}\n",
+   "calls": [
+    "FPrimitiveLevelCorrection",
+    "FPrimitiveModelSceneSampler",
+    "FPrimitiveModelSmoothAlpha",
+    "FPrimitiveModifierEmu",
+    "FPrimitiveTransparency"
+   ],
+   "ret": "vec4",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveLevelCorrection": {
+   "glsl": "vec4 FPrimitiveLevelCorrection(vec4 color) {\n  return color;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveTransparencyVolume": {
+   "glsl": "float FPrimitiveTransparencyVolume(MATERIAL_CONTEXT mc) {\n  vec4 svpos = mc.svposition;\n  vec2 suv = (svpos.xy * CBScreen_fScreenInverseSize);\n  float depth = texture(tDepthMap, suv).x;\n  float vdist1 = calcViewDepth(depth);\n  float vdist2 = svpos.w;\n  return min((abs((vdist1 - vdist2)) / CBMaterial_fTransparencyVolume), 1.0);\n}\n",
+   "calls": [
+    "calcViewDepth"
+   ],
+   "ret": "float",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "calcViewDepth": {
+   "glsl": "float calcViewDepth(float sz) {\n  return (CBViewProjection_fProj[3][2] * (1.0 / (sz + CBViewProjection_fProj[2][2])));\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "float",
+     "sz",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveTransparency": {
+   "glsl": "float FPrimitiveTransparency(MATERIAL_CONTEXT mc) {\n  return 1.0;\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveModelSmoothAlpha": {
+   "glsl": "float FPrimitiveModelSmoothAlpha(float alpha, MATERIAL_CONTEXT mc) {\n  return alpha;\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "float",
+     "alpha",
+     "",
+     ""
+    ],
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FPrimitiveModelSceneSampler": {
+   "glsl": "vec4 FPrimitiveModelSceneSampler(vec4 color, MATERIAL_CONTEXT mc) {\n  return color;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ],
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FColorModifier": {
+   "glsl": "vec4 FColorModifier(MATERIAL_CONTEXT mc, vec4 color) {\n  return color;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDissolve": {
+   "glsl": "void FDissolve(inout float alpha, MATERIAL_CONTEXT mc) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "float",
+     "alpha",
+     "",
+     "inout"
+    ],
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FBlendFogPrimAlpha": {
+   "glsl": "vec4 FBlendFogPrimAlpha(vec4 color, FOG_OUT I, vec3 diffuse) {\n  return vec4(color.xyz, mix(color.w, 0.0, I.effect));\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ],
+    [
+     "FOG_OUT",
+     "I",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "diffuse",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FBlendFog": {
+   "glsl": "vec4 FBlendFog(vec4 color, FOG_OUT I, vec3 diffuse) {\n  return vec4(((color.xyz * I.mulfactor) + I.addfactor), color.w);\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     ""
+    ],
+    [
+     "FOG_OUT",
+     "I",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "diffuse",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FFog": {
+   "glsl": "FOG_OUT FFog(vec3 wposition, vec4 svposition) {\n  FOG_OUT O = zero_FOG_OUT();\n  O.addfactor = vec3(float(0), float(0), float(0));\n  O.mulfactor = vec3(float(1), float(1), float(1));\n  O.effect = float(0);\n  return O;\n}\n",
+   "calls": [],
+   "ret": "FOG_OUT",
+   "params": [
+    [
+     "vec3",
+     "wposition",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "svposition",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAlphaTest": {
+   "glsl": "void FAlphaTest(inout float alpha) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "float",
+     "alpha",
+     "",
+     "inout"
+    ]
+   ]
+  },
+  "FDepthTest": {
+   "glsl": "void FDepthTest(vec4 svposition) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "vec4",
+     "svposition",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDistortion": {
+   "glsl": "MATERIAL_CONTEXT FDistortion(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FEmissionConstantEflEmu": {
+   "glsl": "vec3 FEmissionConstantEflEmu(MATERIAL_CONTEXT mc) {\n  return Globals_fEmissionColor;\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FEmission": {
+   "glsl": "vec3 FEmission(MATERIAL_CONTEXT mc) {\n  return vec3(float(0));\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FSpecularMap": {
+   "glsl": "MATERIAL_CONTEXT FSpecularMap(MATERIAL_CONTEXT mc) {\n  mc.specular = vec3(((((mc.specular * Globals_fSpecularColor) + FReflect(mc)) * vec3(FChannelSpecularMap(texture(tSpecularMap, FUVSpecularMap(mc))))) * mc.occlusion));\n  mc.fresnel = float(FFresnel(mc));\n  return mc;\n}\n",
+   "calls": [
+    "FChannelSpecularMap",
+    "FFresnel",
+    "FReflect",
+    "FUVSpecularMap"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FFresnelSchlick": {
+   "glsl": "vec3 FFresnelSchlick(MATERIAL_CONTEXT mc) {\n  return vec3((Globals_fFresnelSchlick + ((float(1) - Globals_fFresnelSchlick) * pow((float(1) - dot(mc.normal, (-mc.eye_dir))), float(5)))));\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FFresnel": {
+   "glsl": "vec3 FFresnel(MATERIAL_CONTEXT mc) {\n  return vec3(float(1));\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FChannelSpecularMap": {
+   "glsl": "vec4 FChannelSpecularMap(vec4 src) {\n  return src;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "src",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVPrimary": {
+   "glsl": "vec2 FUVPrimary(MATERIAL_CONTEXT mc) {\n  return mc.uv_primary;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVSpecularMap": {
+   "glsl": "vec2 FUVSpecularMap(MATERIAL_CONTEXT mc) {\n  return mc.uv_primary;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FReflectGlobalCubeMap": {
+   "glsl": "vec3 FReflectGlobalCubeMap(MATERIAL_CONTEXT mc) {\n  float occlusion = (float(1) - max(mc.light_mask.x, mc.light_mask.y));\n  return vec3(((texture(tGlobalEnvMap, mc.reflect_dir).xyz * CBMaterial_fReflectiveColor) * mix(float(1), occlusion, CBAmbient_fEnvMapMask)));\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FReflect": {
+   "glsl": "vec3 FReflect(MATERIAL_CONTEXT mc) {\n  return vec3(float(0));\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FSpecular": {
+   "glsl": "MATERIAL_CONTEXT FSpecular(MATERIAL_CONTEXT mc) {\n  mc.specular = (((mc.specular * Globals_fSpecularColor) + FReflect(mc)) * mc.occlusion);\n  mc.fresnel = float(FFresnel(mc));\n  return mc;\n}\n",
+   "calls": [
+    "FFresnel",
+    "FReflect"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDiffuseVertexColorMD": {
+   "glsl": "MATERIAL_CONTEXT FDiffuseVertexColorMD(MATERIAL_CONTEXT mc) {\n  mc.diffuse = (CBMaterial_fDiffuseColor * mc.vertex_color);\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDiffuseVertexColor": {
+   "glsl": "MATERIAL_CONTEXT FDiffuseVertexColor(MATERIAL_CONTEXT mc) {\n  vec3 sd = mix(mc.vertex_color, FAmbient(mc), (max(mc.light_mask.x, mc.light_mask.y) * CBAmbient_fLightMapMask));\n  mc.diffuse = (((mc.diffuse + sd) * CBMaterial_fDiffuseColor) * mc.occlusion);\n  return mc;\n}\n",
+   "calls": [
+    "FAmbient"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAmbientSH": {
+   "glsl": "vec3 FAmbientSH(MATERIAL_CONTEXT mc) {\n  return (getSHdiffuse(mc.normal) * mc.ambient_occlusion);\n}\n",
+   "calls": [
+    "getSHdiffuse"
+   ],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "getSHdiffuse": {
+   "glsl": "vec3 getSHdiffuse(vec3 vN) {\n  vec4 vNormal = vec4(vN, float(1));\n  vec3 x1 = vec3(dot(CBAmbient_fSHCoef[0], vNormal), dot(CBAmbient_fSHCoef[1], vNormal), dot(CBAmbient_fSHCoef[2], vNormal));\n  vec4 vB = (vNormal.xyzz * vNormal.yzzx);\n  vec3 x2 = vec3(dot(CBAmbient_fSHCoef[3], vB), dot(CBAmbient_fSHCoef[4], vB), dot(CBAmbient_fSHCoef[5], vB));\n  float fC = ((vNormal.x * vNormal.x) - (vNormal.y * vNormal.y));\n  vec3 x3 = (CBAmbient_fSHCoef[6].xyz * fC);\n  return ((x1 + x2) + x3);\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "vN",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAmbient": {
+   "glsl": "vec3 FAmbient(MATERIAL_CONTEXT mc) {\n  return (CBAmbient_fAmbientColor * mc.ambient_occlusion);\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDiffuseNone": {
+   "glsl": "MATERIAL_CONTEXT FDiffuseNone(MATERIAL_CONTEXT mc) {\n  mc.diffuse = vec3(float(0));\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDiffuseMD": {
+   "glsl": "MATERIAL_CONTEXT FDiffuseMD(MATERIAL_CONTEXT mc) {\n  mc.diffuse = CBMaterial_fDiffuseColor;\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDiffuse": {
+   "glsl": "MATERIAL_CONTEXT FDiffuse(MATERIAL_CONTEXT mc) {\n  mc.diffuse = (((mc.diffuse + FAmbient(mc)) * CBMaterial_fDiffuseColor) * mc.occlusion);\n  return mc;\n}\n",
+   "calls": [
+    "FAmbient"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FLighting": {
+   "glsl": "MATERIAL_CONTEXT FLighting(MATERIAL_CONTEXT mc) {\n  LIGHT_PARAM param = CBDynamicLighting_sLightParam0;\n  LIGHT_OUTPUT O = FDynamicLight0(param, mc.wposition, mc.light_mask);\n  if ((O.diffuse_enable || O.specular_enable)) {\n    vec4 texcoord = (param.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col = texture(tSpotLightTexture0, (texcoord.xy / texcoord.w)).xyz;\n    vec3 dir = (param.fLightProjMat * vec4((mc.wposition - param.fLightPos), float(1))).xyz;\n    vec3 point_proj_col = texture(tPointLightTexture0, dir).xyz;\n    vec3 pcol = (spot_proj_col * point_proj_col);\n    O.diffuse *= pcol;\n    O.specular *= pcol;\n    mc = FBRDF(mc, O);\n  }\n  LIGHT_PARAM param_1 = CBDynamicLighting_sLightParam1;\n  LIGHT_OUTPUT O_1 = FDynamicLight1(param_1, mc.wposition, mc.light_mask);\n  if ((O_1.diffuse_enable || O_1.specular_enable)) {\n    vec4 texcoord_1 = (param_1.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_1 = texture(tSpotLightTexture1, (texcoord_1.xy / texcoord_1.w)).xyz;\n    vec3 dir_1 = (param_1.fLightProjMat * vec4((mc.wposition - param_1.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_1 = texture(tPointLightTexture1, dir_1).xyz;\n    vec3 pcol_1 = (spot_proj_col_1 * point_proj_col_1);\n    O_1.diffuse *= pcol_1;\n    O_1.specular *= pcol_1;\n    mc = FBRDF(mc, O_1);\n  }\n  LIGHT_PARAM param_2 = CBDynamicLighting_sLightParam2;\n  LIGHT_OUTPUT O_2 = FDynamicLight2(param_2, mc.wposition, mc.light_mask);\n  if ((O_2.diffuse_enable || O_2.specular_enable)) {\n    vec4 texcoord_2 = (param_2.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_2 = texture(tSpotLightTexture2, (texcoord_2.xy / texcoord_2.w)).xyz;\n    vec3 dir_2 = (param_2.fLightProjMat * vec4((mc.wposition - param_2.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_2 = texture(tPointLightTexture2, dir_2).xyz;\n    vec3 pcol_2 = (spot_proj_col_2 * point_proj_col_2);\n    O_2.diffuse *= pcol_2;\n    O_2.specular *= pcol_2;\n    mc = FBRDF(mc, O_2);\n  }\n  LIGHT_PARAM param_3 = CBDynamicLighting_sLightParam3;\n  LIGHT_OUTPUT O_3 = FDynamicLight3(param_3, mc.wposition, mc.light_mask);\n  if ((O_3.diffuse_enable || O_3.specular_enable)) {\n    vec4 texcoord_3 = (param_3.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_3 = texture(tSpotLightTexture3, (texcoord_3.xy / texcoord_3.w)).xyz;\n    vec3 dir_3 = (param_3.fLightProjMat * vec4((mc.wposition - param_3.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_3 = texture(tPointLightTexture3, dir_3).xyz;\n    vec3 pcol_3 = (spot_proj_col_3 * point_proj_col_3);\n    O_3.diffuse *= pcol_3;\n    O_3.specular *= pcol_3;\n    mc = FBRDF(mc, O_3);\n  }\n  LIGHT_PARAM param_4 = CBDynamicLighting_sLightParam4;\n  LIGHT_OUTPUT O_4 = FDynamicLight4(param_4, mc.wposition, mc.light_mask);\n  if ((O_4.diffuse_enable || O_4.specular_enable)) {\n    vec4 texcoord_4 = (param_4.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_4 = texture(tSpotLightTexture4, (texcoord_4.xy / texcoord_4.w)).xyz;\n    vec3 dir_4 = (param_4.fLightProjMat * vec4((mc.wposition - param_4.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_4 = texture(tPointLightTexture4, dir_4).xyz;\n    vec3 pcol_4 = (spot_proj_col_4 * point_proj_col_4);\n    O_4.diffuse *= pcol_4;\n    O_4.specular *= pcol_4;\n    mc = FBRDF(mc, O_4);\n  }\n  LIGHT_PARAM param_5 = CBDynamicLighting_sLightParam5;\n  LIGHT_OUTPUT O_5 = FDynamicLight5(param_5, mc.wposition, mc.light_mask);\n  if ((O_5.diffuse_enable || O_5.specular_enable)) {\n    vec4 texcoord_5 = (param_5.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_5 = texture(tSpotLightTexture5, (texcoord_5.xy / texcoord_5.w)).xyz;\n    vec3 dir_5 = (param_5.fLightProjMat * vec4((mc.wposition - param_5.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_5 = texture(tPointLightTexture5, dir_5).xyz;\n    vec3 pcol_5 = (spot_proj_col_5 * point_proj_col_5);\n    O_5.diffuse *= pcol_5;\n    O_5.specular *= pcol_5;\n    mc = FBRDF(mc, O_5);\n  }\n  LIGHT_PARAM param_6 = CBDynamicLighting_sLightParam6;\n  LIGHT_OUTPUT O_6 = FDynamicLight6(param_6, mc.wposition, mc.light_mask);\n  if ((O_6.diffuse_enable || O_6.specular_enable)) {\n    vec4 texcoord_6 = (param_6.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_6 = texture(tSpotLightTexture6, (texcoord_6.xy / texcoord_6.w)).xyz;\n    vec3 dir_6 = (param_6.fLightProjMat * vec4((mc.wposition - param_6.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_6 = texture(tPointLightTexture6, dir_6).xyz;\n    vec3 pcol_6 = (spot_proj_col_6 * point_proj_col_6);\n    O_6.diffuse *= pcol_6;\n    O_6.specular *= pcol_6;\n    mc = FBRDF(mc, O_6);\n  }\n  LIGHT_PARAM param_7 = CBDynamicLighting_sLightParam7;\n  LIGHT_OUTPUT O_7 = FDynamicLight7(param_7, mc.wposition, mc.light_mask);\n  if ((O_7.diffuse_enable || O_7.specular_enable)) {\n    vec4 texcoord_7 = (param_7.fLightProjMat * vec4(mc.wposition, float(1)));\n    vec3 spot_proj_col_7 = texture(tSpotLightTexture7, (texcoord_7.xy / texcoord_7.w)).xyz;\n    vec3 dir_7 = (param_7.fLightProjMat * vec4((mc.wposition - param_7.fLightPos), float(1))).xyz;\n    vec3 point_proj_col_7 = texture(tPointLightTexture7, dir_7).xyz;\n    vec3 pcol_7 = (spot_proj_col_7 * point_proj_col_7);\n    O_7.diffuse *= pcol_7;\n    O_7.specular *= pcol_7;\n    mc = FBRDF(mc, O_7);\n  }\n  return mc;\n}\n",
+   "calls": [
+    "FBRDF",
+    "FDynamicLight0",
+    "FDynamicLight1",
+    "FDynamicLight2",
+    "FDynamicLight3",
+    "FDynamicLight4",
+    "FDynamicLight5",
+    "FDynamicLight6",
+    "FDynamicLight7"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FBRDF": {
+   "glsl": "MATERIAL_CONTEXT FBRDF(MATERIAL_CONTEXT mc, LIGHT_OUTPUT light_param) {\n  if (light_param.diffuse_enable) {\n    mc.diffuse += (light_param.diffuse * max(float(0), dot(mc.normal, light_param.direction)));\n  }\n  if (light_param.specular_enable) {\n    vec3 h = normalize((light_param.direction - mc.eye_dir));\n    mc.specular += (light_param.specular * pow(max(dot(mc.normal, h), 9.999999747378752e-06), mc.shininess));\n  }\n  if ((light_param.diffuse_enable && light_param.diffuse_back_enable)) {\n    float EL = clamp(dot(mc.eye_dir, light_param.direction), 0.0, 1.0);\n    EL = (EL * EL);\n    EL = (EL * EL);\n    float NL = clamp(dot((-mc.normal), light_param.direction), 0.0, 1.0);\n    mc.diffuse2 += (light_param.diffuse_back * EL);\n    mc.diffuse3 += (light_param.diffuse_back * NL);\n  }\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ],
+    [
+     "LIGHT_OUTPUT",
+     "light_param",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight7": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight7(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight6": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight6(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight5": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight5(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight4": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight4(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight3": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight3(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight2": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight2(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight1": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight1(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDynamicLight0": {
+   "glsl": "LIGHT_OUTPUT FDynamicLight0(LIGHT_PARAM param, vec3 wpos, vec2 mask) {\n  LIGHT_OUTPUT O = zero_LIGHT_OUTPUT();\n  return O;\n}\n",
+   "calls": [],
+   "ret": "LIGHT_OUTPUT",
+   "params": [
+    [
+     "LIGHT_PARAM",
+     "param",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wpos",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "mask",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FShininess": {
+   "glsl": "float FShininess(MATERIAL_CONTEXT mc) {\n  return Globals_fShininess;\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FTransparencyAlpha": {
+   "glsl": "float FTransparencyAlpha(MATERIAL_CONTEXT mc) {\n  return (mc.transparency * CBMaterial_fTransparency);\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FTransparency": {
+   "glsl": "float FTransparency(MATERIAL_CONTEXT mc) {\n  return float(1);\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAlbedoMapColorOnly": {
+   "glsl": "MATERIAL_CONTEXT FAlbedoMapColorOnly(MATERIAL_CONTEXT mc) {\n  vec4 b = texture(tAlbedoMap, FUVAlbedoMap(mc));\n  mc.albedo = (b.xyz * Globals_fAlbedoColor);\n  return mc;\n}\n",
+   "calls": [
+    "FUVAlbedoMap"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVAlbedoMap": {
+   "glsl": "vec2 FUVAlbedoMap(MATERIAL_CONTEXT mc) {\n  return mc.uv_primary;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAlbedoMap": {
+   "glsl": "MATERIAL_CONTEXT FAlbedoMap(MATERIAL_CONTEXT mc) {\n  vec4 b = texture(tAlbedoMap, FUVAlbedoMap(mc));\n  mc.albedo = (b.xyz * Globals_fAlbedoColor);\n  mc.transparency *= b.w;\n  return mc;\n}\n",
+   "calls": [
+    "FUVAlbedoMap"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAlbedo": {
+   "glsl": "MATERIAL_CONTEXT FAlbedo(MATERIAL_CONTEXT mc) {\n  mc.albedo *= Globals_fAlbedoColor;\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FBump": {
+   "glsl": "MATERIAL_CONTEXT FBump(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FOcclusion": {
+   "glsl": "MATERIAL_CONTEXT FOcclusion(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FAmbientMask": {
+   "glsl": "MATERIAL_CONTEXT FAmbientMask(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FLightMask": {
+   "glsl": "MATERIAL_CONTEXT FLightMask(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "createMaterialContext": {
+   "glsl": "MATERIAL_CONTEXT createMaterialContext(MATERIAL_OUTPUT I, bool isfrontface) {\n  I.wnormal = FFrontFaceNormal(I.wnormal, isfrontface);\n  float ln = max(9.999999974752427e-07, sqrt(dot(I.wnormal, I.wnormal)));\n  float lt = max(9.999999974752427e-07, sqrt(dot(I.wtangent, I.wtangent)));\n  float lb = max(9.999999974752427e-07, sqrt(dot(I.wbinormal, I.wbinormal)));\n  MATERIAL_CONTEXT mc = initMaterialContext(I.position, I.wposition, (I.wnormal / ln), (I.wtangent / lt), (I.wbinormal / lb), I.uv_primary, I.uv_secondary, I.uv_unique, I.uv_extend);\n  mc.occlusion = I.occlusion;\n  mc.vertex_color = I.vcolor.xyz;\n  mc.transparency = I.vcolor.w;\n  mc.attributes = I.attributes;\n  mc = FDefaultTransparency(mc);\n  return mc;\n}\n",
+   "calls": [
+    "FDefaultTransparency",
+    "FFrontFaceNormal",
+    "initMaterialContext"
+   ],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_OUTPUT",
+     "I",
+     "",
+     ""
+    ],
+    [
+     "bool",
+     "isfrontface",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FDefaultTransparency": {
+   "glsl": "MATERIAL_CONTEXT FDefaultTransparency(MATERIAL_CONTEXT mc) {\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "MATERIAL_CONTEXT",
+     "mc",
+     "",
+     ""
+    ]
+   ]
+  },
+  "initMaterialContext": {
+   "glsl": "MATERIAL_CONTEXT initMaterialContext(vec4 svposition, vec3 wposition, vec3 normal, vec3 tangent, vec3 binormal, vec2 uv_primary, vec2 uv_secondary, vec2 uv_unique, vec2 uv_extend) {\n  MATERIAL_CONTEXT mc = zero_MATERIAL_CONTEXT();\n  mc.svposition = svposition;\n  mc.wposition = wposition;\n  mc.normal = normal;\n  mc.vertex_normal = normal;\n  mc.tangent = tangent;\n  mc.binormal = binormal;\n  mc.uv_primary = uv_primary;\n  mc.uv_secondary = uv_secondary;\n  mc.uv_unique = uv_unique;\n  mc.uv_extend = uv_extend;\n  mc.eye_dir = normalize((wposition - CBViewProjection_fCameraPos));\n  mc.reflect_dir = reflect(mc.eye_dir, normal);\n  mc.albedo = vec3(float(1));\n  mc.shininess = float(1);\n  mc.transparency = float(1);\n  mc.ambient_occlusion = float(1);\n  mc.occlusion = float(1);\n  mc.fresnel = float(1);\n  mc.uv_screen = (svposition.xy * CBScreen_fScreenInverseSize);\n  mc.global_transparency = float(1);\n  mc.tangent_primary = tangent;\n  mc.tangent_secondary = tangent;\n  return mc;\n}\n",
+   "calls": [],
+   "ret": "MATERIAL_CONTEXT",
+   "params": [
+    [
+     "vec4",
+     "svposition",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wposition",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "normal",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "tangent",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "binormal",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_primary",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_secondary",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_unique",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_extend",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FFrontFaceNormal": {
+   "glsl": "vec3 FFrontFaceNormal(vec3 normal, bool isfrontface) {\n  if ((!isfrontface)) {\n    normal *= float((-1));\n  }\n  return normal;\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "normal",
+     "",
+     ""
+    ],
+    [
+     "bool",
+     "isfrontface",
+     "",
+     ""
+    ]
+   ]
+  },
+  "VS_MaterialStd": {
+   "glsl": "MATERIAL_OUTPUT VS_MaterialStd(MATERIAL_INPUT I, SWING_INPUT SWI, MORPH_INPUT MI, SOFTBODY_INPUT SI, LATTICE_DEFORM_INPUT LDI, INSTANCING_INPUT ISI, PROJECTION_INPUT VPI, int instance_id) {\n  MATERIAL_OUTPUT O = zero_MATERIAL_OUTPUT();\n  vec3 wpos = vec3(float(0), float(0), float(0));\n  vec3 wn = vec3(float(0), float(0), float(0));\n  vec3 wt = vec3(float(0), float(0), float(0));\n  vec3 wb = vec3(float(0), float(0), float(0));\n  WORLD_COORDINATE_INPUT W = zero_WORLD_COORDINATE_INPUT();\n  W.position = I.position;\n  W.normal = I.normal;\n  W.tangent = I.tangent;\n  W.weights = I.weights;\n  W.joints = I.joints;\n  W.SWI = SWI;\n  W.MI = MI;\n  W.SI = SI;\n  W.LDI = LDI;\n  W.ISI = ISI;\n  W.VPI = VPI;\n  W.instance_id = instance_id;\n  FWorldCoordinate(wpos, wn, wt, wb, W);\n  FVertexDisplacement(wpos, wn, wt, wb, I.uv_primary, I.uv_secondary, I.uv_unique, I.uv_extend, I.tangent.w, I.occlusion);\n  O.position = FViewProj(wpos, I.uv_unique);\n  O.wnormal = normalize(wn);\n  O.wtangent = wt;\n  O.wbinormal = wb;\n  O.wposition = wpos;\n  O.uv_primary = FUVTransformPrimary(I.uv_primary);\n  O.uv_secondary = FUVTransformSecondary(I.uv_secondary);\n  O.uv_unique = FUVTransformUnique(I.uv_unique);\n  O.uv_extend = FUVTransformExtend(I.uv_extend);\n  O.vcolor = (vec4(FLinearColor(I.vcolor), I.valpha) * ISI.instance_color);\n  O.occlusion = I.occlusion;\n  O.attributes = FShaderAttributes(W);\n  return O;\n}\n",
+   "calls": [
+    "FLinearColor",
+    "FShaderAttributes",
+    "FUVTransformExtend",
+    "FUVTransformPrimary",
+    "FUVTransformSecondary",
+    "FUVTransformUnique",
+    "FVertexDisplacement",
+    "FViewProj",
+    "FWorldCoordinate"
+   ],
+   "ret": "MATERIAL_OUTPUT",
+   "params": [
+    [
+     "MATERIAL_INPUT",
+     "I",
+     "",
+     ""
+    ],
+    [
+     "SWING_INPUT",
+     "SWI",
+     "",
+     ""
+    ],
+    [
+     "MORPH_INPUT",
+     "MI",
+     "",
+     ""
+    ],
+    [
+     "SOFTBODY_INPUT",
+     "SI",
+     "",
+     ""
+    ],
+    [
+     "LATTICE_DEFORM_INPUT",
+     "LDI",
+     "",
+     ""
+    ],
+    [
+     "INSTANCING_INPUT",
+     "ISI",
+     "",
+     ""
+    ],
+    [
+     "PROJECTION_INPUT",
+     "VPI",
+     "",
+     ""
+    ],
+    [
+     "int",
+     "instance_id",
+     "SV_InstanceID",
+     ""
+    ]
+   ]
+  },
+  "FShaderAttributes": {
+   "glsl": "vec4 FShaderAttributes(WORLD_COORDINATE_INPUT param) {\n  return vec4(float(0));\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "WORLD_COORDINATE_INPUT",
+     "param",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FLinearColor": {
+   "glsl": "vec3 FLinearColor(vec3 color) {\n  return color;\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "color",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformOffset3": {
+   "glsl": "vec2 FUVTransformOffset3(vec2 uv) {\n  vec2 duv = vec2(0.0);\n  duv.x = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform3[0]);\n  duv.y = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform3[1]);\n  return duv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformExtend": {
+   "glsl": "vec2 FUVTransformExtend(vec2 uv) {\n  return uv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformUnique": {
+   "glsl": "vec2 FUVTransformUnique(vec2 uv) {\n  return uv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformOffset2": {
+   "glsl": "vec2 FUVTransformOffset2(vec2 uv) {\n  vec2 duv = vec2(0.0);\n  duv.x = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform2[0]);\n  duv.y = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform2[1]);\n  return duv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformSecondary": {
+   "glsl": "vec2 FUVTransformSecondary(vec2 uv) {\n  return uv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformOffset": {
+   "glsl": "vec2 FUVTransformOffset(vec2 uv) {\n  vec2 duv = vec2(0.0);\n  duv.x = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform[0]);\n  duv.y = dot(vec4(uv, float(0), float(1)), CBMaterial_fUVTransform[1]);\n  return duv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FUVTransformPrimary": {
+   "glsl": "vec2 FUVTransformPrimary(vec2 uv) {\n  return uv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FViewProj": {
+   "glsl": "vec4 FViewProj(vec3 wposition, vec2 uv_unique) {\n  return (CBViewProjection_fViewProj * vec4(wposition, float(1)));\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec3",
+     "wposition",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_unique",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FVertexDisplacement": {
+   "glsl": "void FVertexDisplacement(inout vec3 wpos, inout vec3 wn, vec3 wt, inout vec3 wb, vec2 uv_primary, vec2 uv_secondary, vec2 uv_unique, vec2 uv_extend, float tangent_w, float occlusion) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "vec3",
+     "wpos",
+     "",
+     "inout"
+    ],
+    [
+     "vec3",
+     "wn",
+     "",
+     "inout"
+    ],
+    [
+     "vec3",
+     "wt",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "wb",
+     "",
+     "inout"
+    ],
+    [
+     "vec2",
+     "uv_primary",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_secondary",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_unique",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "uv_extend",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "tangent_w",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "occlusion",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FWorldCoordinate": {
+   "glsl": "void FWorldCoordinate(out vec3 wpos, out vec3 wn, out vec3 wt, out vec3 wb, WORLD_COORDINATE_INPUT param) {\n  FMorph(param);\n  mat3x4 wmat = FWorldMatrix(param);\n  wpos = (vec4(param.position, float(1)) * wmat);\n  wn = (vec4(param.normal, float(0)) * wmat);\n  wt = (vec4(param.tangent.xyz, float(0)) * wmat);\n  FInstancing(wpos, wn, wt, param.ISI);\n  wb = (cross(wt, wn) * param.tangent.w);\n}\n",
+   "calls": [
+    "FInstancing",
+    "FMorph",
+    "FWorldMatrix"
+   ],
+   "ret": "void",
+   "params": [
+    [
+     "vec3",
+     "wpos",
+     "",
+     "out"
+    ],
+    [
+     "vec3",
+     "wn",
+     "",
+     "out"
+    ],
+    [
+     "vec3",
+     "wt",
+     "",
+     "out"
+    ],
+    [
+     "vec3",
+     "wb",
+     "",
+     "out"
+    ],
+    [
+     "WORLD_COORDINATE_INPUT",
+     "param",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInstancing": {
+   "glsl": "void FInstancing(inout vec3 position, inout vec3 normal, inout vec3 tangent, INSTANCING_INPUT ISI) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "vec3",
+     "position",
+     "",
+     "inout"
+    ],
+    [
+     "vec3",
+     "normal",
+     "",
+     "inout"
+    ],
+    [
+     "vec3",
+     "tangent",
+     "",
+     "inout"
+    ],
+    [
+     "INSTANCING_INPUT",
+     "ISI",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FWorldMatrix": {
+   "glsl": "mat3x4 FWorldMatrix(WORLD_COORDINATE_INPUT param) {\n  SKINNING_INPUT in_skin = zero_SKINNING_INPUT();\n  in_skin.weights = param.weights;\n  in_skin.joints = param.joints;\n  return FSkinning(in_skin);\n}\n",
+   "calls": [
+    "FSkinning"
+   ],
+   "ret": "mat3x4",
+   "params": [
+    [
+     "WORLD_COORDINATE_INPUT",
+     "param",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FSkinningNone": {
+   "glsl": "mat3x4 FSkinningNone(SKINNING_INPUT I) {\n  return CBWorld_fWorld;\n}\n",
+   "calls": [],
+   "ret": "mat3x4",
+   "params": [
+    [
+     "SKINNING_INPUT",
+     "I",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FSkinning": {
+   "glsl": "mat3x4 FSkinning(SKINNING_INPUT I) {\n  return mat3x4(float(1), float(0), float(0), float(0), float(0), float(1), float(0), float(0), float(0), float(0), float(1), float(0));\n}\n",
+   "calls": [],
+   "ret": "mat3x4",
+   "params": [
+    [
+     "SKINNING_INPUT",
+     "I",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FMorph": {
+   "glsl": "void FMorph(inout WORLD_COORDINATE_INPUT WI) {\n}\n",
+   "calls": [],
+   "ret": "void",
+   "params": [
+    [
+     "WORLD_COORDINATE_INPUT",
+     "WI",
+     "",
+     "inout"
+    ]
+   ]
+  }
+ }
+}

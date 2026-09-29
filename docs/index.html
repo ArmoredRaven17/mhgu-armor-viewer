@@ -515,6 +515,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="weaponDrawn">Carry</label><select id="weaponDrawn"><option value="1">Drawn</option><option value="0">Sheathed</option></select></div>
           <div class="field"><label for="weaponPose">Stance</label><select id="weaponPose"></select></div>
           <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
+          <label class="chk" id="chargeField" style="display:none"><input type="checkbox" id="chargeChk">Demon Riot active (Hunter Art)</label>
+          <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active (Hunter Art)</label>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
           <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
@@ -1219,6 +1221,7 @@ import { createFx } from './render/fx.js';
 import { renderCameraFor, LENS_DEFAULT, LENS_TYPES, SQUEEZES, fovSrcOf } from './render/lens.js';
 import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
 import { createFloorGrid } from './render/grid.js';
+import { WeaponEffects, WeaponUnitEffects } from './render/weapon-fx.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
@@ -2249,7 +2252,7 @@ function saveState(){
       wireOn, hideCursor, camGrid: floorGridOn, ...lightingSaveState(), effects: effectsState(), plate: plateFileState(),
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
-      weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value,
+      weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
@@ -2531,9 +2534,13 @@ function hunterRoots(){
 }
 // the roots a weapon hangs off -- the armour and the clothing are what supply the hand bones
 function playerRoots(){ return Object.values(mounted).concat(Object.values(clothMounted)); }
+// THE GAME POSE PLAYING, kept because its LIST is how the hunter's own effect schedule is keyed
+// (effect/psl/player/mot/co/co_0.psl and friends -> docs/effects/co.json "co_0:16").
+let curGamePose = null;
 async function playGamePose(idx){
   const entry = (manifest.poses || [])[idx];
   if (!entry) return;
+  curGamePose = entry;
   return pose.play(entry);
 }
 // called every frame while a game pose is playing
@@ -2614,6 +2621,70 @@ const WEAPON_EVENTS = await loadJson('poses/weapons/events.json');
 const OT_EVENTS = await loadJson('poses/otomo-events.json').catch(() => null);
 const weapon = new WeaponRig({ scene: world, pose, roots: playerRoots, ctx: pieceCtx,
                                events: WEAPON_EVENTS.clips || {} });
+
+// THE WEAPON'S EFFECTS (render/weapon-fx.js, Raven 2026-09-27: "Implement effects"): the game's own
+// particle effects on the ROM-translated runtime, fired by the weapon class's .psl on the clip and the
+// frame the game fires them. It hangs from the hunter's bones, so it re-attaches when the armour changes
+// under it as well as when the weapon does (weaponFx.sync).
+const weaponFx = new WeaponEffects();
+// THE HUNTER'S OWN EFFECTS, the layer the weapon's schedule knows nothing about: the footfalls,
+// landings, glints and carve puffs bound to the COMMON motion lists (co_0, co_1, co_2, co_6), which
+// are the lists this app plays as its game poses. 105 of their clips carry a schedule and 110 of the
+// viewer's 507 poses land on one. Raven, 2026-09-27: "We are likely missing an entire class of
+// effects" -- this was it, and the ROM's own psl/player/mot/co says so.
+const hunterFx = new WeaponEffects();
+// THE SWITCH AXE'S SWORD AURA (render/weapon-fx.js WeaponUnitEffects, Raven 2026-09-28: "We're still missing
+// effects from Switch Axe"): the game hangs it from the WEAPON unit at its joint 0, so it has a host of its own,
+// rooted on the weapon's main part, and it fires when a sword-mode stance starts -- the ROM's own list of them.
+const swordFx = new WeaponUnitEffects();
+swordFx.hunterHost = weaponFx;                 // the Art's own effect (900/901) hangs from the hunter
+swordFx.floor = () => figureFloor().y;         // the player's position is where the hunter STANDS: the soles (the floor grid's height)
+weaponFx.floor = hunterFx.floor = swordFx.floor;   // and every effect the game places at the player unit (joint -1) starts there
+const chargeChk = document.getElementById('chargeChk');
+chargeChk.onchange = () => { swordFx.setCharge(chargeChk.checked); saveState(); };
+swordFx.onCharge = on => { chargeChk.checked = on; saveState(); };   // mirrors a harness call; the motion never touches the switch (Raven, 2026-09-29)
+const tempestChk = document.getElementById('tempestChk');
+tempestChk.onchange = () => { swordFx.setTempest(tempestChk.checked); saveState(); };
+swordFx.onTempest = on => { tempestChk.checked = on; saveState(); };
+// the phial colours are the game's fixed table (render/weapon-fx.js: resident pec_001); there is no stage to pick
+swordFx.loadPalettes();
+function syncWeaponFx(){
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); return Promise.resolve(null); }
+  return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
+                      hunterFx.sync('co', playerRoots(), world),
+                      swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world)]);
+}
+// THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
+// seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
+// LOOP the real elapsed time, not the negative jump -- the PSL walker wants to SEE the frame go
+// backwards (it re-fires the clip's effects from the loop point), so the raw time still goes to setClip.
+let fxLastTime = null, fxLastClip = null;
+function stepWeaponFx(){
+  // the Palico is on screen: the clock below is ITS clip's, and the hunter's effects are held (setFigure)
+  if (figure !== 'hunter'){ fxLastTime = null; fxLastClip = null; return; }
+  const act = pose.action, clip = act ? act.getClip() : null;
+  const t = act ? act.time : 0;
+  let advance = 0;
+  if (act && clip === fxLastClip && fxLastTime !== null){
+    const d = t - fxLastTime;
+    // a wrap looks like a big step back; a scrub can too, and 0 is the safe reading for it
+    advance = d >= 0 ? d : (act.loop === THREE.LoopRepeat ? Math.max(0, t + clipDur(act) - fxLastTime) : 0);
+  }
+  fxLastClip = clip; fxLastTime = act ? t : null;
+  weaponFx.step(weapon.stance, t, act ? advance : null);
+  // the hunter's own clip effects: keyed by the pose's LIST and motion number
+  const gp = (!weapon.stance && curGamePose) ? curGamePose : null;
+  const gm = gp && /Motion\[(\d+)\]/.exec(gp.clip || '');
+  hunterFx.stepClip(gm ? gp.src + ':' + gm[1] : null, t, act ? advance : null);
+  // THE SWITCH AXE'S SWORD AURA: requested when a sword-mode stance starts, from the weapon-unit host (render/weapon-fx.js
+  // WeaponUnitEffects), the way uPlayerQuest08's action code requests it -- the 27 main-list motions, the morph's Motion[3]
+  // and the Arts' Motion[91], with the phial's stage colour. The bursts (510..523) fire at the two motion frames the
+  // action code creates the burst shells on (render/weapon-fx.js BURSTS).
+  // the last word is the Switch Axe IN THE HAND: Tempest Axe's aura is the player's request, gated on the weapon being
+  // drawn (0x11a5db0), not on the weapon-unit host, which is seconds behind a draw (render/weapon-fx.js stepTempest)
+  swordFx.stepStance(weapon.stance, t, act ? advance : null, weapon.phial(), weapon.modeWord,
+                     weaponClassSel.value === 'w08' && weapon.cls === 'w08' && weapon.drawn, weapon.element(), weapon.onBack());
+}
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
 // it ships inside every armor body.arc, which is the mesh normally hidden. Showing
@@ -3426,6 +3497,7 @@ async function apply(map){
     selectToken(sel, slot, v);
     await setSlot(slot, v);
   }
+  await syncWeaponFx();        // the effects hang from the hunter's bones, which have just been remade
 }
 
 // first-run outfit when there is nothing saved yet
@@ -3438,6 +3510,9 @@ document.getElementById('pose').onchange = async e => {
   // the body exactly where the game's own lobby idles (LMT id 2) put them
   weaponPoseSel.value = ''; weaponDrawnSel.value = '0';
   weapon.setStance(null); weapon.setDrawn(false);
+  // THE EFFECTS FOLLOW THE WEAPON TO THE BACK: every other sheathe goes through applyWeaponState, which syncs; this
+  // one did not, and Demon Riot's flames drew round the sheathed weapon through every Hunter Pose (Raven, 2026-09-29)
+  syncWeaponFx();
   await weapon.rebindMotion();
   if (v.startsWith('g:')) {
     await playGamePose(+v.slice(2));
@@ -3623,6 +3698,15 @@ function figureFloor(){
 }
 const floorGrid = createFloorGrid({ scene, floor: () => figureFloor().y,
                                     centre: out => out.copy(figureFloor().centre), reach: () => figureFloor().reach });
+// THE WEAPON'S EFFECTS (render/weapon-fx.js): always on where the class ships them. The harness can
+// turn them off for an A/B (__view.weaponFx.set), which is what the dev shots use; there is no control
+// for it in the app, because the game does not have one either.
+let weaponFxOn = true;
+function paintWeaponFx(){
+  weaponFx.setEnabled(weaponFxOn);
+  swordFx.setEnabled(weaponFxOn);
+  if (weaponFxOn) syncWeaponFx();
+}
 const gridBtn = document.getElementById('gridBtn');
 function paintFloorGrid(){
   floorGrid.set(floorGridOn && !SCENE);
@@ -3702,6 +3786,7 @@ renderer.setAnimationLoop(() => {
   stepChainHold();
   stepLighting();
   stepDeviant(performance.now()/1000);
+  stepWeaponFx();
   if (rainbowOn) applyCharColors(performance.now()/1000);
   if (camMode === 'fly') stepFly(); else controls.update();   // update() would look at the target
   trackLights(); head.position.copy(camera.position);
@@ -3764,6 +3849,11 @@ weaponClassSel.innerHTML = '<option value="none">— none —</option>' +
   weaponClasses(manifest).map(w => '<option value="' + w.key + '">' + w.class + '</option>').join('');
 const rarityTag = r => r ? ' (R' + r + ')' : '';
 // the lists that depend on the class, rebuilt after weapon.set() has loaded its index
+// the named weapon the model picker is showing, with its rarity tag stripped back off
+function selectedWeaponName(){
+  const o = weaponModelSel.selectedOptions && weaponModelSel.selectedOptions[0];
+  return o ? o.textContent.replace(/\s*\u2605+\s*$/, '').replace(/\s*\(R\d+\)\s*$/, '').trim() : null;
+}
 async function buildWeaponLists(){
   const cj = weapon.classJson();
   // Weapons list by RARITY, rising, the way players list them (Raven, 2026-09-03: "Weapons
@@ -3776,6 +3866,9 @@ async function buildWeaponLists(){
     '<option value="' + modelIdOf(r.model) + '">' + r.name + rarityTag(r.rarity) + '</option>').join('');
   weaponModelSel.disabled = !rows.length;
   if (weapon.modelId) weaponModelSel.value = weapon.modelId;
+  // the list was just rebuilt, so tell the rig which of its options is showing -- for the one model
+  // two named weapons share, `value` alone cannot say (weapon.phial())
+  if (weapon.weaponName == null) weapon.weaponName = selectedWeaponName();
   const list = weapon.poses();
   weaponPoseSel.innerHTML = '<option value="">— none —</option>' +
     list.map((p, i) => '<option value="' + i + '" title="' + p.clip + '">' + p.label + '</option>').join('');
@@ -3790,6 +3883,8 @@ async function buildWeaponLists(){
   document.querySelector('#weaponFormField label').textContent = weapon.formTitle();
   weaponFormSel.innerHTML = forms.map(t => '<option value="' + t + '">' + weapon.formLabel(t) + '</option>').join('');
   document.getElementById('weaponFormField').style.display = (forms.length && weapon.formSelectable()) ? '' : 'none';
+  document.getElementById('chargeField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
+  document.getElementById('tempestField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
   // the Bow's nocked arrow: the ROM's proof-effect placements (docs/weapons/w10.json
   // shared.arrow.records); none by default, because which animation requests which
@@ -3860,6 +3955,7 @@ async function applyWeaponState(){
   if (p) await pose.play(p);
   else await playPlayerPose();
   weapon.step();
+  await syncWeaponFx();
 }
 // the hunter's own pose from the Pose select, defaulting to the first game pose
 async function playPlayerPose(){
@@ -3879,7 +3975,10 @@ function weaponFileState(){
   const row = rowFor(cj, weapon.modelId);
   const p = weapon.poses()[+weaponPoseSel.value];
   return { class: weaponClassSel.value, className: cj.name, model: weapon.modelId,
-           name: row ? row.name : null, drawn: weaponDrawnSel.value === '1',
+           // THE WEAPON ACTUALLY MOUNTED, not just the first row that uses its model: two named
+           // weapons can share one (the Switch Axe's 136 is Yukumo Switch Axe and Yukumo Pure Axe)
+           // and they differ in phial, so rowFor's first hit would bring back the wrong one.
+           name: weapon.weaponName || (row ? row.name : null), drawn: weaponDrawnSel.value === '1',
            stance: p ? p.label : null,
            form: weaponFormSel.value === '' ? null : +weaponFormSel.value,
            kinsect: kinsectSel.value || null,
@@ -3896,7 +3995,11 @@ weaponClassSel.onchange = async () => {
   saveState();
 };
 weaponModelSel.onchange = async () => {
-  await weapon.set(weaponClassSel.value, weaponModelSel.value);
+  // THE OPTION'S TEXT, not just its value: the list is one option per NAMED weapon but its value is
+  // the MODEL, so two weapons sharing a model are two options with the same value. selectedOptions
+  // distinguishes them, which is what settles the Switch Axe's model 136 (Yukumo Switch Axe, Power /
+  // Yukumo Pure Axe, Dragon) for weapon.phial().
+  await weapon.set(weaponClassSel.value, weaponModelSel.value, selectedWeaponName());
   await applyWeaponState();
   saveState();
 };
@@ -4719,6 +4822,7 @@ if (SAVED && SAVED.camZoomCursor === true){ controls.zoomToCursor = true; docume
 if (SAVED && SAVED.wireOn === true) { wireOn = true; paintWire(); }
 if (SAVED && SAVED.hideCursor === true) { hideCursor = true; paintCursor(); }
 if (SAVED && typeof SAVED.camGrid === 'boolean'){ floorGridOn = SAVED.camGrid; paintFloorGrid(); }
+paintWeaponFx();
 if (SAVED && Number.isFinite(SAVED.flySpeed) && SAVED.flySpeed !== FLY_SPEED) setFlySpeed(SAVED.flySpeed);
 if (SAVED && SAVED.camFace === true) setFaceLock(true);
 paintFlySpeed(); paintCamMode();
@@ -5173,6 +5277,12 @@ function setFigure(f){
   weapon.setVisible(h);
   for (const g of Object.values(otMounted)) g.visible = !h;
   otApplyMasks();
+  // THE HUNTER'S EFFECTS GO WITH THE HUNTER. Nothing held them here, so an aura or a footfall kept drawing round a
+  // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
+  // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
+  // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
+  for (const fx of [weaponFx, hunterFx, swordFx]) fx.setSuppressed(!h);
+  if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
   // Palico stands in bind pose beside it.
@@ -5334,7 +5444,8 @@ if (SAVED && SAVED.slots) {
 }
 await apply(startMap);
 if (weaponClassSel.value !== 'none'){
-  await weapon.set(weaponClassSel.value, SAVED_WEAPON && SAVED_WEAPON.model);
+  await weapon.set(weaponClassSel.value, SAVED_WEAPON && SAVED_WEAPON.model,
+                   SAVED_WEAPON && SAVED_WEAPON.name);
   await buildWeaponLists();        // the model, stance, form and kinsect lists for this class
   if (SAVED && SAVED.weaponPose !== undefined && SAVED.weaponPose !== '' &&
       [...weaponPoseSel.options].some(o => o.value === String(SAVED.weaponPose)))
@@ -5342,6 +5453,8 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.weaponForm !== undefined && SAVED.weaponForm !== '' &&
       [...weaponFormSel.options].some(o => o.value === String(SAVED.weaponForm)))
     weaponFormSel.value = String(SAVED.weaponForm);
+  if (SAVED && SAVED.charge !== undefined){ chargeChk.checked = !!SAVED.charge; swordFx.setCharge(!!SAVED.charge); }
+  if (SAVED && SAVED.tempest !== undefined){ tempestChk.checked = !!SAVED.tempest; swordFx.setTempest(!!SAVED.tempest); }
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
     kinsectSel.value = SAVED.kinsect;
   if (SAVED && SAVED.kinsectEl !== undefined) kinsectElSel.value = kinsectElValue(SAVED.kinsectEl);
@@ -5413,6 +5526,64 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   // the floor grid: set(on) as the bar button does; info() -> { on, y, radius, centre, colour }.
   // A dev scene never draws it, so set() there only lights the button.
   grid: { set: on => { floorGridOn = !!on; paintFloorGrid(); }, info: () => floorGrid.info() },
+  // the weapon's ROM effects (render/weapon-fx.js): what is attached, what is running, and the
+  // clip the PSL walker is being fed
+  weaponFx: {
+    set: async on => { weaponFxOn = !!on; paintWeaponFx(); await syncWeaponFx(); return weaponFx.stats(); },
+    sync: () => syncWeaponFx(),
+    stats: () => weaponFx.stats(),
+    // the hunter's OWN effects, the common-motion layer (co_0..co_6), a second host beside the weapon's
+    hunter: { stats: () => hunterFx.stats(), def: () => hunterFx.live && hunterFx.live.def,
+              sync: () => syncWeaponFx(), set: on => hunterFx.setEnabled(on) },
+    bounds: () => weaponFx.bounds(),
+    // the STATE layer: the records the motion schedule never names (a Switch Axe's phial aura).
+    // Which variant a phial picks is not read yet, so the key is the caller's to choose.
+    state: () => weaponFx.stateRecords(),
+    // build the state records too (off by default: they load slowly and none can draw yet)
+    stateLayer: async on => { if (weaponFx.setStateLayer(on)) await syncWeaponFx(); return weaponFx.stats(); },
+    start: (key, efl) => { const q = weaponFx.startState(key, efl); return { started: !!q, stats: weaponFx.stats() }; },
+    stop: key => ({ stopped: weaponFx.stopState(key), stats: weaponFx.stats() }),
+    raw: () => weaponFx.live,
+    // the SWORD AURA host (WeaponUnitEffects): its own stats, the stage whose palette colours the phial, a request by hand;
+    // `charge` is the Demon Riot state (player+0x3340), `burst` a burst shell's effect
+    sword: { stats: () => swordFx.stats(), raw: () => swordFx.live, palette: () => swordFx.palette,
+             request: (mode = 0, phial) => !!swordFx.request(mode, phial || weapon.phial()), sync: () => syncWeaponFx(),
+             colour: phial => swordFx.colourFor(phial || weapon.phial()), bounds: () => swordFx.bounds(),
+             charge: on => { chargeChk.checked = !!on; swordFx.setCharge(!!on); return swordFx.stats(); }, mode: () => swordFx.mode(),
+             tempest: on => { tempestChk.checked = !!on; swordFx.setTempest(!!on); return swordFx.stats(); },
+             obj: () => swordFx, burst: (row = 0, slot = 0, phial, element) => !!swordFx.burst(slot, row, phial || weapon.phial(), element == null ? swordFx.lastElement : element) },
+    clips: () => { const l = weaponFx.live; return l ? Object.keys(l.def.clips || {}) : []; },
+    def: () => { const l = weaponFx.live; return l ? l.def : null; },
+    // ADVANCE n GAME FRAMES BY HAND, the way the render loop would: the stance moves 1/60 s, the pose is
+    // re-applied, the effects are stepped and the frame is rendered (the runtime steps inside the render,
+    // from its anchor's onBeforeRender). For a headless check and for a hidden pane, where the browser
+    // never fires requestAnimationFrame and the loop above simply does not run.
+    //   The mixer's own clock is frozen (timeScale 0) while the frames are stepped by hand, and PUT BACK
+    // after: left at 0, the render loop's stepWeaponFx read an animation advance of 0 for ever after, so
+    // the effects stood still under the live loop once a check had run (2026-09-28). A play-once stance
+    // held on its last frame advances nothing either way -- a held pose freezes its effects by design.
+    step: (n = 1, from = null) => {
+      const act = pose.action;
+      const timeScale = act ? act.timeScale : null;
+      if (act && pose.mixer){
+        act.enabled = true; act.paused = false; act.timeScale = 0;
+        if (typeof from === 'number') act.time = Math.max(0, from);
+      }
+      for (let i = 0; i < n; i++){
+        if (act && pose.mixer){
+          act.time += 1 / 60;
+          const d = clipDur(act);
+          if (act.time > d) act.time = act.loop === THREE.LoopRepeat ? act.time - d : d;
+          pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
+        }
+        weapon.stepMotion(); weapon.step();
+        stepWeaponFx();
+        renderFrame(0.5);
+      }
+      if (act && timeScale !== null) act.timeScale = timeScale;
+      return weaponFx.stats();
+    },
+  },
   fly: {
     enter: () => setCamMode('fly'), leave: () => setCamMode('orbit'), mode: () => camMode,
     look: (dyaw, dpitch) => flyTurn(dyaw, dpitch),
@@ -5469,8 +5640,8 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
   channelColours: () => Object.fromEntries(Object.entries(weapon.parts).map(([k, p]) =>
     [k, (p.userData.chanMats || []).map(m => ({ name: m.name, ch: m.userData.rom.ch, rgb: m.userData.chanRgb }))])),
   weaponParts: () => weapon.parts_(),
-  setWeapon: async (cls, model) => { weaponClassSel.value = cls || 'none';
-                                     await weapon.set(weaponClassSel.value, model);
+  setWeapon: async (cls, model, name) => { weaponClassSel.value = cls || 'none';
+                                     await weapon.set(weaponClassSel.value, model, name);
                                      await buildWeaponLists(); await applyWeaponState(); return weapon.audit(); },
   get deviant(){return deviant}, get pigment(){return tint.pigment}, armorMats, stepDeviant, stepGamePose, currentSet, loadSet };
 
@@ -5780,7 +5951,7 @@ document.getElementById('importFile').addEventListener('change', function(){
 async function applyWeaponFile(w){
   const cls = (w && [...weaponClassSel.options].some(o => o.value === w.class)) ? w.class : 'none';
   weaponClassSel.value = cls;
-  await weapon.set(cls, w ? w.model : null);
+  await weapon.set(cls, w ? w.model : null, w ? w.name : null);
   await buildWeaponLists();
   if (w && cls !== 'none'){
     weaponDrawnSel.value = w.drawn === false ? '0' : '1';
@@ -6350,7 +6521,7 @@ async function runScene(name){
     readSlotPigments();
     const cls = sc.weapon && sc.weapon.cls;
     weaponClassSel.value = (cls && [...weaponClassSel.options].some(o => o.value === cls)) ? cls : 'none';
-    await weapon.set(weaponClassSel.value, sc.weapon && sc.weapon.model);
+    await weapon.set(weaponClassSel.value, sc.weapon && sc.weapon.model, sc.weapon && sc.weapon.name);
     await buildWeaponLists();
     const held = weaponClassSel.value !== 'none' && sc.drawn !== false && sc.stance !== null;
     weaponDrawnSel.value = held ? '1' : '0';
@@ -6397,6 +6568,7 @@ window.__view.shot = async function(run, nameArg, atArg){
     pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
   }
   stepDeviant(0.5); weapon.stepMotion(); weapon.step();
+  stepWeaponFx();
   settleCamera();
   renderFrame(0.5);                    // a fixed clock, so the grain is the same in every shot
   const url = renderer.domElement.toDataURL('image/png');

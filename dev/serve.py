@@ -65,7 +65,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(out)
 
     def log_message(self, fmt, *args):
-        if "/shot" in (args[0] if args else ""):
+        # a 404 logs through log_error with an HTTPStatus first, not the request line: testing it with `in` threw
+        # and dropped the connection, so a missing file reached the page as a failed fetch instead of a 404
+        first = args[0] if args and isinstance(args[0], str) else ""
+        if "/shot" in first:
             sys.stderr.write("%s\n" % (fmt % args))
 
 

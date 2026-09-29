@@ -36,6 +36,44 @@ export function defaultModel(cj){
 }
 
 // the Smithy row shown for a model (the first named row that uses it)
+// THE PHIAL A SWITCH AXE FIRES. It is a property of the WEAPON, not of the model, and the viewer picks
+// a model -- so a model that several named weapons share can carry more than one. Across the Switch
+// Axe's 108 listed weapons on 107 models exactly ONE does: model 136 is Yukumo Switch Axe (Power) and
+// Yukumo Pure Axe (Dragon). Both are in the picker, so the NAME settles that one and the model answers
+// for every other (Raven, 2026-09-27: "use a model based approach but add an exception that updates the
+// phial type based on the name if model 136 is selected"). Nothing is special-cased to 136: the rule is
+// "the name decides where the model cannot", which is the same answer without a magic number in it.
+//   The data is docs/weapons/w08.json `phial`, from table/weapon08BaseData.w08d byte +18 -- a column
+// located against the Collection Tracker's own switch_axe.json and agreeing on all 109 rows
+// (C:/MHGU-Extract/add-weapon-phials.py). No other class ships one yet, so this answers null for them.
+export function phialFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && r.phial && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  if (name){ const hit = rows.find(r => r.name === name); if (hit) return hit.phial; }
+  return rows[0].phial;
+}
+// every phial the model can carry, so a caller can tell a settled model from the ambiguous one
+export function phialsFor(cj, modelId){
+  if (!cj || !modelId) return [];
+  return [...new Set((cj.weapons || [])
+    .filter(r => r.named && r.phial && modelIdOf(r.model) === modelId).map(r => r.phial))];
+}
+// THE ELEMENT A WEAPON CARRIES ('Fire' | 'Water' | 'Thunder' | 'Dragon' | 'Ice' | 'Poison' | 'Paralysis' | 'Sleep' |
+// 'Blast'), or null for none -- a property of the WEAPON like the phial, so the name decides where the model cannot.
+// The data is docs/weapons/<cls>.json `element`, from table/weaponNNBaseData byte +17 (0 none, 1 Fire, 2 Water,
+// 3 Thunder, 4 Dragon, 5 Ice, 6 Poison, 7 Paralysis, 8 Sleep, 9 Blast): the column was located per class against the
+// Collection Tracker's own `ele` and agrees on every row of the twelve classes that have one
+// (C:/MHGU-Extract/add-weapon-elements.py; the two Bowguns carry none). The game's code asks for it as player
+// parameter 17 -- the Switch Axe's burst shells pick their row by it (render/weapon-fx.js burstRow).
+export function elementFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  const hit = (name && rows.find(r => r.name === name)) || rows[0];
+  return hit.element || null;
+}
+
 export function rowFor(cj, modelId){
   return (cj.weapons || []).find(r => r.named && modelIdOf(r.model) === modelId) || null;
 }

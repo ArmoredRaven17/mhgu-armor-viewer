@@ -1,0 +1,1329 @@
+{
+ "_about": "The Switch Axe's phial effects as the ROM requests them: the effect holder's rows, the burst shells' rows, the\nrequester's codes and the colour tables -- written to the Armor Viewer as docs/effects/w08-shells.json.\nRead 2026-09-28, corrected 2026-09-29 (the bursts' sites, the fixed palette, the decimal motion ids).\n\n    python tools/w08shells.py                 writes docs/effects/w08-shells.json\n    python tools/w08shells.py <out.json>      writes elsewhere (to compare before replacing the shipped file)\n\nThe rows come straight from romfs shell/pl/w08.arc (player/plshells.py reads any class the same way); the colour\ntables from loc/arc/resident.arc and the stage arcs.\n\nWHAT IS IN IT (every number read out of the ROM or its data, the addresses are main.text):\n  holder      shell/pleffect/effect_w08 rows: the effect-holder shell uShellPlEffectW08 (vtable 0x1756e00). The player\n              keeps one at +0x2634; a request names a ROW (\"code\") of this list and takes its spec 0: vtable +0x39c =\n              0x281ef4 -> holder +0x150 = 0x44bfcc (fire and forget); vtable +0x3a0 = 0x281f14 -> holder +0x154 =\n              0x44c0c4 (a tracked slot, replacing what it held); 0x281ffc -> holder +0x158 = 0x44c164 (a tracked slot,\n              idempotent). The holder's stop policy is its vtable +0x160 = 0x454ed4, per code.\n  requester   uPlayerQuest08's 0x11a40f4(self, mode): mode -> code. The phial (player parameter 27, the equipment's copy\n              of weapon08BaseData mBinType, read through vtable +0x15c) picks the EVEN code for Dragon ([2,4,6,10][mode])\n              and the ODD one for every other phial ([1,3,5,9][mode]) plus a colour: entry [8,9,10,0,12,11][phial]\n              (rodata 0x16a76b0) of the FIXED table `palettes.player` into the request block +0x80 with override bit\n              17; mode 4 would be code 13 with no colour (no call site passes 4: row 13 is asked by 0x11a30c4 itself). The parent is the unit in the player's part slot 7 (+0x23a0: the\n              first weapon unit) and the root joint is overridden to 0 (block +0x52, bit 5). WHICH MOTIONS ASK is in the\n              Armor Viewer's render/weapon-fx.js SWORD_REQUESTS (motion ids are decimal bank*1000+slot; an earlier\n              `motionsSeen` block here listed hex-split numbers and is gone).\n  burst000/1  shell/pl/pl_w08_000 (uShellPlw08_000, shell id 0x2e) and pl_w08_001 (0x2f) rows: each row's record(s).\n              The shells are CREATED by two sites of the class (0x48b884 with the shell id and the row in the setup\n              block): 0x119eecc on Motion[125] at frame 12 and 0x11a38d0 on Motion[137] at frame 2, the row chosen\n              by phial and element; the shell's init (vtable +0x13c = 0x474330 / 0x474c54) requests spec 0 of its row.\n              The class's many 0x2b6a80 sites register attack HITBOXES, not shells: an earlier reading here took them\n              for the shells' spawns.\n  palettes    rProofEffectColorControl tables. `player` = loc/arc/resident.arc effect/pec/pec_001, the effect manager's\n              colour-control slot 1, which every phial colour is read from; `resident` = all five resident tables;\n              `stages` = each stage arc's own table (slot 0: other effects' tints), kept for reference.\n              THE APP READS `palettes.player`: a file without it draws no coloured aura at all (the ROM makes no\n              request when the table has no entry, and so does render/weapon-fx.js colourFor).",
+ "phial": {
+  "source": "weapon08BaseData.w08d byte +18 (mBinType); player parameter 27",
+  "enum": [
+   "Power",
+   "Element",
+   "Paralysis",
+   "Dragon",
+   "Exhaust",
+   "Poison"
+  ],
+  "paletteEntry": [
+   8,
+   9,
+   10,
+   0,
+   12,
+   11
+  ],
+  "skipColour": "Dragon always; Element when the weapon has an element (parameter 17 in 1..5)"
+ },
+ "requester": {
+  "routine": "0x11a40f4",
+  "parentSlot": 7,
+  "rootJoint": 0,
+  "codeByMode": {
+   "0": [
+    1,
+    2
+   ],
+   "1": [
+    3,
+    4
+   ],
+   "2": [
+    5,
+    6
+   ],
+   "3": [
+    9,
+    10
+   ],
+   "4": [
+    13,
+    13
+   ]
+  },
+  "codeOrder": [
+   "every phial but Dragon",
+   "Dragon"
+  ],
+  "modeSites": {
+   "0": [
+    "0x119e4f4",
+    "0x119e75c",
+    "0x119edf4",
+    "0x119fcfc",
+    "0x11a06a4",
+    "0x11a0d10",
+    "0x11a1008",
+    "0x11a16f4",
+    "0x11a37c0"
+   ],
+   "1": [
+    "0x119ff2c"
+   ],
+   "2": [
+    "0x11a40b0"
+   ],
+   "3": [
+    "0x11a2684"
+   ]
+  }
+ },
+ "holder": {
+  "lists": [
+   "w08_000",
+   "cm002_002",
+   "w08_800",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "rows": [
+   {
+    "effect": "effect_w08_ef000",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "cm002_002",
+      "key": 205
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef001",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 500
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef002",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 501
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef003",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 505
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef004",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 506
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef005",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 800
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef006",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 801
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef007",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 900
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef008",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 901
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef009",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 800
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef010",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 801
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef011",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 550
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef012",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_800",
+      "key": 1001
+     }
+    ]
+   },
+   {
+    "effect": "effect_w08_ef013",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 502
+     }
+    ]
+   }
+  ]
+ },
+ "burst000": {
+  "lists": [
+   "w08_000",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "rows": [
+   {
+    "effect": "pl_w08_000_ef000",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef001",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 511
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef002",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef003",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 513
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef004",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef005",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef006",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef007",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef008",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef009",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef010",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef011",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef012",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef013",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef014",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef015",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef016",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef017",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 515
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef018",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef019",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 517
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef020",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef021",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 519
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef022",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef023",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 521
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef024",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef025",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 523
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef026",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef027",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef028",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef029",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef030",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef031",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef032",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef033",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef034",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef035",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef036",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef037",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef038",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef039",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef040",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef041",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef042",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef043",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef044",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef045",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef046",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef047",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef048",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef049",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef050",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef051",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef052",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef053",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef054",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_000_ef055",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   }
+  ]
+ },
+ "burst001": {
+  "lists": [
+   "w08_000",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   ""
+  ],
+  "rows": [
+   {
+    "effect": "pl_w08_001_ef000",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 511
+     },
+     {
+      "list": "w08_000",
+      "key": 510
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef001",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 513
+     },
+     {
+      "list": "w08_000",
+      "key": 512
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef002",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 515
+     },
+     {
+      "list": "w08_000",
+      "key": 514
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef003",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 517
+     },
+     {
+      "list": "w08_000",
+      "key": 516
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef004",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 519
+     },
+     {
+      "list": "w08_000",
+      "key": 518
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef005",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 521
+     },
+     {
+      "list": "w08_000",
+      "key": 520
+     }
+    ]
+   },
+   {
+    "effect": "pl_w08_001_ef006",
+    "scale": 1.0,
+    "records": [
+     {
+      "list": "w08_000",
+      "key": 523
+     },
+     {
+      "list": "w08_000",
+      "key": 522
+     }
+    ]
+   }
+  ]
+ },
+ "palettes": {
+  "source": "rProofEffectColorControl tables, u32 colours as stored (little-endian bytes R G B A), index = entry number. THE PHIAL COLOURS COME FROM `player`: the requesters read the effect manager's colour-control slot 1 ([[0x1831b10]+0x40]+4 -> +0x74 entry table, 0x11a4e04 / 0x11a41c8 / the burst shells 0x4740a0), and slot 1 is loc/arc/resident.arc effect/pec/pec_001 -- 13 entries, one vivid hue per phial at 8..12, the same on every stage (Raven, 2026-09-28: 'the Phial colors don't shift, they are assigned per Switch Axe via the Phial Type'). The stage tables (effect/pec/pec_<stage> in each stage arc) are slot 0's and tint other effects; kept for reference.",
+  "player": [
+   "ffa0a0a0",
+   "ffeb008c",
+   "ff0000bf",
+   "ffff1111",
+   "ff00a516",
+   "ff19b4cc",
+   "ffffeb28",
+   "ff005aff",
+   "ff0014ff",
+   "ff74c729",
+   "ff00bbe8",
+   "ffff2864",
+   "ffff6b36"
+  ],
+  "resident": {
+   "pec_000": [
+    "ff65e1ff",
+    "ff6594ff",
+    "ff6565ff",
+    "ffff65b4"
+   ],
+   "pec_001": [
+    "ffa0a0a0",
+    "ffeb008c",
+    "ff0000bf",
+    "ffff1111",
+    "ff00a516",
+    "ff19b4cc",
+    "ffffeb28",
+    "ff005aff",
+    "ff0014ff",
+    "ff74c729",
+    "ff00bbe8",
+    "ffff2864",
+    "ffff6b36"
+   ],
+   "pec_002": [
+    "ffc0d2ff",
+    "ffc010c0",
+    "ffc0d2ff",
+    "ff10ffff",
+    "ffc0d2ff",
+    "ffc0c010",
+    "ffd1ede2",
+    "ffc0d2ff",
+    "ffd1ede2",
+    "ff8db4d8",
+    "ff789aae",
+    "ff5a96b1",
+    "ff434c52",
+    "ff414f63",
+    "ff98a8ee",
+    "ff1932c7"
+   ],
+   "pec_003": [
+    "ff2828ff",
+    "ffff7d3c",
+    "ff00ffff",
+    "ff64ff64",
+    "ff5f5f5f"
+   ],
+   "pec_004": [
+    "ff28482d",
+    "ff503246",
+    "ff3682a0",
+    "ffb2a8ad",
+    "ff412d2a",
+    "ff2b6a71",
+    "ff5e5b38",
+    "ffaad7ff",
+    "ff8ed9ff",
+    "ff2f3782",
+    "ff3a503a",
+    "ff2f3782",
+    "ff949999",
+    "ff2a2846",
+    "ff46788c",
+    "ffa58080",
+    "ff876ea8",
+    "ff2d2d6e"
+   ]
+  },
+  "stages": {
+   "m01d": [
+    "ff536270",
+    "ff485667",
+    "ff849c70",
+    "ff3a2f41",
+    "ff1e2435",
+    "ff313c62",
+    "ff3b554c",
+    "ff414c64",
+    "ff082657",
+    "ff33545a",
+    "ff2b2713",
+    "ff24331c",
+    "cdcdcdcd"
+   ],
+   "m01n": [
+    "ff37111a",
+    "ff270d2e",
+    "ff524323",
+    "ff581e2a",
+    "ff443c27",
+    "ff8e776d",
+    "ff4a513e",
+    "ff566f4a",
+    "ff543f72",
+    "ff482333",
+    "ff253827",
+    "ff24321e"
+   ],
+   "m02d": [
+    "ff141d26",
+    "ff5f6d7b",
+    "ff545d70",
+    "ff566c84",
+    "ffa4d6f3",
+    "ff5889ae",
+    "ffa5d5cc",
+    "ff414454",
+    "ff403a57",
+    "ff100819",
+    "ff13041f",
+    "ff191919",
+    "ff2f2f2f"
+   ],
+   "m02n": [
+    "ff0d0405",
+    "ff192f37",
+    "ff0b1210",
+    "ff0b1210",
+    "ff332124",
+    "ff151c20",
+    "ff413b21",
+    "ff151015",
+    "ff2a1c18",
+    "ff241312",
+    "ff200f0f",
+    "ff232919",
+    "ff2c1f1a"
+   ],
+   "m03d": [
+    "ff32363c",
+    "ff282b30",
+    "ff34281e",
+    "ffa09d8e",
+    "ff4f4c43",
+    "ff635449",
+    "ffa09b8e",
+    "ff86867f",
+    "ffa09a8c",
+    "ff4a656a"
+   ],
+   "m03n": [
+    "ff50331c",
+    "ff2e3d31",
+    "ff392b1f",
+    "ff5e573e",
+    "ff5d594b",
+    "cb48472b",
+    "ff717563",
+    "ff858c6e",
+    "ff858c6e",
+    "ff1c2321"
+   ],
+   "m04d": [
+    "ff8eb6ca",
+    "ff233544",
+    "ff658eb4",
+    "ff7e8b9d",
+    "ff415d5f",
+    "ff192742",
+    "ff56514e",
+    "ff415d5f",
+    "ff131b1c",
+    "ff727e9b",
+    "ffcdcdcd",
+    "ffcdcdcd",
+    "cdcdcdcd"
+   ],
+   "m04n": [
+    "ff32404f",
+    "ff121f34",
+    "ff3d576a",
+    "ff565c6b",
+    "ff4c595e",
+    "ff1e2d4d",
+    "ff19192a",
+    "ff425c6f",
+    "ff646342",
+    "ff4b6368"
+   ],
+   "m05d": [
+    "ff87aaeb",
+    "ff4e65af",
+    "ff146ae5",
+    "ff365797",
+    "ff6983d6",
+    "ff99b0d3",
+    "ff3370ed",
+    "ffb3e4fe",
+    "ff7696d5",
+    "ff63b5ff",
+    "ff6b94df",
+    "ff5c90ed"
+   ],
+   "m06d": [
+    "ffa9d7f3",
+    "ffe7dbd4",
+    "ff869696",
+    "ffa2897a",
+    "ff695649",
+    "ff9c9184",
+    "ff18232b",
+    "ff5e5e5e",
+    "ff9ba6b6",
+    "ff5f5554",
+    "ff5c676a"
+   ],
+   "m07d": [
+    "ff0c0e0c",
+    "ff0b0e0d",
+    "ff0c0e0d",
+    "ff5b5a4d",
+    "ff101112",
+    "ff101112",
+    "ff0b0e0b",
+    "ff5b5a4d",
+    "ff192023",
+    "ff5b5a4d",
+    "ff0e0f0b"
+   ],
+   "m08d": [
+    "ffcccccc",
+    "ff9d977d",
+    "ff9a7f81",
+    "ff3f4c69",
+    "ff22438e",
+    "ff3f4c69",
+    "ff284ea3",
+    "ff5983a5",
+    "ff30576a",
+    "ff2c4787",
+    "ff2c4286",
+    "ff37719f"
+   ],
+   "m09d": [
+    "ff1f2d30",
+    "ff537ec7"
+   ],
+   "m10d": [
+    "ff1f2d30",
+    "ff84aae8"
+   ],
+   "m11d": [
+    "ffb59687",
+    "ff2468d7",
+    "ff407397",
+    "ff1961b6",
+    "ff455d85",
+    "ff7676ad",
+    "ff696c80",
+    "ff444b56",
+    "ff7e96b2",
+    "ff26314b",
+    "ff283055"
+   ],
+   "m12d": [
+    "ffa2a3dc",
+    "ff152638",
+    "ff212c57",
+    "ff0e2e74",
+    "ff0a35fe",
+    "ff1d53da",
+    "ff285179",
+    "ff545f8d",
+    "ff081669",
+    "ff172864",
+    "ff0e1914"
+   ],
+   "m13d": [
+    "ff333a3c",
+    "ff3a5d69",
+    "ff223443",
+    "ff2a312d",
+    "ff597881",
+    "ff233d47",
+    "ff5f637a",
+    "ff16232c",
+    "ff4c3f49",
+    "ff1b2737",
+    "ff0c0f16"
+   ],
+   "m14d": [
+    "ff776d56",
+    "ff5f5e4c",
+    "ff676051",
+    "ffa1775b",
+    "ffa78f82",
+    "ff14120b",
+    "ff2e2009",
+    "ff604e51",
+    "ff636a76",
+    "ff494631"
+   ],
+   "m15d": [
+    "ff9dbae1",
+    "ff9dbae1"
+   ],
+   "m16d": [
+    "ff768c9e",
+    "ff7e989f"
+   ],
+   "m17d": [
+    "ff252525",
+    "ff2b3e3f",
+    "ffcdcdcd",
+    "ffcdcdcd",
+    "ffcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd"
+   ],
+   "m18d": [
+    "ff14001c",
+    "ff010715",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd",
+    "cdcdcdcd"
+   ],
+   "m19d": [
+    "ffffe3e6",
+    "ff254b9f"
+   ],
+   "m20d": [
+    "ff876443",
+    "ffb58e82"
+   ],
+   "m21d": [
+    "ff8da8a4",
+    "ffbccbb6"
+   ],
+   "m22d": [
+    "ff5191e6",
+    "ff5d8ba1",
+    "ff7cb7db",
+    "ff8cc0ed",
+    "ff6a7477",
+    "ff5c9dc4",
+    "ff6c7857",
+    "ff8fc3f7",
+    "ff8ebfef",
+    "ff96ceff",
+    "ff738088",
+    "ff8ca9d5"
+   ],
+   "m23d": [
+    "ffa0b7ba",
+    "ff112834",
+    "ff365669",
+    "ff738998",
+    "ffa0b7ba",
+    "ff2d4a56",
+    "ff534e49",
+    "ff89746d",
+    "ff766966",
+    "ff1f3642",
+    "ffa0b7ba"
+   ],
+   "m24d": [
+    "ff72898c",
+    "ffa0b7ba",
+    "ffa0b7ba",
+    "ffa0b7ba",
+    "ff1e2523",
+    "ffa16e5d",
+    "ff3c4959",
+    "ff091c3a",
+    "ff4b4f5a",
+    "ff947767"
+   ],
+   "m25d": [
+    "ff15313d",
+    "ff766966"
+   ],
+   "m26d": [
+    "ff21311a",
+    "ff261a14",
+    "ff44525c"
+   ],
+   "m27d": [
+    "ff3e5a6a",
+    "ffb9a8ac"
+   ]
+  }
+ }
+}
