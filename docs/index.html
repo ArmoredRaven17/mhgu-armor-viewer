@@ -521,6 +521,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field" id="weaponOilField" style="display:none"><label for="weaponOil">Oil</label><select id="weaponOil"><option value="0">None</option><option value="1">Affinity Oil</option><option value="2">Destroyer Oil</option><option value="3">Stamina Oil</option><option value="4">Mind's Eye Oil</option></select></div>
           <div class="field" id="enragedGuardField" style="display:none"><label for="enragedGuard">Enraged Guard</label><select id="enragedGuard"><option value="0">Off</option><option value="1">Power I</option><option value="2">Power II</option><option value="3">Power III</option></select></div>
           <label class="chk" id="healShieldField" style="display:none"><input type="checkbox" id="healShieldChk">Healing Shield active (Hunter Art)</label>
+          <div class="field" id="devouringDemonField" style="display:none"><label for="devouringDemon">Devouring Demon</label><select id="devouringDemon"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
@@ -1231,6 +1232,7 @@ import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
 import { createFloorGrid } from './render/grid.js';
 import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS } from './render/weapon-fx.js';
 import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
+import { DevouringDemonEffects, PLAYER_REQUESTS as LS_PLAYER_REQUESTS } from './render/weapon-fx-w07.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2264,6 +2266,7 @@ function saveState(){
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
       chaosOil: document.getElementById('chaosOil').value,
+      devouringDemon: document.getElementById('devouringDemon').value,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
@@ -2664,7 +2667,8 @@ swordFx.loadPalettes();
 // THE PLAYER'S OWN HOLDER REQUESTS, every class's (render/weapon-fx.js PlayerRequests): the rows a class's action code asks
 // on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
-const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS });
+const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
+                                      w07: LS_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
 // THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
@@ -2689,13 +2693,21 @@ const enragedGuardSel = document.getElementById('enragedGuard'), healShieldChk =
 enragedGuardSel.onchange = () => { guardFx.setTier(+enragedGuardSel.value); saveState(); };
 healShieldChk.onchange = () => { weapon.setShieldCoat(healShieldChk.checked); saveState(); };
 playerReq.levelOf = cls => (cls === 'w03' && guardFx.tier) ? guardFx.tier - 1 : 0;
+// THE LONG SWORD'S DEVOURING DEMON (render/weapon-fx-w07.js): the holder hangs the Art's aura from the sword unit while
+// the state lasts (rows 900..902 by the Art's level), drawn or sheathed -- nothing in the ROM tests either -- and the Art's
+// own stance asks 920 at its start and the level's aura at frame 190. The state is the user's control.
+const ddFx = new DevouringDemonEffects();
+const devouringDemonSel = document.getElementById('devouringDemon');
+devouringDemonSel.onchange = () => { ddFx.setLevel(+devouringDemonSel.value); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); return Promise.resolve(null); }
+  const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
+  const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
   return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
                       hunterFx.sync('co', playerRoots(), world),
                       swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world),
-                      chaosFx.sync(weapon.cls === weaponClassSel.value ? weaponClassSel.value : null,
-                                   weapon.parts && weapon.parts.main ? [weapon.parts.main] : [], world)]);
+                      chaosFx.sync(inHand, mainPart, world),
+                      ddFx.sync(inHand, mainPart, world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2731,6 +2743,8 @@ function stepWeaponFx(){
   playerReq.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t);
   guardFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn, weapon.onBack());
   chaosFx.step(t, act ? advance : null);
+  ddFx.stepArt(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn ? weapon.stance : null, t);
+  ddFx.step(t, act ? advance : null);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3775,6 +3789,7 @@ function paintWeaponFx(){
   weaponFx.setEnabled(weaponFxOn);
   swordFx.setEnabled(weaponFxOn);
   chaosFx.setEnabled(weaponFxOn);
+  ddFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -3961,6 +3976,7 @@ async function buildWeaponLists(){
   document.getElementById('chaosOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('weaponOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
+  document.getElementById('devouringDemonField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('enragedGuardField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   document.getElementById('healShieldField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
@@ -5359,7 +5375,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5534,6 +5550,7 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.charge !== undefined){ chargeChk.checked = !!SAVED.charge; swordFx.setCharge(!!SAVED.charge); }
   if (SAVED && SAVED.tempest !== undefined){ tempestChk.checked = !!SAVED.tempest; swordFx.setTempest(!!SAVED.tempest); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.chaosOil))){ chaosOilSel.value = String(SAVED.chaosOil); chaosFx.setLevel(+SAVED.chaosOil); }
+  if (SAVED && /^[0-3]$/.test(String(SAVED.devouringDemon))){ devouringDemonSel.value = String(SAVED.devouringDemon); ddFx.setLevel(+SAVED.devouringDemon); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
@@ -5639,6 +5656,9 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     player: () => playerReq.stats(),
     sns: { stats: () => chaosFx.stats(), raw: () => chaosFx.live, obj: () => chaosFx, bounds: () => chaosFx.bounds(),
            chaosOil: level => { chaosOilSel.value = String(level | 0); chaosFx.setLevel(level | 0); return chaosFx.stats(); } },
+    // the Long Sword's Devouring Demon (render/weapon-fx-w07.js): its state and the weapon-unit host
+    ls: { stats: () => ddFx.stats(), raw: () => ddFx.live, obj: () => ddFx, bounds: () => ddFx.bounds(),
+          demon: level => { devouringDemonSel.value = String(level | 0); ddFx.setLevel(level | 0); return ddFx.stats(); } },
     // the weapon model's own state (render/weapon-state.js): the Sword & Shield's oil, the Long Sword's Spirit Gauge
     parts: () => weapon.partAudit(),
     oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },

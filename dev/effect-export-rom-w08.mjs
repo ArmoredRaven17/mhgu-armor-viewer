@@ -72,6 +72,15 @@ const CLASS_SHAPES = {
     [1000, 'parent', undefined], [1001, 'parent', undefined], [1002, 'parent', undefined],
     [800, 'parent', undefined], [801, 'parent', undefined], [802, 'parent', undefined],
   ],
+  // THE LONG SWORD (render/weapon-fx-w07.js): rows 0 / 1 / 8 / 9 = w07_000 511 / 510 / 515 / 520 and row 2 = cm002_002 204
+  // (the sharpening) through the PLAYER's own block, no overrides; Devouring Demon's rows 3..6 = w07_800 900..902 (slot 3,
+  // by the level) and 920 (slot 4, the Art's start) on the WEAPON unit, no overrides (0x119a134, the holder's 0x454bcc).
+  // Not here: the after-strike shell pl_w07_100 (800..802, made on a hit) and row 7 (910, which nothing in the class asks)
+  w07: [
+    [511, 'parent', undefined], [510, 'parent', undefined], [515, 'parent', undefined], [520, 'parent', undefined],
+    [204, 'parent', undefined],
+    [900, 'unit', undefined], [901, 'unit', undefined], [902, 'unit', undefined], [920, 'unit', undefined],
+  ],
 };
 // a request that roots its record on a joint needs that joint on the parent, as the page's hunter host adds it
 // (render/weapon-fx.js WeaponEffects.useDef requestJoints): the Sword & Shield's joint 1
