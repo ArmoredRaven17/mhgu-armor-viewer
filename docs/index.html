@@ -787,6 +787,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <h2>Settings</h2>
     <h3 class="stage-h">Display</h3>
     <label class="chk"><input type="checkbox" id="setNote">Hide rendering notice</label>
+    <h3 class="stage-h">Equipment</h3>
+    <label class="chk"><input type="checkbox" id="setHeadBoth">Treat Head Armors as Blademaster/Gunner</label>
+    <p class="hint">The Head list offers helms and caps together, whichever Type is picked.</p>
     <h3 class="stage-h">Backdrop</h3>
     <p class="hint">Overrides the render background so the model can be keyed out.</p>
     <div class="row gap stage-row">
@@ -3065,7 +3068,8 @@ function optionsFor(slot){
     seen.add(r.model);
     // hunter_type 2 is Blademaster/Gunner -- the shared sets and the mask-type head
     // pieces -- and those stay in the list whichever type is picked
-    if (hunterType !== 'all' && r.t !== 2 && r.t !== (hunterType === 'b' ? 0 : 1)) continue;
+    const ty = typeFor(slot);
+    if (ty !== 'all' && r.t !== 2 && r.t !== (ty === 'b' ? 0 : 1)) continue;
     forge.push({ value: 's' + r.series, label: r.name, model: r.model,
                  group: 'Rarity ' + r.r });
   }
@@ -3091,9 +3095,20 @@ function optionsFor(slot){
 // restored before the lists are first built, so a saved choice is reflected from the start
 let hunterType = (SAVED && (SAVED.hunterType === 'b' || SAVED.hunterType === 'g'))
                ? SAVED.hunterType : 'all';
+// SETTINGS -> EQUIPMENT (Raven, 2026-09-30: "Users want to be able to combine Blademaster (Helm) and Gunner (Caps) in the
+// armor drop down even when Blademaster or Gunner are selected", "This basically uses Both behavior for either filter"):
+// with the toggle on, the Head list ignores the Type filter -- Both's list -- so a Blademaster helm and a Gunner cap are
+// both offered whichever type is picked; the other slots keep the filter. A view preference, app chrome like the capture
+// settings: its own localStorage key, not part of a saved set or a hunter slot. Read here, before the lists are built.
+const EQUIP_KEY = 'mhgu-armor-viewer-equipment';
+const equipPrefs = { headBoth: false };
+try { Object.assign(equipPrefs, JSON.parse(localStorage.getItem(EQUIP_KEY) || '{}')); } catch (_) {}
+equipPrefs.headBoth = equipPrefs.headBoth === true;
+// the type a slot's list is filtered by
+function typeFor(slot){ return (slot === 'helm' && equipPrefs.headBoth) ? 'all' : hunterType; }
 const OPT_CACHE = {};
 function optionsCached(slot){
-  const k = gender + hunterType + slot;
+  const k = gender + typeFor(slot) + slot;
   return OPT_CACHE[k] || (OPT_CACHE[k] = optionsFor(slot));
 }
 // the type filter is a VIEW, so resolution always runs against the unfiltered list --
@@ -3204,6 +3219,17 @@ document.getElementById('htype').onchange = e => {
   rebuildSelects(document.getElementById('filter').value);
   saveState();
 };
+// Settings -> Equipment: the Head list as Both (typeFor); a view, so what is equipped stays (rebuildSelects)
+{
+  const cb = document.getElementById('setHeadBoth');
+  cb.checked = equipPrefs.headBoth;
+  cb.onchange = () => {
+    equipPrefs.headBoth = cb.checked;
+    try { localStorage.setItem(EQUIP_KEY, JSON.stringify(equipPrefs)); } catch (_) {}
+    rebuildSelects(document.getElementById('filter').value);
+  };
+}
+
 
 // ---- gender -------------------------------------------------------------
 // Gender is a property of the hunter on screen (Raven, 2026-09-03: "Instead of having Male
