@@ -594,6 +594,10 @@ export class PlayerRequests {
     this.key = null; this.file = null; this.clip = null; this.mtime = null;
     this.slots = new Map();      // holder slot -> { q, live, stop, while }
     this.fired = 0;
+    this.done = new Set();       // the `once` requests fired since the action started
+    // A REQUEST'S ROW BY A LEVEL the stance alone cannot say (the Lance's stance shell, by the Art's level): `keys` in
+    // place of `key`, indexed by levelOf(cls), 0-based
+    this.levelOf = null;
   }
   // every frame: `cls` is the class whose code runs (null when no weapon stance plays: sheathed, a Hunter Pose, another
   // class), `stance` the weapon's { file, clip, t0 }, `time` the stance action's time in seconds
@@ -606,25 +610,32 @@ export class PlayerRequests {
     const t0 = stance && stance.t0 ? stance.t0 : 0;
     const mtime = key ? (time || 0) + t0 : null;
     let from = -1;                               // the motion frame the last step reached, -1 for a new action
+    let wrapped = false;                         // the clip came round its end this step (the motion's end flag, 0x94dc04)
     if (key !== null && key === this.key){
       const loop = /_loop$/.test(stance.clip || '');
-      if (stance.clip === this.clip && stance.file === this.file && mtime < this.mtime) from = loop ? t0 - 1e-6 : -1;  // a wrap
+      if (stance.clip === this.clip && stance.file === this.file && mtime < this.mtime){ from = loop ? t0 - 1e-6 : -1; wrapped = loop; }  // a wrap
       else if (mtime >= this.mtime) from = this.mtime;
     }
+    if (key !== this.key) this.done.clear();    // a new action: its `once` requests may fire again
     // the stop policy: a slot's effect lives while its stance does
     for (const [s, x] of this.slots) if (!x.while.includes(key)) this.release(s, x.stop);
     this.key = key; this.file = stance ? stance.file : null; this.clip = stance ? stance.clip : null; this.mtime = mtime;
     if (key === null || !live) return;
-    const due = (table[key] || []).filter(r => from < r.at / 60 && mtime >= r.at / 60);
+    // `at` is a motion frame; `atEnd` the first time the clip comes round its end (a loop's wrap); `once` fires a request
+    // at most once per action (the action's own flag byte, as the Lance's charge sets +7 after its first speed-up)
+    const due = (table[key] || []).filter(r => !(r.once && this.done.has(r)) &&
+                                          (r.atEnd ? wrapped : (from < r.at / 60 && mtime >= r.at / 60)));
     const last = new Map();
     for (const r of due) if (r.slot != null) last.set(r.slot, r);   // caught up at once: the last per slot is what stands
     for (const r of due){
       if (r.slot != null && last.get(r.slot) !== r) continue;
-      if (h.refused.has(r.key)) continue;
+      const rk = r.keys ? r.keys[Math.max(0, Math.min(r.keys.length - 1, (this.levelOf && this.levelOf(cls)) | 0))] : r.key;
+      if (h.refused.has(rk)) continue;
+      if (r.once) this.done.add(r);
       if (r.slot != null){ const x = this.slots.get(r.slot); if (x) this.release(r.slot, 3); }   // 0x44c210: at once
-      const q = h.startState(r.key, r.efl, r.requester || null);
+      const q = h.startState(rk, r.efl, r.requester || null);
       this.fired++;
-      if (q && r.slot != null) this.slots.set(r.slot, { q, key: r.key, live, stop: r.stop || 3, while: r.while || [key] });
+      if (q && r.slot != null) this.slots.set(r.slot, { q, key: rk, live, stop: r.stop || 3, while: r.while || [key] });
     }
   }
   // the holder's answer for a slot's effect: 3 at once, 2 the effect's own end (the schedule drops it when finished)

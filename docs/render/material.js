@@ -258,6 +258,11 @@ export function applyTint(mat){
       uAmt:  { value: 0 },
       uEnv:  { value: null },
       uEnvAmt: { value: 0 },
+      // fReflectiveColor's HUE on the sphere map, as a multiplier of the scalar weight above: (1, 1, 1), the lit path's
+      // long-standing average, everywhere except under a part's material override (setMaterialOverride), which draws the
+      // ROM's colour as it is -- the Lance's Healing Shield pulses the shield's reflection green. (17 CBMaterial records
+      // and 654 clip tracks carry a non-grey reflective colour elsewhere and are still averaged: a separate matter.)
+      uReflTint: { value: new THREE.Vector3(1, 1, 1) },
       uDbg: { value: 0 },
       uKey: { value: new THREE.Color(1,1,1) },          // the armor's AUTHORED color
       uHasKey: { value: 0 },
@@ -319,7 +324,7 @@ export function applyTint(mat){
       sh.fragmentShader = sh.fragmentShader
         .replace('void main() {',
                  'uniform vec3 uTint; uniform float uAmt;' +
-                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform float uDbg;' +
+                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform vec3 uReflTint; uniform float uDbg;' +
                  ' uniform vec2 uSat; uniform vec2 uVal;' +
                  ' uniform vec3 uKey; uniform float uHasKey; uniform float uKeyTol;' +
                  ' uniform float uSatBoost;' +
@@ -442,7 +447,7 @@ export function applyTint(mat){
              // SCREEN blend, not additive -- a + b*(1-a) cannot exceed 1, so bright
              // armor keeps its detail instead of clipping to white.
              vec3 enc = mhguSrgbOetf( gl_FragColor.rgb );
-             enc += env * g * uEnvAmt * fres * ( 1.0 - enc );
+             enc += env * uReflTint * g * uEnvAmt * fres * ( 1.0 - enc );
              gl_FragColor.rgb = mhguSrgbEotf( enc );
            }
            #include <colorspace_fragment>`);
@@ -1006,26 +1011,33 @@ function stepOneSlot(m, clip, tSec){
 // that stops matching a clip goes back to how it shipped instead of keeping the last frame written.
 export function stepMaterialAnim(root, tSec, pickClip){
   if (!root) return 0;
+  lastClock = tSec;
   let n = 0;
   root.traverse(o => {
     const m = o.material;
     if (!m || !m.userData) return;
     const clips = m.userData.rom && m.userData.rom.anim;
-    if (!clips || !clips.length) return;
-    const pick = pickClip ? pickClip(clips, m.userData.rom, tSec, m) : AUTO_CLIP(clips);
-    const raw = Array.isArray(pick) ? pick : [pick];
+    const ovr = m.userData.override;
+    // A PART'S OVERRIDE WITH A CLIP OF ITS OWN RUNS ON ANY MATERIAL, animated or not: the player steps its part-state
+    // materials' clips every frame (0x27bcb8) and the part copies the moving members on (0x3063cc) -- the Lance's
+    // Healing Shield on a shield whose own materials have no clip at all
+    if ((!clips || !clips.length) && !(ovr && ovr.anim)) return;
     const list = [];
-    for (const e of raw){
-      const i = Array.isArray(e) ? e[0] : e;
-      if (!(i >= 0)) continue;
-      const t0 = Array.isArray(e) && typeof e[1] === 'number' ? e[1] : 0;
-      list.push([i, tSec - t0]);
-      if (list.length === 4) break;
+    if (clips && clips.length){
+      const pick = pickClip ? pickClip(clips, m.userData.rom, tSec, m) : AUTO_CLIP(clips);
+      const raw = Array.isArray(pick) ? pick : [pick];
+      for (const e of raw){
+        const i = Array.isArray(e) ? e[0] : e;
+        if (!(i >= 0)) continue;
+        const t0 = Array.isArray(e) && typeof e[1] === 'number' ? e[1] : 0;
+        list.push([i, tSec - t0]);
+        if (list.length === 4) break;
+      }
+      restoreBase(m, baseOf(m));
+      for (const [ci, t] of list) stepOneSlot(m, clips[ci], t);
     }
-    restoreBase(m, baseOf(m));
-    if (!list.length) return;
-    for (const [ci, t] of list) stepOneSlot(m, clips[ci], t);
-    n++;
+    if (ovr) writeOverride(m, ovr, tSec);   // a part's override lands after the clips
+    if (list.length || (ovr && ovr.anim)) n++;
   });
   return n;
 }
@@ -1062,4 +1074,96 @@ function writeCb(m, w){
   const ov = m.userData.ov;
   if (w.reflective) ov.uRefl.value.fromArray(w.reflective);
   if (typeof w.transparency === 'number' && m.userData.rom.feat.transp === 'Alpha') ov.uTransp.value = w.transparency;
+}
+
+// A MATERIAL LAID OVER A WEAPON PART'S OWN, as the part unit does it (0x305f3c, every frame the part holds an override at
+// +0x13b0), into each of the part's materials whose colour channel is not masked out:
+//   * THE FRAME IT CHANGES (0x30679c): CBMaterial.fDiffuseColor and fReflectiveColor, $Globals.fSpecularColor (+0xb0) and
+//     fEmissionColor (+0xc0), the CBAmbient colour where both carry one, the tFresnelMap / tShininessMap bindings where
+//     the override binds them -- the override material's values AT THAT MOMENT;
+//   * EVERY FRAME AFTER (0x3063cc): fReflectiveColor and fEmissionColor only, again as they stand now.
+// "As they stand" because the override is a live material with its own clip: the player keeps a clone of each part-state
+// material (0x2895d4: res->vt+0x44(0), ->vt+0x1c) and steps them all every frame by its own frame delta (vtable +0x60 =
+// 0x27bcb8 -> each material's vt+0x20 = 0xb0cffc, the clip evaluator 0xb0ba84), from the moment it is loaded -- not from
+// the moment it is laid on. So fSpecularColor keeps whatever value the clip had on the frame the override took hold.
+// `o` is { diffuse, reflective, specular, emission } (each [r, g, b] or absent) and, when the override material is
+// animated, `anim`: its auto-play clip (build-matanim.py's shape), evaluated on the clock stepMaterialAnim is handed; or
+// null to give the material back its own. The Lance's Healing Shield puts player/mod/common/pl_lance_up.mrl on the
+// shield this way (render/weapon-state.js LANCE_UP). On the lit path: the colour is fAlbedoColor x fDiffuseColor,
+// fReflectiveColor the sphere map's weight AND hue (uReflTint), fSpecularColor uSpecRGB, fEmissionColor the emissive
+// over the albedo map (the ROM's PS_MaterialStd adds FEmissionConstant into mc.diffuse, which FFinalCombiner multiplies
+// by the albedo); on the reflection overlay only fReflectiveColor has a term. A material's own clips run under it: the
+// part writes the override after them, every frame (stepMaterialAnim).
+let lastClock = 0;                               // the clock stepMaterialAnim was last handed
+export function setMaterialOverride(mat, o){
+  mat.userData.override = o || null;
+  restoreOwn(mat);
+  // an animated material's snapshot of how it shipped must be taken before anything is laid over it
+  if (mat.userData.rom && mat.userData.rom.anim && mat.userData.rom.anim.length) baseOf(mat);
+  if (!o){ unbindOverrideEmission(mat); delete mat.userData.overrideSpec; return; }
+  mat.userData.overrideSpec = sampleOverride(o, 'fSpecularColor', lastClock) || o.specular || null;   // the frame it changes
+  bindOverrideEmission(mat, o);
+  writeOverride(mat, o, lastClock);
+}
+// the override's own clip at `tSec` for one member, [r, g, b] (3 columns written), or null when it does not drive it
+function sampleOverride(o, target, tSec){
+  const c = o && o.anim;
+  if (!c || !c.frames || !c.tracks) return null;
+  const tr = c.tracks.find(t => t.target === target && !t.unsupported);
+  if (!tr) return null;
+  const fr = Math.max(0, tSec) * MAT_FPS;
+  const v = sampleTrack(tr, c.loop ? fr % c.frames : Math.min(fr, c.frames));
+  return v ? [v[0], v[1] === undefined ? v[0] : v[1], v[2] === undefined ? v[0] : v[2]] : null;
+}
+// AN EMISSION LAID ON NEEDS THE ALBEDO UNDER IT, as baseOf gives an animated one (the Esurient rule): a part material
+// that ships emission 0 has no emissive map, and the override's glow would light the whole surface flat
+function overrideEmits(o){
+  const e = o.emission, tr = o.anim && o.anim.tracks && o.anim.tracks.find(t => t.target === 'fEmissionColor');
+  return !!tr || !!(e && (e[0] + e[1] + e[2]) > 0);
+}
+function bindOverrideEmission(m, o){
+  if (!m.map || !m.emissive || m.emissiveMap || !overrideEmits(o)) return;
+  m.emissiveMap = m.map;
+  m.userData.emissiveFromOverride = true;
+  m.needsUpdate = true;
+}
+function unbindOverrideEmission(m){
+  if (!m.userData.emissiveFromOverride) return;
+  m.emissiveMap = null;
+  delete m.userData.emissiveFromOverride;
+  m.needsUpdate = true;
+}
+function setReflective(m, rgb){
+  const u = m.userData.u, avg = (rgb[0] + rgb[1] + rgb[2]) / 3;
+  m.userData.reflective = avg;
+  if (u.uReflTint){
+    if (avg > 1e-6) u.uReflTint.value.set(rgb[0] / avg, rgb[1] / avg, rgb[2] / avg);
+    else u.uReflTint.value.set(1, 1, 1);
+  }
+  if (u.uEnvAmt) u.uEnvAmt.value = envStrength(m);
+}
+function restoreOwn(m){
+  const rom = m.userData.rom, gl = rom && rom.glob, cb = rom && rom.cbm, u = m.userData.u;
+  if (m.userData.ov){ if (cb) setCbWrite(m, m.userData.cbWrite); return; }
+  if (!gl || !cb) return;
+  if (u && m.color) m.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
+  m.userData.reflective = (cb.reflective[0] + cb.reflective[1] + cb.reflective[2]) / 3;
+  if (u && u.uReflTint) u.uReflTint.value.set(1, 1, 1);
+  if (u && u.uEnvAmt) u.uEnvAmt.value = envStrength(m);
+  if (u && u.uSpecRGB && gl.specular) u.uSpecRGB.value.fromArray(gl.specular.slice(0, 3));
+  if (m.emissive) m.emissive.setRGB(gl.emission[0], gl.emission[1], gl.emission[2]);
+}
+function writeOverride(m, o, tSec){
+  const refl = sampleOverride(o, 'fReflectiveColor', tSec) || o.reflective;
+  const emis = sampleOverride(o, 'fEmissionColor', tSec) || o.emission;
+  if (m.userData.ov){ if (refl) m.userData.ov.uRefl.value.fromArray(refl); return; }
+  const rom = m.userData.rom, gl = rom && rom.glob, u = m.userData.u;
+  if (!u) return;                                // an unlit layer: nothing here takes these constants
+  const alb = gl ? gl.albedo : [1, 1, 1];
+  if (o.diffuse && m.color) m.color.setRGB(alb[0] * o.diffuse[0], alb[1] * o.diffuse[1], alb[2] * o.diffuse[2]);
+  if (refl) setReflective(m, refl);
+  const spec = m.userData.overrideSpec || o.specular;
+  if (spec && u.uSpecRGB) u.uSpecRGB.value.fromArray(spec);
+  // read as sRGB, as applyTrack reads a clip's fEmissionColor (the Monster Viewer's lesson: linear is several times too bright)
+  if (emis && m.emissive) m.emissive.setRGB(emis[0], emis[1], emis[2], THREE.SRGBColorSpace);
 }

@@ -16,7 +16,7 @@ import * as THREE from 'three';
 import { loader, loadGlb, getTexture, weaponMotCache, bust } from './assets.js';
 import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
 import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, applyRomUv, allMats,
-         setOverlayAlbedo, setMaterialClip, clearMaterialClip, setCbWrite, MAT_FPS } from './material.js';
+         setOverlayAlbedo, setMaterialClip, clearMaterialClip, setCbWrite, setMaterialOverride, MAT_FPS } from './material.js';
 import { kinsectColours, ELEMENTS } from './kinsect.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
@@ -27,7 +27,7 @@ const APPLY_ROOT_TRACK = false;
 import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
 import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
-import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB } from './weapon-state.js';
+import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags } from './weapon-state.js';
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -209,6 +209,7 @@ export class WeaponRig {
     // (0 none, 1..3, 4 Valor's) and the Sword & Shield's oil (0 none, 1 Affinity, 2 Destroyer, 3 Stamina, 4 Mind's Eye)
     this.spirit = 0;
     this.oil = 0;
+    this.shieldCoat = false;         // the Lance's Healing Shield: pl_lance_up over the shield (applyShieldCoat)
     this._ps = null;                 // the part state's memory: the last frame's triggers, the colours written, the pulse
     this._appliedKey = null;
     this.motGroup = 0;
@@ -304,6 +305,7 @@ export class WeaponRig {
     if (seq !== this._seq) return;
     this.applyKinsectColours();
     await this.rebindMotion();
+    this.applyShieldCoat();
     this.step();
   }
 
@@ -433,6 +435,20 @@ export class WeaponRig {
   // here the select is how the user asks for a look, so each pick starts from nothing.)
   setSpirit(n){ n = +n; this.spirit = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
   setOil(n){ n = +n; this.oil = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
+  // THE LANCE'S HEALING SHIELD (render/weapon-state.js LANCE_UP): the user's control, as the Arts' states are. While it
+  // stands the shield's materials outside colour channel 10 take pl_lance_up's constants and its looping clip, the green
+  // pulse (material.js stepMaterialAnim runs it every frame) -- drawn or sheathed: nothing in the request (0x1179d88) or
+  // the part's override tests either.
+  setShieldCoat(on){ this.shieldCoat = !!on; this.applyShieldCoat(); }
+  applyShieldCoat(){
+    const p = this.parts.second, o = (this.cls === 'w03' && this.shieldCoat) ? LANCE_UP : null;
+    if (!p) return;
+    p.traverse(x => {
+      const m = x.material;
+      if (!m || !m.userData || !m.userData.rom || m.userData.rom.ch === 10) return;
+      if (o || m.userData.override) setMaterialOverride(m, o);
+    });
+  }
   // the arrow placement: a key of shared.arrow.records ('520' ...) or null for none
   setArrow(key){ this.arrowKey = (key === null || key === undefined || key === '') ? null : String(key); this.step(); }
   // the Kinsect's strongest element: an index into ELEMENTS (render/kinsect.js), or null for none
@@ -1042,13 +1058,18 @@ export class WeaponRig {
   // The motion is the stance's while the weapon is drawn; sheathed, the hunter plays a Hunter Pose, no weapon motion.
   partState(){
     const cls = this.cls;
-    if ((cls !== 'w07' && cls !== 'w01') || !this.cj) return null;
+    if ((cls !== 'w07' && cls !== 'w01' && cls !== 'w03') || !this.cj) return null;
     const mo = motionAt(this.drawn ? this.stance : null, this.poseTime());
     const o = { drawn: drawnFlag(this.drawn, mo), motion: mo.id, frame: mo.frame, onBack: this.onBack(), disp: this.gmkGroup | 0 };
     if (cls === 'w07'){
       const f = spiritFlags(Object.assign(o, { level: this.spirit }));
       const trg = f.t23 ? 23 : f.t22 ? 22 : f.t21 ? 21 : f.t20 ? 20 : null;
       return { cls, t1: f.t1, t0: f.t0, trg, blue: f.blue, show: null, oil: 0, key: 'ls:' + trg };
+    }
+    if (cls === 'w03'){
+      const f = lanceFlags(o);
+      const trg = f.t43 ? 43 : f.t51 ? 51 : null;
+      return { cls, t1: f.t1, t0: f.t0, trg, blue: false, show: null, oil: 0, key: 'lance:' + trg };
     }
     const f = snsFlags(o);
     const g = this.oil ? oilPart(f.t1, parseInt(this.modelId, 10)) : 0;
@@ -1060,7 +1081,9 @@ export class WeaponRig {
   stepPartState(ps){
     if (!ps){ if (this._ps) this.clearPartState(); return; }
     const main = this.parts.main;
-    const chan = ch => ((main && main.userData.chanMats) || []).filter(m => m.userData.rom.ch === ch);
+    // the Lance's shield is a unit of its own that runs the same triggers (kind 5 = 0x30de60 asks 0x30dab4 too)
+    const units = ps.cls === 'w03' ? [main, this.parts.second] : [main];
+    const chan = ch => units.flatMap(p => (p && p.userData.chanMats) || []).filter(m => m.userData.rom.ch === ch);
     const now = performance.now() / 1000;
     let e = this._ps;
     if (!e || e.cls !== ps.cls || e.root !== main){
@@ -1072,7 +1095,8 @@ export class WeaponRig {
     for (const t of now1){
       if (e.trgs.has(t)) continue;
       const r = g && g.find(r => r.trg === t);
-      if (r && r.anime !== undefined && r.anime !== null) for (const m of chan(t >= 20 ? 2 : 8)) setMaterialClip(m, r.anime, now);
+      // the channel the trigger is fired with: the Long Sword's Spirit triggers pass 2, every other here 8
+      if (r && r.anime !== undefined && r.anime !== null) for (const m of chan(ps.cls === 'w07' && t >= 20 && t <= 23 ? 2 : 8)) setMaterialClip(m, r.anime, now);
     }
     e.trgs = new Set(now1);
     if (ps.cls === 'w07'){

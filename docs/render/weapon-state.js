@@ -118,6 +118,80 @@ export function spiritPulse(timer, dt){
 export const OIL_RGB = [[1, 1, 1], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]];   // the .bss table 0x30ab3c fills, byte 0 red
 const OIL_31 = new Set([46, 99, 130, 131, 142, 155, 173, 179, 183, 185, 188]);    // 0x30acc4's table and the 46 test
 export function oilPart(drawn, model){ return drawn ? 21 : (OIL_31.has(model) ? 31 : 21); }
+// ---- the Lance (kinds 4 / 5: the lance 0x30d1e0, the shield 0x30de60) -----------------------------------------------
+// HEALING SHIELD'S COAT (read 2026-09-30). The Art (action 99, Arts Motion[151]) arms +0x3338 at motion frame 190 (the
+// level's duration, 0x282140(self, level + 0x10), x1.2 when 0x2a25f4(self, level + 0x38) answers); vtable +0x3e0 raises
+// status lo 0x80000000 while it runs. Every frame it stands, the class's update (vtable +0x24 = 0x1179d88) posts a
+// part-state request, 0x2896d4(player, 1, 4, 0x400, priority 1000): part slot 8 -- player+0x23a4, the SHIELD (slot 7
+// when the player's +0x13cc bit 3 is set, which a hunter's is not) -- takes the material registered at index 4 with the
+// mask 0x400. 0x28963c hands both to the part (0x30694c: +0x13b0, +0x13b8) and the part's 0x305f3c lays that material
+// over each of its own whose colour channel is NOT in the mask (bit 10: channel 10 keeps its own; two shields carry
+// one), through 0x30679c (material.js setMaterialOverride). Index 4 is the Lance's own, loaded by its vtable +0x148
+// (0x1173d48: resource 0x88b = player/mod/common/pl_lance_up.mrl, rMaterial, in player/quest/w03.arc). That material
+// binds neither tFresnelMap nor tShininessMap and carries no CBAmbient, so what reaches the shield is its constants AND
+// ITS CLIP. (Corrected 2026-09-30, Raven: "Healing Shield does not see to render anything currently" -- the first reading
+// took the constants alone, a shield that went a shade plainer.) Its one material has an animation block (+0x38 = 0x410,
+// 260 bytes, to the file's end): one clip, "Animation", 120 frames, looping, AUTO-PLAY, three linear tracks that swing
+// the shield GREEN and back -- fReflectiveColor 0 -> (0.115, 0.682, 0.098) at frame 60 -> 0, fEmissionColor 0.1 grey ->
+// the same green -> 0.1, fSpecularColor 0.4 grey -> the same green -> 0.4. The player registers a CLONE of the material
+// (0x2895d4) and steps every part-state material's clip each frame by its own frame delta (vtable +0x60 = 0x27bcb8 ->
+// the material's vt+0x20 = 0xb0cffc), from the moment it is loaded; the part copies fReflectiveColor and fEmissionColor
+// from it every frame (0x3063cc) and fSpecularColor only on the frame the override takes hold (0x30679c). The shield's own
+// shader (PS_MaterialStd, emission Constant, reflect SphereMap) adds the emission into the diffuse term that the albedo
+// multiplies, and weights the sphere map by the reflective colour: a textured green glow and a green sheen that pulse
+// every 120 frames the whole time the Art stands -- not only when a hit is blocked (that is the block burst, 1000..1002).
+export const LANCE_UP = {
+  diffuse: [0.8, 0.8, 0.8], reflective: [0, 0, 0], specular: [0.4, 0.4, 0.4], emission: [0, 0, 0],
+  anim: { frames: 120, loop: 1, auto: 1, name: 'Animation', tracks: [
+    { target: 'fEmissionColor', kind: 1, interp: 1, cols: 3, keys: [[0, 0.1, 0.1, 0.1, 1], [60, 0.11539, 0.68242, 0.09813, 1], [120, 0.1, 0.1, 0.1, 1]] },
+    { target: 'fReflectiveColor', kind: 1, interp: 1, cols: 3, keys: [[0, 0, 0, 0, 1], [60, 0.11539, 0.68242, 0.09813, 1], [120, 0, 0, 0, 1]] },
+    { target: 'fSpecularColor', kind: 1, interp: 1, cols: 3, keys: [[0, 0.4, 0.4, 0.4, 0.2], [60, 0.11539, 0.68242, 0.09813, 1], [120, 0.4, 0.4, 0.4, 1]] },
+  ] },
+};
+
+// THE LANCE'S TRIGGERS: both parts (the lance, kind 4 = 0x30d1e0, and the shield, kind 5 = 0x30de60) ask 0x30dab4(part,
+// disp, player, &t1, &t0, &t43, &t51) and fire 1 (drawn), 0 (sheathed), 43 and 51, every one with channel 8. The records
+// (docs/weapons/w03.json shared.gmk) give 43 / 51 to display types 3, 4 and 5 (13 models): 43 shows group 3 (and hides 1
+// on type 4), 51 shows 2 (type 3) or 1 (type 4) and hides 3; type 5 plays channel-8 clip 1 on 43 and 0 on 51. With the
+// weapon drawn, 43 stands on the motions 5149, 5150, 5152, 5154, 5222, 5233, 5060 and the charge 5102, and 51 on every
+// other; display type 3 (11 models) turns the drawn reading into a sheathed one in the first frames of 5150 (to 12),
+// 5130 (to 36) and the draw 5002 (to 80), and on the back, and the sheathed one into drawn off the back (5003 and 5009
+// until frames 30 / 24, with 51).
+export function lanceFlags({ drawn, motion: m, frame: fr, onBack, disp }){
+  let t1 = 0, t0 = 0, t43 = 0, t51 = 0;
+  let which = null;
+  if (m > 5194){
+    if (m === 5195 || m === 5196) which = 1;
+    else if (m === 5231) which = 0;
+    else if (m === 5252) which = fr < 69 ? 1 : 0;
+  } else if (m === 5095) which = fr < 13 ? 1 : 0;
+  else if (m === 5148) which = 1;
+  if (which === null){                                    // 0x30db68: the drawn flag and the mount index, the sharpening
+    if (drawn && !onBack) which = 1;
+    else if (m === 5255) which = (fr >= 20 && fr < 324) ? 1 : 0;
+    else which = 0;
+  }
+  if (which) t1 = 1; else t0 = 1;
+  const tip = () => {                                     // 0x30dc10: the drawn motion's 43 or 51
+    const r = m - 5149;
+    if (m > 5148 ? ((r >= 0 && r <= 5 && ((0x2b >> r) & 1)) || m === 5222 || m === 5233) : (m === 5060 || m === 5102)) t43 = 1;
+    else t51 = 1;
+  };
+  if (t1) tip();
+  if (disp === 3){                                        // 0x30dc88
+    if (t1){
+      const sheathe = m === 5150 ? fr <= 12 : m === 5130 ? fr <= 36 : m === 5002 ? fr <= 80 : onBack;
+      if (sheathe){ t1 = 0; t0 = 1; t43 = 0; t51 = 0; }
+    } else if (t0){
+      if (m > 5094){ if (m !== 5095 && m !== 5252 && !onBack){ t1 = 1; t0 = 0; tip(); } }
+      else if (m === 5003){ if (fr <= 30){ t1 = 1; t0 = 0; t51 = 1; } }
+      else if (m === 5009){ if (fr <= 24){ t1 = 1; t0 = 0; t51 = 1; } }
+      else if (!onBack){ t1 = 1; t0 = 0; tip(); }
+    }
+  }
+  return { t1: !!t1, t0: !!t0, t43: !!t43, t51: !!t51 };
+}
+
 // 0x30af7c(part, disp, player, &b7, &b6): the drawn (b7) and sheathed (b6) triggers
 export function snsFlags({ drawn, motion: m, frame: fr, onBack, disp }){
   let b7 = 0, b6 = 0;

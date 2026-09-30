@@ -519,6 +519,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active (Hunter Art)</label>
           <div class="field" id="chaosOilField" style="display:none"><label for="chaosOil">Chaos Oil</label><select id="chaosOil"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
           <div class="field" id="weaponOilField" style="display:none"><label for="weaponOil">Oil</label><select id="weaponOil"><option value="0">None</option><option value="1">Affinity Oil</option><option value="2">Destroyer Oil</option><option value="3">Stamina Oil</option><option value="4">Mind's Eye Oil</option></select></div>
+          <div class="field" id="enragedGuardField" style="display:none"><label for="enragedGuard">Enraged Guard</label><select id="enragedGuard"><option value="0">Off</option><option value="1">Power I</option><option value="2">Power II</option><option value="3">Power III</option></select></div>
+          <label class="chk" id="healShieldField" style="display:none"><input type="checkbox" id="healShieldChk">Healing Shield active (Hunter Art)</label>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
@@ -1229,6 +1231,7 @@ import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
 import { createFloorGrid } from './render/grid.js';
 import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS } from './render/weapon-fx.js';
 import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
+import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
@@ -2262,6 +2265,7 @@ function saveState(){
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
       chaosOil: document.getElementById('chaosOil').value,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
+      enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
@@ -2660,7 +2664,7 @@ swordFx.loadPalettes();
 // THE PLAYER'S OWN HOLDER REQUESTS, every class's (render/weapon-fx.js PlayerRequests): the rows a class's action code asks
 // on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
-const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS });
+const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
 // THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
@@ -2675,6 +2679,16 @@ chaosOilSel.onchange = () => { chaosFx.setLevel(+chaosOilSel.value); saveState()
 const weaponOilSel = document.getElementById('weaponOil'), spiritSel = document.getElementById('spiritGauge');
 weaponOilSel.onchange = () => { weapon.setOil(+weaponOilSel.value); saveState(); };
 spiritSel.onchange = () => { weapon.setSpirit(+spiritSel.value); saveState(); };
+// THE LANCE'S ART STATES (render/weapon-fx-w03.js), the user's controls: Enraged Guard's absorbed power -- the aura the
+// holder keeps on the hunter, by the tier of the hit the guard took (rows 900..902) -- and Healing Shield's coat on the
+// shield (render/weapon.js setShieldCoat). The Enraged Guard stance's own shell takes its row from the Art's level, which
+// the viewer has not got: it reads the same select (Power I..III -> level I..III, level I when off).
+const guardFx = new EnragedGuard();
+guardFx.host = weaponFx; guardFx.requests = playerReq;
+const enragedGuardSel = document.getElementById('enragedGuard'), healShieldChk = document.getElementById('healShieldChk');
+enragedGuardSel.onchange = () => { guardFx.setTier(+enragedGuardSel.value); saveState(); };
+healShieldChk.onchange = () => { weapon.setShieldCoat(healShieldChk.checked); saveState(); };
+playerReq.levelOf = cls => (cls === 'w03' && guardFx.tier) ? guardFx.tier - 1 : 0;
 function syncWeaponFx(){
   if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); return Promise.resolve(null); }
   return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
@@ -2715,6 +2729,7 @@ function stepWeaponFx(){
                      weaponClassSel.value === 'w08' && weapon.cls === 'w08' && weapon.drawn, weapon.element(), weapon.onBack());
   // the player's own rows: the class whose code runs is the one in the hand, playing a weapon stance
   playerReq.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t);
+  guardFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn, weapon.onBack());
   chaosFx.step(t, act ? advance : null);
 }
 
@@ -3229,7 +3244,6 @@ document.getElementById('htype').onchange = e => {
     rebuildSelects(document.getElementById('filter').value);
   };
 }
-
 
 // ---- gender -------------------------------------------------------------
 // Gender is a property of the hunter on screen (Raven, 2026-09-03: "Instead of having Male
@@ -3947,6 +3961,8 @@ async function buildWeaponLists(){
   document.getElementById('chaosOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('weaponOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
+  document.getElementById('enragedGuardField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
+  document.getElementById('healShieldField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
   // the Bow's nocked arrow: the ROM's proof-effect placements (docs/weapons/w10.json
   // shared.arrow.records); none by default, because which animation requests which
@@ -5520,6 +5536,8 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && /^[0-3]$/.test(String(SAVED.chaosOil))){ chaosOilSel.value = String(SAVED.chaosOil); chaosFx.setLevel(+SAVED.chaosOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
+  if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
+  if (SAVED && SAVED.healShield !== undefined){ healShieldChk.checked = !!SAVED.healShield; weapon.setShieldCoat(!!SAVED.healShield); }
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
     kinsectSel.value = SAVED.kinsect;
   if (SAVED && SAVED.kinsectEl !== undefined) kinsectElSel.value = kinsectElValue(SAVED.kinsectEl);
@@ -5625,6 +5643,10 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     parts: () => weapon.partAudit(),
     oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },
     spirit: n => { spiritSel.value = String(n | 0); weapon.setSpirit(n | 0); return weapon.partAudit(); },
+    // the Lance's Art states (render/weapon-fx-w03.js): Enraged Guard's absorbed power, Healing Shield's coat
+    lance: { guard: n => { enragedGuardSel.value = String(n | 0); guardFx.setTier(n | 0); return guardFx.stats(); },
+             coat: on => { healShieldChk.checked = !!on; weapon.setShieldCoat(!!on); return weapon.shieldCoat; },
+             stats: () => guardFx.stats(), obj: () => guardFx },
     clips: () => { const l = weaponFx.live; return l ? Object.keys(l.def.clips || {}) : []; },
     def: () => { const l = weaponFx.live; return l ? l.def : null; },
     // ADVANCE n GAME FRAMES BY HAND, the way the render loop would: the stance moves 1/60 s, the pose is

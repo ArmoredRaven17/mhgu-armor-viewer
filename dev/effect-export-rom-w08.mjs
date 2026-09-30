@@ -60,6 +60,18 @@ const CLASS_SHAPES = {
     [201, 'parent', undefined], [405, 'parent', undefined],
     [1100, 'unit', undefined], [1101, 'unit', undefined], [1102, 'unit', undefined],
   ],
+  // THE LANCE (render/weapon-fx-w03.js): every row it asks goes through the PLAYER's own block (+0x2550, no overrides) --
+  // rows 0..4, 12, 16 = w03_000 510 / 500 / 501 / 505 / 520 / 515 / 650 from its actions, rows 8..10 = w03_800 900..902
+  // (Enraged Guard's absorbed power, action 82 and the holder's hook 0x453430), rows 13..15 = w03_800 1000..1002 (Healing
+  // Shield's block, vtable +0x8b4), row 11 = cm002_002 203 (the sharpening); the stance shell pl_w03_100 (rows 800..802)
+  // stands at the player's position
+  w03: [
+    [510, 'parent', undefined], [500, 'parent', undefined], [501, 'parent', undefined], [505, 'parent', undefined],
+    [520, 'parent', undefined], [515, 'parent', undefined], [650, 'parent', undefined], [203, 'parent', undefined],
+    [900, 'parent', undefined], [901, 'parent', undefined], [902, 'parent', undefined],
+    [1000, 'parent', undefined], [1001, 'parent', undefined], [1002, 'parent', undefined],
+    [800, 'parent', undefined], [801, 'parent', undefined], [802, 'parent', undefined],
+  ],
 };
 // a request that roots its record on a joint needs that joint on the parent, as the page's hunter host adds it
 // (render/weapon-fx.js WeaponEffects.useDef requestJoints): the Sword & Shield's joint 1
