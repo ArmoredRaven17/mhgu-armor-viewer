@@ -659,8 +659,15 @@ export class WeaponRig {
       // deg. (An earlier reading called the rotation tracks NaN: that was the reader taking
       // normalized int16 quaternions for floats; 192 of the 3,006 weapon clips rotate bone
       // 0.) The earlier reading that the translation is root-motion data came from the
-      // Sword & Shield's shield rest loop (0, 0.88, 0) and is superseded by this one; the
-      // sheathed SnS shield now rides that 0.88 m too.
+      // Sword & Shield's shield rest loop (0, 0.88, 0) and is superseded by this one. THAT 0.88 m
+      // WAS NEVER BONE 0's (corrected 2026-09-30, Raven: "Sheathed SnS shield placement is off again,
+      // it is floating off the arm"): wg01_r_00's first track in every motion is a per-motion TAG
+      // track (its bone byte runs 0, 1, 2, 3, 9, 18, 130 with the motion; reference (0, 87.959, 0) cm
+      // in motions 0 and 1), and lmt_to_gltf took it for bone 0 in motion 0 alone, where the tag is
+      // 0. The list's own bone-0 track there is (0, 0, 0), fixed in the two group-0 off sets. The
+      // game plays that rest clip on the shield whenever the weapon is on the back (0x30837c: a
+      // non-weapon motion bank -> clip 0 while the main part's mount index is 2 / 0x12), so the
+      // shield stays on the arm.
       const rs = mot.rootSrc;
       b.matrix.multiply(_rootM.compose(rs.position, rs.quaternion, rs.scale));
     }
