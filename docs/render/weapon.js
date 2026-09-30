@@ -15,7 +15,8 @@
 import * as THREE from 'three';
 import { loader, loadGlb, getTexture, weaponMotCache, bust } from './assets.js';
 import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, applyRomUv, allMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, applyRomUv, allMats,
+         setOverlayAlbedo, setMaterialClip, clearMaterialClip, setCbWrite, MAT_FPS } from './material.js';
 import { kinsectColours, ELEMENTS } from './kinsect.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
@@ -26,6 +27,7 @@ const APPLY_ROOT_TRACK = false;
 import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
 import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
+import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB } from './weapon-state.js';
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -203,6 +205,12 @@ export class WeaponRig {
     this.stance = null;              // { file, clip, dur, label } from the class's stance list
     this.modeWord = null;            // player+0x3328 for the Switch Axe: 'sword' / 'axe' as the last declaring stance set it, carried
     this.form = null;                // gimmick trigger override, null = the game's rule
+    // THE WEAPON MODEL'S OWN STATE (render/weapon-state.js), each the user's control: the Long Sword's Spirit Gauge level
+    // (0 none, 1..3, 4 Valor's) and the Sword & Shield's oil (0 none, 1 Affinity, 2 Destroyer, 3 Stamina, 4 Mind's Eye)
+    this.spirit = 0;
+    this.oil = 0;
+    this._ps = null;                 // the part state's memory: the last frame's triggers, the colours written, the pulse
+    this._appliedKey = null;
     this.motGroup = 0;
     this.visible = true;             // the figure on screen is the hunter
     this._seq = 0; this._appliedTrg = null; this._motLast = 0;
@@ -243,6 +251,7 @@ export class WeaponRig {
     }
     this.parts = {};
     this._appliedTrg = null;
+    this._ps = null;                 // the materials it wrote went with the parts
   }
 
   // set(cls, modelId): load the class index, pick the model (null = the class's first named
@@ -389,7 +398,8 @@ export class WeaponRig {
       o.material = mat; allMats.push(mat);
       if (rom && rom.ch) chan.push(mat);
       if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
-      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t0 => { const t = applyRomUv(mat, t0);
+      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t0 => { if (setOverlayAlbedo(mat, t0)) return;
+        const t = applyRomUv(mat, t0);
         mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
       if (rom){
         if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere) jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
@@ -418,6 +428,11 @@ export class WeaponRig {
 
   // ---- state ----------------------------------------------------------------------------
   setDrawn(b){ this.drawn = !!b; this._appliedTrg = null; }
+  // A LEVEL OR AN OIL PICKED IS A NEW STATE: its trigger rises afresh and restarts its clip. (In the game the Long Sword's
+  // level 4 and 3 share trigger 23, so dropping from one to the other raises nothing and the blue would stand, frozen;
+  // here the select is how the user asks for a look, so each pick starts from nothing.)
+  setSpirit(n){ n = +n; this.spirit = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
+  setOil(n){ n = +n; this.oil = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
   // the arrow placement: a key of shared.arrow.records ('520' ...) or null for none
   setArrow(key){ this.arrowKey = (key === null || key === undefined || key === '') ? null : String(key); this.step(); }
   // the Kinsect's strongest element: an index into ELEMENTS (render/kinsect.js), or null for none
@@ -590,7 +605,9 @@ export class WeaponRig {
       const part = this.parts[kind];
       if (part) this.placePart(part, mounts[kind]);
     }
-    this.applyForm(ids, mounts);
+    const ps = this.partState();          // after placePart: it reads where the mount put the weapon
+    this.applyForm(ids, mounts, ps);
+    this.stepPartState(ps);
   }
   placePart(part, m){
     const b = part.userData.bone;
@@ -969,12 +986,16 @@ export class WeaponRig {
     if (!ids){ const r = this.mounts(); ids = r.ids; mounts = r.mounts; }
     return triggerFor(mounts && mounts.main, ids, this.drawn);
   }
-  applyForm(ids, mounts){
+  applyForm(ids, mounts, ps){
     if (!this.cj) return;
     if (!ids){ const r = this.mounts(); ids = r.ids; mounts = r.mounts; }
-    const trg = this.currentTrigger(ids, mounts);
-    if (trg === this._appliedTrg) return;
-    this._appliedTrg = trg;
+    if (ps === undefined) ps = this.partState();
+    // a class whose part code this app runs (render/weapon-state.js) fires 0 / 1 by that code's own answer
+    const own = ps && this.form === null;
+    const trg = own ? (ps.t1 && !ps.t0 ? 1 : 0) : this.currentTrigger(ids, mounts);
+    const key = ps ? ps.key : null;
+    if (trg === this._appliedTrg && key === this._appliedKey) return;
+    this._appliedTrg = trg; this._appliedKey = key;
     const g = this.gmk() && this.gmk()[String(this.gmkGroup)];
     const recs = [];
     if (g){
@@ -982,8 +1003,11 @@ export class WeaponRig {
       // each accumulates on the last (a drawn special bowgun deploys its part 3 on trigger 1
       // and keeps it under the attachment trigger)
       const r0 = g.find(r => r.trg === 0); if (r0) recs.push(r0);
-      if (this.drawn && trg !== 1){ const r1 = g.find(r => r.trg === 1); if (r1) recs.push(r1); }
-      if (trg !== 0){ const r = g.find(r => r.trg === trg); if (r) recs.push(r); }
+      if (own){ if (trg === 1){ const r1 = g.find(r => r.trg === 1); if (r1) recs.push(r1); } }
+      else if (this.drawn && trg !== 1){ const r1 = g.find(r => r.trg === 1); if (r1) recs.push(r1); }
+      if (!own && trg !== 0){ const r = g.find(r => r.trg === trg); if (r) recs.push(r); }
+      // the Long Sword's Spirit trigger (20..23) fires after them, and its record wins
+      if (own && ps.trg != null){ const r = g.find(r => r.trg === ps.trg); if (r) recs.push(r); }
     }
     for (const kind of ['main', 'second']){
       const part = this.parts[kind];
@@ -997,9 +1021,85 @@ export class WeaponRig {
           if (rec.off && rec.off.includes(id)) vis = false;
           else if (rec.on && rec.on.includes(id)) vis = true;
         }
+        // the bits the part code sets and clears itself, after the records (the Sword & Shield's oil groups)
+        if (kind === 'main' && ps && ps.show && id in ps.show) vis = ps.show[id];
         o.visible = vis;
       });
     }
+  }
+
+  // ---- the weapon model's own state (render/weapon-state.js) ------------------------------
+  // What the part code answers this frame, for a class whose code this app runs, else null:
+  //   { cls, t1, t0 (the drawn / sheathed triggers), trg (the Long Sword's 20..23 or null), blue (its level 4),
+  //     show ({ group: visible } the code sets itself), oil, key (what the part visibility depends on) }
+  // The motion is the stance's while the weapon is drawn; sheathed, the hunter plays a Hunter Pose, no weapon motion.
+  partState(){
+    const cls = this.cls;
+    if ((cls !== 'w07' && cls !== 'w01') || !this.cj) return null;
+    const mo = motionAt(this.drawn ? this.stance : null, this.poseTime());
+    const o = { drawn: drawnFlag(this.drawn, mo), motion: mo.id, frame: mo.frame, onBack: this.onBack(), disp: this.gmkGroup | 0 };
+    if (cls === 'w07'){
+      const f = spiritFlags(Object.assign(o, { level: this.spirit }));
+      const trg = f.t23 ? 23 : f.t22 ? 22 : f.t21 ? 21 : f.t20 ? 20 : null;
+      return { cls, t1: f.t1, t0: f.t0, trg, blue: f.blue, show: null, oil: 0, key: 'ls:' + trg };
+    }
+    const f = snsFlags(o);
+    const g = this.oil ? oilPart(f.t1, parseInt(this.modelId, 10)) : 0;
+    return { cls, t1: f.t1, t0: f.t0, trg: null, blue: false, show: { 21: g === 21, 31: g === 31 }, oil: this.oil, key: 'oil:' + g };
+  }
+  // THE PART'S MATERIALS, every frame: a trigger's `anime` on its rising edge (0x30890c: slot 0 at time 0 on the trigger's
+  // colour channel -- 8 for 0..3, 2 for 20..23), the Long Sword's level-4 colour and pulse, the Sword & Shield's oil colour
+  // on the type's change. On the main part: the shield, the scabbard and a second blade are units of their own.
+  stepPartState(ps){
+    if (!ps){ if (this._ps) this.clearPartState(); return; }
+    const main = this.parts.main;
+    const chan = ch => ((main && main.userData.chanMats) || []).filter(m => m.userData.rom.ch === ch);
+    const now = performance.now() / 1000;
+    let e = this._ps;
+    if (!e || e.cls !== ps.cls || e.root !== main){
+      this.clearPartState();
+      e = this._ps = { cls: ps.cls, root: main, trgs: new Set(), oil: 0, blue: false, timer: 0, last: now };
+    }
+    const now1 = [ps.t1 ? 1 : null, ps.t0 ? 0 : null, ps.trg].filter(t => t !== null);   // 0x310300's / 0x30aafc's order
+    const g = this.gmk() && this.gmk()[String(this.gmkGroup)];
+    for (const t of now1){
+      if (e.trgs.has(t)) continue;
+      const r = g && g.find(r => r.trg === t);
+      if (r && r.anime !== undefined && r.anime !== null) for (const m of chan(t >= 20 ? 2 : 8)) setMaterialClip(m, r.anime, now);
+    }
+    e.trgs = new Set(now1);
+    if (ps.cls === 'w07'){
+      if (ps.blue){
+        const p = spiritPulse(e.timer, Math.min(Math.max(now - e.last, 0), 0.1) * MAT_FPS);
+        e.timer = p.timer; e.pulse = p.value;
+        for (const m of chan(2)){
+          setMaterialClip(m, -1, now);
+          setCbWrite(m, { reflective: SPIRIT_BLUE, specular: SPIRIT_BLUE, transparency: p.value });
+        }
+      } else if (e.blue) for (const m of chan(2)) setCbWrite(m, null);
+      e.blue = ps.blue;
+    } else if (ps.oil !== e.oil){
+      for (const m of chan(2)) setCbWrite(m, ps.oil ? { reflective: OIL_RGB[ps.oil] } : null);
+      e.oil = ps.oil;
+    }
+    e.last = now;
+  }
+  // back to the materials' own: the clip the engine gave slot 0 at load, the constants they ship
+  clearPartState(){
+    for (const kind of Object.keys(this.parts)){
+      for (const m of (this.parts[kind] && this.parts[kind].userData.chanMats) || []){ clearMaterialClip(m); setCbWrite(m, null); }
+    }
+    this._ps = null;
+  }
+  partAudit(){
+    const ps = this.partState(), e = this._ps, main = this.parts.main;
+    const mats = ((main && main.userData.chanMats) || []).map(m => ({ name: m.name, ch: m.userData.rom.ch, overlay: !!m.userData.ov,
+      slot0: m.userData.slot0 || null, write: m.userData.cbWrite || null,
+      refl: m.userData.ov ? m.userData.ov.uRefl.value.toArray() : null, transp: m.userData.ov ? m.userData.ov.uTransp.value : null }));
+    const groups = {};
+    if (main) main.traverse(o => { if ((o.isMesh || o.isSkinnedMesh) && o.userData.part < 100) groups[o.userData.part] = o.visible; });
+    return { cls: this.cls, spirit: this.spirit, oil: this.oil, state: ps, trgs: e ? [...e.trgs] : [], pulse: e ? e.pulse : null,
+             motion: motionAt(this.drawn ? this.stance : null, this.poseTime()), groups, mats };
   }
 
   // ---- inspection -----------------------------------------------------------------------

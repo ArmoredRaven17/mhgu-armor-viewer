@@ -518,6 +518,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <label class="chk" id="chargeField" style="display:none"><input type="checkbox" id="chargeChk">Demon Riot active (Hunter Art)</label>
           <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active (Hunter Art)</label>
           <div class="field" id="chaosOilField" style="display:none"><label for="chaosOil">Chaos Oil</label><select id="chaosOil"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
+          <div class="field" id="weaponOilField" style="display:none"><label for="weaponOil">Oil</label><select id="weaponOil"><option value="0">None</option><option value="1">Affinity Oil</option><option value="2">Destroyer Oil</option><option value="3">Stamina Oil</option><option value="4">Mind's Eye Oil</option></select></div>
+          <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
           <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
@@ -1209,7 +1211,7 @@ import { createStage } from './render/stage.js';
 import { initAssets, loadJson, getTexture } from './render/assets.js';
 import { playerBone } from './render/skeleton.js';
 import { tint, applyTint, allMats, armorMats, setCharColor, setChannelColor, setWire, setDebug, setMaskWindow,
-         setAlphaOverride, setBiasUnitsPerStep, setRegionDark, stepMaterialAnim, AUTO_CLIP }
+         setAlphaOverride, setBiasUnitsPerStep, setRegionDark, stepMaterialAnim, SLOT_CLIP }
   from './render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './render/pose.js';
@@ -2256,6 +2258,7 @@ function saveState(){
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
       chaosOil: document.getElementById('chaosOil').value,
+      weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
@@ -2663,6 +2666,12 @@ weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those
 const chaosFx = new ChaosOilEffects();   // no `floor`: the unit is the sword's own bone 0, not the player standing on the ground
 const chaosOilSel = document.getElementById('chaosOil');
 chaosOilSel.onchange = () => { chaosFx.setLevel(+chaosOilSel.value); saveState(); };
+// THE WEAPON MODEL'S OWN STATES (render/weapon-state.js), the user's controls as the Arts' are: the Sword & Shield's item
+// oil (it stands beside Chaos Oil: the part code tests the oil's status bits and nothing else) and the Long Sword's Spirit
+// Gauge (levels 1..3, and 4 -- Valor's blue)
+const weaponOilSel = document.getElementById('weaponOil'), spiritSel = document.getElementById('spiritGauge');
+weaponOilSel.onchange = () => { weapon.setOil(+weaponOilSel.value); saveState(); };
+spiritSel.onchange = () => { weapon.setSpirit(+spiritSel.value); saveState(); };
 function syncWeaponFx(){
   if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); return Promise.resolve(null); }
   return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
@@ -3809,7 +3818,7 @@ renderer.setAnimationLoop(() => {
   stepDeviant(performance.now()/1000);
   // the .mrl's own material animation, on the ROM's auto-play clips (render/material.js):
   // 1,486 materials carry one and were drawn frozen at frame 0 until now
-  stepMaterialAnim(scene, performance.now()/1000, AUTO_CLIP);
+  stepMaterialAnim(scene, performance.now()/1000, SLOT_CLIP);
   stepWeaponFx();
   if (rainbowOn) applyCharColors(performance.now()/1000);
   if (camMode === 'fly') stepFly(); else controls.update();   // update() would look at the target
@@ -3910,6 +3919,8 @@ async function buildWeaponLists(){
   document.getElementById('chargeField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
   document.getElementById('tempestField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
   document.getElementById('chaosOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
+  document.getElementById('weaponOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
+  document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
   // the Bow's nocked arrow: the ROM's proof-effect placements (docs/weapons/w10.json
   // shared.arrow.records); none by default, because which animation requests which
@@ -5481,6 +5492,8 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.charge !== undefined){ chargeChk.checked = !!SAVED.charge; swordFx.setCharge(!!SAVED.charge); }
   if (SAVED && SAVED.tempest !== undefined){ tempestChk.checked = !!SAVED.tempest; swordFx.setTempest(!!SAVED.tempest); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.chaosOil))){ chaosOilSel.value = String(SAVED.chaosOil); chaosFx.setLevel(+SAVED.chaosOil); }
+  if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
+  if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
     kinsectSel.value = SAVED.kinsect;
   if (SAVED && SAVED.kinsectEl !== undefined) kinsectElSel.value = kinsectElValue(SAVED.kinsectEl);
@@ -5582,6 +5595,10 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     player: () => playerReq.stats(),
     sns: { stats: () => chaosFx.stats(), raw: () => chaosFx.live, obj: () => chaosFx, bounds: () => chaosFx.bounds(),
            chaosOil: level => { chaosOilSel.value = String(level | 0); chaosFx.setLevel(level | 0); return chaosFx.stats(); } },
+    // the weapon model's own state (render/weapon-state.js): the Sword & Shield's oil, the Long Sword's Spirit Gauge
+    parts: () => weapon.partAudit(),
+    oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },
+    spirit: n => { spiritSel.value = String(n | 0); weapon.setSpirit(n | 0); return weapon.partAudit(); },
     clips: () => { const l = weaponFx.live; return l ? Object.keys(l.def.clips || {}) : []; },
     def: () => { const l = weaponFx.live; return l ? l.def : null; },
     // ADVANCE n GAME FRAMES BY HAND, the way the render loop would: the stance moves 1/60 s, the pose is
@@ -5607,6 +5624,8 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
         }
         weapon.stepMotion(); weapon.step();
+        // the materials' own clips on the wall clock, as the render loop runs them (the Spirit Gauge's, the oils' fade)
+        stepMaterialAnim(scene, performance.now() / 1000, SLOT_CLIP);
         stepWeaponFx();
         renderFrame(0.5);
       }
@@ -6659,7 +6678,7 @@ window.__view.shot = async function(run, nameArg, atArg){
   stepDeviant(0.5); weapon.stepMotion(); weapon.step();
   // a DEV SCENE freezes the material clock so its shots stay comparable frame for frame;
   // an ordinary screenshot catches the animation where it actually is
-  stepMaterialAnim(scene, SCENE ? 0.5 : performance.now() / 1000, AUTO_CLIP);
+  stepMaterialAnim(scene, SCENE ? 0.5 : performance.now() / 1000, SLOT_CLIP);
   stepWeaponFx();
   settleCamera();
   renderFrame(0.5);                    // a fixed clock, so the grain is the same in every shot

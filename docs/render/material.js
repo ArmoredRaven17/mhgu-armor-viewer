@@ -155,6 +155,100 @@ export function setAlphaOverride(v){
   return alphaOverride;
 }
 
+// THE REFLECTION OVERLAY: the additive layer a weapon's own state lights -- the Sword & Shield's oils and the Long Sword's
+// Spirit Gauge on colour channel 2 (render/weapon-state.js), 123 + 123 models, and the Dual Blades' 242 -- drawn with the
+// game's own formula, not the albedo. PS_MaterialStd, as efx/shader/glsl.py translates it for these materials
+// (one134.mrl, ken122.mrl; 2026-09-30):
+//   colour = albedo x FDiffuse + FSpecularMap x FFresnel, alpha = vertex alpha x FTransparencyAlpha, blended BSAddAlpha
+//   FDiffuse        = (light + FAmbient) x CBMaterial.fDiffuseColor -- (0, 0, 0) on 245 of the 246, so NOTHING
+//   FSpecularMap    = ((light specular x $Globals.fSpecularColor) + FReflect) x tSpecularMap.rgb x occlusion
+//   FReflectSphereMap = tSphereMap(uv) x CBMaterial.fReflectiveColor, uv = normalize(View x normal).xy x 0.5 + 0.5, v flipped
+//   FFresnelSchlick = fFresnelSchlick + (1 - it) x (1 - N.V)^5, and fFresnelSchlick is 1.0: no term
+//   FTransparencyAlpha = transparency x CBMaterial.fTransparency; FAlbedoMap (not ColorOnly) first multiplies the
+//                    transparency by the albedo map's alpha
+// So what shows is the SPHERE MAP TINTED BY fReflectiveColor -- the colour the oils write (0x53a254) and the Spirit clips
+// animate -- faded by fTransparency. The old additive path drew the albedo map instead, which the ROM multiplies by zero,
+// and hid the layers that bind no albedo (the Sword & Shield's): both wrong for these.
+//   UNBOUND TEXTURES: none of these layers binds tSpecularMap, and 120 Sword & Shield layers bind no albedo either. Read
+// as black, the spec map would zero the only term there is and no oil or Spirit level could ever show, which the game's
+// own authoring (a sphere map, a colour, an animated fade on a layer that is otherwise nothing) rules out: they read as
+// white here, the albedo's alpha as 1.
+//   NOT DRAWN, deliberately: the lights' specular term (x fSpecularColor, which the Spirit clips colour; the viewer's lights
+// are a studio stand-in) and the albedo term of the one layer whose fDiffuseColor is not zero (the Sword & Shield 151).
+// fUVTransform2 is the second UV set, which the sphere lookup does not read.
+// The arithmetic runs on the texel as the file holds it (the sRGB-encoded value) and is decoded again, as the lit path's
+// sheen is: the ROM's colour constants act on its texture values.
+function isReflectOverlay(rom){
+  return !!(rom && rom.ch === 2 && rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere && rom.cbm);
+}
+const OVERLAY_VS = `
+#include <common>
+#include <skinning_pars_vertex>
+attribute vec4 color;
+varying vec3 vOvNormal;
+varying float vOvAlpha;
+varying vec2 vOvUv;
+void main() {
+  #include <beginnormal_vertex>
+  #include <skinbase_vertex>
+  #include <skinnormal_vertex>
+  #include <defaultnormal_vertex>
+  #include <begin_vertex>
+  #include <skinning_vertex>
+  #include <project_vertex>
+  vOvNormal = transformedNormal;
+  vOvAlpha = color.a;       // COLOR_0's alpha where the mesh has one (the Long Sword's fade at the blade's ends), else 1
+  vOvUv = uv;
+}`;
+const OVERLAY_FS = `
+uniform sampler2D uSphere; uniform float uSphereOn;
+uniform sampler2D uAlb; uniform float uAlbOn; uniform float uAlbView;
+uniform vec3 uRefl; uniform float uTransp;
+varying vec3 vOvNormal; varying float vOvAlpha; varying vec2 vOvUv;
+vec3 ovOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }
+vec3 ovEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }
+void main() {
+  vec3 n = normalize( vOvNormal );
+  #ifdef DOUBLE_SIDED
+    if ( ! gl_FrontFacing ) n = - n;
+  #endif
+  vec2 suv = n.xy * 0.5 + 0.5;
+  suv.y = 1.0 - suv.y;
+  vec3 raw = uSphereOn > 0.5 ? ovOetf( texture2D( uSphere, suv ).rgb ) : vec3( 0.0 );
+  float a = vOvAlpha * uTransp;
+  if ( uAlbOn > 0.5 ) a *= texture2D( uAlb, uAlbView > 0.5 ? suv : vOvUv ).a;
+  gl_FragColor = vec4( ovEotf( raw * uRefl ), clamp( a, 0.0, 1.0 ) );
+  #include <colorspace_fragment>
+}`;
+function createReflectOverlay(spec, rom, st, side){
+  const ft = rom.feat, cb = rom.cbm;
+  const ov = {
+    uSphere: { value: null }, uSphereOn: { value: 0 },
+    uAlb: { value: null }, uAlbOn: { value: 0 }, uAlbView: { value: ft.uvAlbedoMap === 'UVViewNormal' ? 1 : 0 },
+    uRefl: { value: new THREE.Vector3().fromArray(cb.reflective) },
+    uTransp: { value: ft.transp === 'Alpha' ? cb.transparency : 1 },
+  };
+  // BSAddAlpha on the colour: dst + src x srcAlpha. The DESTINATION ALPHA is left as it is: the game never shows its
+  // framebuffer's alpha, and this canvas is composited over the page by it -- three's AdditiveBlending adds srcAlpha^2
+  // there too, so the sphere map's black rim, which adds no colour, laid a dark veil over the floor grid behind the blade.
+  const mat = new THREE.ShaderMaterial({ name: spec.srcName, uniforms: ov, vertexShader: OVERLAY_VS, fragmentShader: OVERLAY_FS,
+                                         side, transparent: true, blending: THREE.CustomBlending,
+                                         blendEquation: THREE.AddEquation, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneFactor,
+                                         blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor,
+                                         depthWrite: romDepthWrite(st, false), wireframe: !!spec.wire });
+  mat.userData.ov = ov;
+  mat.userData.rom = rom; mat.userData.unlit = true; mat.userData.noTint = true;
+  mat.userData.renderOrder = 20;
+  return applyRomBias(mat, st);
+}
+// the overlay's albedo, once loaded: only its alpha counts, and only under FAlbedoMap
+export function setOverlayAlbedo(mat, t){
+  const ov = mat.userData.ov, ft = mat.userData.rom && mat.userData.rom.feat;
+  if (!ov) return false;
+  ov.uAlb.value = t; ov.uAlbOn.value = (t && ft && ft.albedo === 'Map') ? 1 : 0;
+  return true;
+}
+
 export function applyTint(mat){
   // Own the uniform OBJECTS up front and hand the same ones to onBeforeCompile, so
   // changing pigment or sheen is just a .value write -- no recompile.
@@ -413,6 +507,7 @@ export function createMaterial(spec){
   const rom = spec.rom || null;
   const st = rom && rom.state, ft = rom && rom.feat, cb = rom && rom.cbm, gl = rom && rom.glob;
   const side = (st && st.cull in SIDE) ? SIDE[st.cull] : THREE.DoubleSide;   // FrontSide is 0: no || here
+  if (st && st.blend === 'add' && isReflectOverlay(rom)) return createReflectOverlay(spec, rom, st, side);
   if (st && st.blend === 'add'){
     // Additive materials are the glow parts, drawn unlit and added over what is behind:
     // the Charge Blade's phial box (part 24, XfB_0__m30_gaxe064_add_) is a 12-vertex box
@@ -576,6 +671,7 @@ export function applyRomUv(mat, t){
 
 // the env matcap, once its texture has loaded
 export function setEnvTexture(mat, t){
+  if (mat.userData.ov){ mat.userData.ov.uSphere.value = t; mat.userData.ov.uSphereOn.value = t ? 1 : 0; return; }
   if (mat.isMeshMatcapMaterial){ mat.matcap = t; mat.needsUpdate = true; return; }
   if (!mat.userData.u) return;                 // an unlit additive material takes none
   mat.userData.u.uEnv.value = t;
@@ -721,11 +817,18 @@ function baseOf(m){
         reflective: m.userData ? m.userData.reflective : undefined,
         envAmt: (m.userData.u && m.userData.u.uEnvAmt) ? m.userData.u.uEnvAmt.value : undefined,
         specRGB: (m.userData.u && m.userData.u.uSpecRGB) ? m.userData.u.uSpecRGB.value.clone() : null,
-        uv: (drivesUv && m.map) ? { offset: m.map.offset.clone(), repeat: m.map.repeat.clone(), rotation: m.map.rotation } : null };
+        uv: (drivesUv && m.map) ? { offset: m.map.offset.clone(), repeat: m.map.repeat.clone(), rotation: m.map.rotation } : null,
+        // from the ROM's own constants, not the uniforms: a colour write may already stand when the first frame is stepped
+        ov: m.userData.ov ? { refl: new THREE.Vector3().fromArray(rom.cbm.reflective),
+                              transp: rom.feat.transp === 'Alpha' ? rom.cbm.transparency : 1 } : null };
   animBase.set(m, b);
   return b;
 }
 function restoreBase(m, b){
+  if (b.ov && m.userData.ov){
+    m.userData.ov.uRefl.value.copy(b.ov.refl); m.userData.ov.uTransp.value = b.ov.transp;
+    if (m.userData.cbWrite) writeCb(m, m.userData.cbWrite);   // what the weapon's own code wrote stands under the clips
+  }
   if (b.color && m.color) m.color.copy(b.color);
   if (b.opacity !== undefined) m.opacity = b.opacity;
   if (b.transparent !== undefined) m.transparent = b.transparent;
@@ -803,6 +906,15 @@ function applyTrack(m, tr, f){
   const v = sampleTrack(tr, f);
   if (!v) return;
   const b = baseOf(m);
+  // THE REFLECTION OVERLAY draws two of the members its clips drive: fReflectiveColor, its tint, and fTransparency, its
+  // fade (FTransparencyAlpha). fDiffuseColor and fAlbedoColor feed the albedo term, fSpecularColor the lights' term and
+  // fUVTransform2 the second UV set -- none of which it draws (createReflectOverlay).
+  const ov = m.userData.ov;
+  if (ov){
+    if (tr.target === 'fReflectiveColor') ov.uRefl.value.set(v[0], v[1] === undefined ? v[0] : v[1], v[2] === undefined ? v[0] : v[2]);
+    else if (tr.target === 'fTransparency' && m.userData.rom.feat.transp === 'Alpha') ov.uTransp.value = v[0];
+    return;
+  }
   // the ROM writes only as many floats as the member word asks for (the vector writer returns
   // early on cols-1), so a 3-column track must not have its fourth component applied
   const cols = tr.cols || v.length;
@@ -900,7 +1012,7 @@ export function stepMaterialAnim(root, tSec, pickClip){
     if (!m || !m.userData) return;
     const clips = m.userData.rom && m.userData.rom.anim;
     if (!clips || !clips.length) return;
-    const pick = pickClip ? pickClip(clips, m.userData.rom, tSec) : AUTO_CLIP(clips);
+    const pick = pickClip ? pickClip(clips, m.userData.rom, tSec, m) : AUTO_CLIP(clips);
     const raw = Array.isArray(pick) ? pick : [pick];
     const list = [];
     for (const e of raw){
@@ -920,3 +1032,34 @@ export function stepMaterialAnim(root, tSec, pickClip){
 // The ROM's own default: clip+0x04 bit 1 is the auto-play flag, and at load the engine writes every
 // bit-1 clip into the next free slot. Everything else waits for a setClip call from game state.
 export function AUTO_CLIP(clips){ return clips.findIndex(c => c.auto); }
+
+// SLOT 0 AS THE GAME'S OWN CODE SETS IT. 0xb09ae8(material, slot, clip) puts `clip` in the slot at time 0 (+0x50 + slot * 8,
+// the time +0x54 zeroed); a weapon's gimmick trigger does it with the record's `anime` (render/weapon-state.js), and the
+// colour writer 0x53a254 with its flag sets clip 0xffff, which plays nothing. `t0` is the clock value (the one
+// stepMaterialAnim is handed) at which the clip starts; clip -1 is none. Until something sets it, the slot holds what the
+// engine put there at load, the auto-play clip -- SLOT_CLIP, the picker the page runs, answers exactly that.
+export function setMaterialClip(mat, clip, t0){ mat.userData.slot0 = { clip, t0 }; }
+export function clearMaterialClip(mat){ delete mat.userData.slot0; }
+export function SLOT_CLIP(clips, rom, tSec, m){
+  const s = m && m.userData.slot0;
+  if (!s) return AUTO_CLIP(clips);
+  return (s.clip >= 0 && s.clip < clips.length) ? [[s.clip, s.t0]] : -1;
+}
+// WHAT THE WEAPON'S CODE WRITES INTO A MATERIAL'S CONSTANTS, and what stands until something writes over it: the colour
+// writers 0x53a254 (fReflectiveColor), 0x53a3bc ($Globals.fSpecularColor) and 0x53a738 (fTransparency). `w` is
+// { reflective: [r, g, b], specular: [r, g, b], transparency }, any of them, or null for the material's own values. The
+// material's clips still write over it each frame, member by member, as the ROM's evaluator does. Drawn on the reflection
+// overlay; fSpecularColor is kept but has no term there (createReflectOverlay).
+export function setCbWrite(mat, w){
+  mat.userData.cbWrite = w || null;
+  const ov = mat.userData.ov, cb = mat.userData.rom && mat.userData.rom.cbm;
+  if (!ov || !cb) return;
+  ov.uRefl.value.fromArray(cb.reflective);
+  ov.uTransp.value = mat.userData.rom.feat.transp === 'Alpha' ? cb.transparency : 1;
+  if (w) writeCb(mat, w);
+}
+function writeCb(m, w){
+  const ov = m.userData.ov;
+  if (w.reflective) ov.uRefl.value.fromArray(w.reflective);
+  if (typeof w.transparency === 'number' && m.userData.rom.feat.transp === 'Alpha') ov.uTransp.value = w.transparency;
+}
