@@ -517,6 +517,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
           <label class="chk" id="chargeField" style="display:none"><input type="checkbox" id="chargeChk">Demon Riot active (Hunter Art)</label>
           <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active (Hunter Art)</label>
+          <div class="field" id="chaosOilField" style="display:none"><label for="chaosOil">Chaos Oil</label><select id="chaosOil"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
           <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
@@ -1221,7 +1222,8 @@ import { createFx } from './render/fx.js';
 import { renderCameraFor, LENS_DEFAULT, LENS_TYPES, SQUEEZES, fovSrcOf } from './render/lens.js';
 import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
 import { createFloorGrid } from './render/grid.js';
-import { WeaponEffects, WeaponUnitEffects } from './render/weapon-fx.js';
+import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS } from './render/weapon-fx.js';
+import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
@@ -2253,6 +2255,7 @@ function saveState(){
       weapon: { cls: weaponClassSel.value, model: weapon.modelId },
       weaponDrawn: weaponDrawnSel.value === '1', weaponPose: weaponPoseSel.value,
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
+      chaosOil: document.getElementById('chaosOil').value,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
       deviant: { on:deviant.on, a:deviant.a, b:deviant.b, anim:deviant.anim,
@@ -2648,11 +2651,25 @@ tempestChk.onchange = () => { swordFx.setTempest(tempestChk.checked); saveState(
 swordFx.onTempest = on => { tempestChk.checked = on; saveState(); };
 // the phial colours are the game's fixed table (render/weapon-fx.js: resident pec_001); there is no stage to pick
 swordFx.loadPalettes();
+// THE PLAYER'S OWN HOLDER REQUESTS, every class's (render/weapon-fx.js PlayerRequests): the rows a class's action code asks
+// on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
+// (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
+const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS });
+playerReq.host = weaponFx;
+weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
+// THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
+// sword unit while the Art's state lasts, drawn or sheathed -- the ROM tests neither -- so its host follows the sword part
+// wherever the rig puts it. The state is the user's control, as Demon Riot's and Tempest Axe's are.
+const chaosFx = new ChaosOilEffects();   // no `floor`: the unit is the sword's own bone 0, not the player standing on the ground
+const chaosOilSel = document.getElementById('chaosOil');
+chaosOilSel.onchange = () => { chaosFx.setLevel(+chaosOilSel.value); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); return Promise.resolve(null); }
   return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
                       hunterFx.sync('co', playerRoots(), world),
-                      swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world)]);
+                      swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world),
+                      chaosFx.sync(weapon.cls === weaponClassSel.value ? weaponClassSel.value : null,
+                                   weapon.parts && weapon.parts.main ? [weapon.parts.main] : [], world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2684,6 +2701,9 @@ function stepWeaponFx(){
   // drawn (0x11a5db0), not on the weapon-unit host, which is seconds behind a draw (render/weapon-fx.js stepTempest)
   swordFx.stepStance(weapon.stance, t, act ? advance : null, weapon.phial(), weapon.modeWord,
                      weaponClassSel.value === 'w08' && weapon.cls === 'w08' && weapon.drawn, weapon.element(), weapon.onBack());
+  // the player's own rows: the class whose code runs is the one in the hand, playing a weapon stance
+  playerReq.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t);
+  chaosFx.step(t, act ? advance : null);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3705,6 +3725,7 @@ let weaponFxOn = true;
 function paintWeaponFx(){
   weaponFx.setEnabled(weaponFxOn);
   swordFx.setEnabled(weaponFxOn);
+  chaosFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -3885,6 +3906,7 @@ async function buildWeaponLists(){
   document.getElementById('weaponFormField').style.display = (forms.length && weapon.formSelectable()) ? '' : 'none';
   document.getElementById('chargeField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
   document.getElementById('tempestField').style.display = weaponClassSel.value === 'w08' ? '' : 'none';
+  document.getElementById('chaosOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
   // the Bow's nocked arrow: the ROM's proof-effect placements (docs/weapons/w10.json
   // shared.arrow.records); none by default, because which animation requests which
@@ -5281,7 +5303,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5455,6 +5477,7 @@ if (weaponClassSel.value !== 'none'){
     weaponFormSel.value = String(SAVED.weaponForm);
   if (SAVED && SAVED.charge !== undefined){ chargeChk.checked = !!SAVED.charge; swordFx.setCharge(!!SAVED.charge); }
   if (SAVED && SAVED.tempest !== undefined){ tempestChk.checked = !!SAVED.tempest; swordFx.setTempest(!!SAVED.tempest); }
+  if (SAVED && /^[0-3]$/.test(String(SAVED.chaosOil))){ chaosOilSel.value = String(SAVED.chaosOil); chaosFx.setLevel(+SAVED.chaosOil); }
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
     kinsectSel.value = SAVED.kinsect;
   if (SAVED && SAVED.kinsectEl !== undefined) kinsectElSel.value = kinsectElValue(SAVED.kinsectEl);
@@ -5552,6 +5575,10 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
              charge: on => { chargeChk.checked = !!on; swordFx.setCharge(!!on); return swordFx.stats(); }, mode: () => swordFx.mode(),
              tempest: on => { tempestChk.checked = !!on; swordFx.setTempest(!!on); return swordFx.stats(); },
              obj: () => swordFx, burst: (row = 0, slot = 0, phial, element) => !!swordFx.burst(slot, row, phial || weapon.phial(), element == null ? swordFx.lastElement : element) },
+    // the player's own holder rows by stance (PlayerRequests), and the Sword & Shield's Chaos Oil host
+    player: () => playerReq.stats(),
+    sns: { stats: () => chaosFx.stats(), raw: () => chaosFx.live, obj: () => chaosFx, bounds: () => chaosFx.bounds(),
+           chaosOil: level => { chaosOilSel.value = String(level | 0); chaosFx.setLevel(level | 0); return chaosFx.stats(); } },
     clips: () => { const l = weaponFx.live; return l ? Object.keys(l.def.clips || {}) : []; },
     def: () => { const l = weaponFx.live; return l ? l.def : null; },
     // ADVANCE n GAME FRAMES BY HAND, the way the render loop would: the stance moves 1/60 s, the pose is

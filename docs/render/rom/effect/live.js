@@ -271,6 +271,11 @@ export class LiveEffects {
     // the head by its record root joint 2, decoded and handled above, not here.
     const originGid = def.originJoint == null ? 0 : def.originJoint;
     this.originBone = (bones.find(b => b.gid === originGid) || {}).node || null;
+    // A PLAYER PART UNIT (the Armor Viewer, 2026-09-29): the weapon in the hand is a unit of its own, and its whole
+    // placement -- rotation too -- is where the rig puts the weapon's bone 0 (render/weapon.js placePart). A record at
+    // joint -1 with no root-joint override hangs from that unit (the Sword & Shield's Chaos Oil, w01_800 1100..1102,
+    // space 0), so it turns with the blade; the hunter's unit keeps the host's facing (unitMatrix).
+    this.unitFromOrigin = !!def.unitFromOrigin;
     root.updateMatrixWorld(true);
     this.writeJoints();
     // a record: the monster's request, whole (proof.js ProofRequest) -- the core makes the effect the game
@@ -415,7 +420,10 @@ export class LiveEffects {
   unitMatrix(out){
     this.unitOnGround = true;
     out.copy(this.root.matrixWorld);
-    if (this.originBone){                                   // position from the model root (gid 0); rotation/scale stay the unit's
+    if (this.originBone && this.unitFromOrigin){            // a part unit: the bone's whole placement (attach)
+      this.originBone.updateWorldMatrix(true, false);
+      out.copy(this.originBone.matrixWorld);
+    } else if (this.originBone){                            // position from the model root (gid 0); rotation/scale stay the unit's
       this.originBone.updateWorldMatrix(true, false);
       const e = this.originBone.matrixWorld.elements, o = out.elements;
       o[12] = e[12]; o[13] = e[13]; o[14] = e[14];

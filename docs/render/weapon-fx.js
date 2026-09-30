@@ -135,7 +135,16 @@ export class WeaponEffects {
   // while the state layer is off. The weapon-unit host below narrows it to the records it hangs.
   useDef(def){
     const keep = e => (this.stateLayer || e.when !== 'state') && !(e.record && this.refused.has(e.record.key));
-    return Object.assign({}, def, { effects: (def.effects || []).filter(keep) });
+    // THE JOINTS A REQUESTER ROOTS A RECORD ON (the block's +0x52, mask +0x14 bit 5): the parent unit carries only the joints
+    // the effects name, and a request that overrides its record's root joint names one no record does -- the Sword &
+    // Shield's rows 1 / 3 / 4 hang from the player's joint 1 (render/weapon-fx-w01.js). `requestJoints(cls)` answers
+    // { record key: joint } for the class (PlayerRequests.rootJoints); those joints join their records' lists.
+    const extra = this.requestJoints ? this.requestJoints(def.weapon) : null;
+    const add = e => {
+      const j = extra && e.when === 'state' && e.record ? extra[e.record.key] : undefined;
+      return j != null && !(e.joints || []).includes(j) ? Object.assign({}, e, { joints: [...(e.joints || []), j] }) : e;
+    };
+    return Object.assign({}, def, { effects: (def.effects || []).filter(keep).map(add) });
   }
 
   // Attach only when something that matters has changed: the class, or the BONES under it. Every armour
@@ -558,6 +567,88 @@ export const PLAYER_TIMED_REQUESTS = {
   'draw:116': [{ at: 20, key: 550, efl: 'w08_003' }],
   'draw:255': [{ at: 274, key: 205, efl: 'cm002_007' }],
 };
+
+// ---- THE PLAYER'S OWN HOLDER REQUESTS, BY STANCE: every class's, on the hunter host ----
+// A class's action code asks its effect holder for a row at a MOTION FRAME of the action it runs, on the PLAYER unit
+// (its own vtable +0x130 handle, the block at +0x2550 or one it builds with 0x40a54). These are the player's requests,
+// so they run on the hunter host and are gated on player facts alone -- the class equipped, the weapon drawn, the
+// stance playing -- never on a weapon-unit host being up (weapon-effects-guide.md section 7; the Switch Axe's table
+// above ran from its weapon-unit host until 2026-09-29, so it waited out that host's 3 s build after every draw).
+// A class's table maps a stance key ("draw:110") to its requests: { at: the motion frame, key, efl, requester: the
+// block's overrides (null: the player's own block, none), slot: the holder's tracked slot (0x281ffc) when it has one }.
+//   * NO SLOT: fire and forget (vtable +0x39c -> holder +0x150); the effect runs its course.
+//   * A SLOT (0x281ffc -> holder +0x158 = 0x44c164 with flag 1, read 2026-09-29): a request into an occupied slot first
+//     stops the occupant AT ONCE (holder vtable +0x15c = 0x44c210: 0x329c40(effect, 1)), then asks its own row. The
+//     holder's stop policy (vtable +0x160) keeps the slot's effect while its test holds; here that test is the stance:
+//     `while` (default: the stance that asked). Leaving it, `stop` is the policy's answer as the holder's update applies
+//     it (0x44bef0..0x44bfb0): 3 stops at once, 2 lets a running effect end on its own (0x329c40(effect, 0)).
+// FRAMES COUNT THE MOTION: a `_loop` stance is the tail of one motion (its t0 is where it starts), so a loop's wrap is
+// the motion going on -- frames below t0 are not crossed again, as the ROM's frame test (0x2804ec) does not cross them
+// -- while a stance that begins partway (a `_loop` picked on its own) catches up on every frame before it at once, the
+// last request per slot winning. A stance whose clip plays again from the top (another pick, a harness loop) is the
+// action again.
+export class PlayerRequests {
+  constructor(tables){
+    this.tables = tables || {};  // class -> { stance key -> [request] }
+    this.host = null;            // the hunter host's WeaponEffects
+    this.key = null; this.file = null; this.clip = null; this.mtime = null;
+    this.slots = new Map();      // holder slot -> { q, live, stop, while }
+    this.fired = 0;
+  }
+  // every frame: `cls` is the class whose code runs (null when no weapon stance plays: sheathed, a Hunter Pose, another
+  // class), `stance` the weapon's { file, clip, t0 }, `time` the stance action's time in seconds
+  step(cls, stance, time){
+    const h = this.host, live = (h && h.live) || null;
+    for (const [s, x] of this.slots) if (x.live !== live || (x.q.finished && x.q.finished())) this.slots.delete(s);  // gone with a rebuilt host
+    const table = cls ? this.tables[cls] : null;
+    const slot = stance ? slotOf(stance.clip) : null;
+    const key = table && slot !== null ? setOf(stance.file) + ':' + slot : null;
+    const t0 = stance && stance.t0 ? stance.t0 : 0;
+    const mtime = key ? (time || 0) + t0 : null;
+    let from = -1;                               // the motion frame the last step reached, -1 for a new action
+    if (key !== null && key === this.key){
+      const loop = /_loop$/.test(stance.clip || '');
+      if (stance.clip === this.clip && stance.file === this.file && mtime < this.mtime) from = loop ? t0 - 1e-6 : -1;  // a wrap
+      else if (mtime >= this.mtime) from = this.mtime;
+    }
+    // the stop policy: a slot's effect lives while its stance does
+    for (const [s, x] of this.slots) if (!x.while.includes(key)) this.release(s, x.stop);
+    this.key = key; this.file = stance ? stance.file : null; this.clip = stance ? stance.clip : null; this.mtime = mtime;
+    if (key === null || !live) return;
+    const due = (table[key] || []).filter(r => from < r.at / 60 && mtime >= r.at / 60);
+    const last = new Map();
+    for (const r of due) if (r.slot != null) last.set(r.slot, r);   // caught up at once: the last per slot is what stands
+    for (const r of due){
+      if (r.slot != null && last.get(r.slot) !== r) continue;
+      if (h.refused.has(r.key)) continue;
+      if (r.slot != null){ const x = this.slots.get(r.slot); if (x) this.release(r.slot, 3); }   // 0x44c210: at once
+      const q = h.startState(r.key, r.efl, r.requester || null);
+      this.fired++;
+      if (q && r.slot != null) this.slots.set(r.slot, { q, key: r.key, live, stop: r.stop || 3, while: r.while || [key] });
+    }
+  }
+  // the holder's answer for a slot's effect: 3 at once, 2 the effect's own end (the schedule drops it when finished)
+  release(s, answer){
+    const x = this.slots.get(s), h = this.host, sc = h && h.live && h.live.schedule;
+    this.slots.delete(s);
+    if (!x || !sc || x.live !== h.live) return;
+    try {
+      if (!x.q.stopped) sc.host.stopRequest(x.q);
+      if (answer === 3){ sc.host.releaseRequest(x.q); for (const e of sc.entries) e.requests = e.requests.filter(q => q !== x.q); }
+    } catch (_) {}
+  }
+  stopAll(){ for (const [s] of this.slots) this.release(s, 3); this.key = null; this.mtime = null; }
+  // { record key: joint } for every request of the class that roots its record on a joint (not -1, the unit itself):
+  // the hunter host adds those joints to its parent (WeaponEffects.useDef requestJoints)
+  rootJoints(cls){
+    const out = {}, t = this.tables[cls];
+    for (const list of Object.values(t || {}))
+      for (const r of list) if (r.requester && r.requester.rootJoint != null && r.requester.rootJoint !== 0xffff) out[r.key] = r.requester.rootJoint;
+    return out;
+  }
+  stats(){ return { key: this.key, frame: this.mtime == null ? null : Math.round(this.mtime * 60), fired: this.fired,
+                    slots: [...this.slots].map(([s, x]) => ({ slot: s, key: x.key, stop: x.stop })) }; }
+}
 export const BURST_RECORDS = {
   0: { 0: 510, 1: 511, 2: 512, 3: 513, 16: 514, 17: 515, 18: 516, 19: 517, 20: 518, 21: 519, 22: 520, 23: 521, 24: 522, 25: 523 },   // pl_w08_000 rows: spec 0 (w08_002.efl)
   1: { 0: [511, 510], 1: [513, 512], 2: [515, 514], 3: [517, 516], 4: [519, 518], 5: [521, 520], 6: [523, 522] },              // pl_w08_001 row r: specs 0 / 1
@@ -893,10 +984,7 @@ export class WeaponUnitEffects extends WeaponEffects {
     const timed = key ? TIMED_REQUESTS[key] : null;
     if (timed && before !== null)
       for (const t of timed) if (crossed(t.at) && !this.refused.has(t.key)){ this.lastRequested = t.key; this.startState(t.key, null, { rootJoint: 0 }); }
-    // the player's own holder rows (PLAYER_TIMED_REQUESTS), on the HUNTER host with no overrides
-    const ptimed = key ? PLAYER_TIMED_REQUESTS[key] : null, hh = this.hunterHost;
-    if (ptimed && before !== null && hh && hh.live)
-      for (const t of ptimed) if (crossed(t.at) && !hh.refused.has(t.key)) hh.startState(t.key, t.efl, null);
+    // (the player's own holder rows, PLAYER_TIMED_REQUESTS, are the page's PlayerRequests on the hunter host: player facts, not this host)
     if (!started || key === null) return;
     for (const [mode, r] of Object.entries(SWORD_REQUESTS)){
       if (r.held || r.set !== set || !r.slots.includes(slot)) continue;

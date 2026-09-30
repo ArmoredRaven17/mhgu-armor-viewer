@@ -49,6 +49,22 @@ const rot = (a, x, y, z) => [Math.cos(a), 0, -Math.sin(a), 0, 0, 1, 0, 0, Math.s
 const RED = 0xff0014ff;   // resident pec_001 entry 8, the Power phial
 let prims = 0, models = 0, starts = 0, f = 0, where = '';
 const refusals = [];
+// THE CLASS'S OWN REQUEST SHAPES (used in step 2 below), per class where it has its own -- a record key means nothing across
+// classes: the Sword & Shield's 500/501/505 are other records, asked another way than the Switch Axe's
+const CLASS_SHAPES = {
+  // THE SWORD & SHIELD (render/weapon-fx-w01.js): holder rows 1 / 3 / 4 = w01_000 500 / 501 / 505 on the PLAYER with the
+  // root joint 1 (0x116852c, 0x11687d4); rows 0 and 2 = cm002_002 201 and cm001_000 405 through the player's own block
+  // (no overrides); Chaos Oil's rows 5..7 = w01_800 1100..1102 on the WEAPON unit, no overrides (the holder's 0x452b88)
+  w01: [
+    [500, 'parent', { rootJoint: 1 }], [501, 'parent', { rootJoint: 1 }], [505, 'parent', { rootJoint: 1 }],
+    [201, 'parent', undefined], [405, 'parent', undefined],
+    [1100, 'unit', undefined], [1101, 'unit', undefined], [1102, 'unit', undefined],
+  ],
+};
+// a request that roots its record on a joint needs that joint on the parent, as the page's hunter host adds it
+// (render/weapon-fx.js WeaponEffects.useDef requestJoints): the Sword & Shield's joint 1
+const requestJoints = (CLASS_SHAPES[cls] || []).filter(([, who, r]) => who === 'parent' && r && r.rootJoint != null && r.rootJoint !== 0xffff)
+                                               .map(([, , r]) => r.rootJoint);
 // A HOST, built afresh after a refusal: a branch no recording took throws out of the lifted code mid-frame and the
 // emulated memory is not to be trusted after it, so the soak drops that clip or record and goes on with a new host.
 function build(){
@@ -71,7 +87,7 @@ function build(){
   host.initDraw({ position: [0, 0, 1000], view: [...T, 0, 0, -1000, 1], world: [...T, 0, 0, 1000, 1] });
   // the hunter host as live.js builds it: every effect, one parent with the union of the joints
   const owners = def.effects.map(e => host.createEffect(new Uint8Array(readFileSync(join(docs, e.efl)))));
-  const joints = [...new Set(def.effects.flatMap(e => e.joints))];
+  const joints = [...new Set([...def.effects.flatMap(e => e.joints), ...requestJoints])];
   const parent = host.createParent(joints);
   const pose = f => { const a = f < 60 ? 0 : 0.01 * (f - 60); joints.forEach((j, k) => host.setJointMatrix(parent, j, rot(a, 20 * k, 100 + 40 * (k % 3), -25))); };
   host.setParentScale(parent, 1); pose(0);
@@ -121,8 +137,10 @@ const attempt = (label, run) => {
       for (let k = 0; k < 30; k++) frame();
     });
   }
-  // 2. the class's own requests, as render/weapon-fx.js makes them (the Switch Axe's; another class adds its own)
-  const shapes = [
+  // 2. the class's own requests, as render/weapon-fx.js makes them: the Switch Axe's, and per class where it has its own
+  // (a record key means nothing across classes: the Sword & Shield's 500/501/505 are other records, asked another way)
+  const SHAPES = CLASS_SHAPES;
+  const shapes = SHAPES[cls] || [
     [500, 'unit', { rootJoint: 0, colour: RED }], [501, 'unit', { rootJoint: 0 }],
     [505, 'unit', { rootJoint: 0, colour: RED }], [506, 'unit', { rootJoint: 0 }],
     [800, 'unit', { rootJoint: 0, colour: RED }], [801, 'unit', { rootJoint: 0 }],
@@ -157,12 +175,12 @@ const attempt = (label, run) => {
       for (let k = 0; k < 30; k++) frame();
     });
   }
-  // 3. the held aura's hide byte, both ways, and a burst cut at 34 frames as its shell cuts it
-  attempt('held 800', ({ host, frame, request, release, unit }) => {
+  // 3. the held aura's hide byte, both ways, and a burst cut at 34 frames as its shell cuts it (the Switch Axe's alone)
+  if (!SHAPES[cls]) attempt('held 800', ({ host, frame, request, release, unit }) => {
     const h = request(800, unit, { rootJoint: 0, colour: RED });
     if (h){ for (let k = 0; k < 120; k++){ host.m.w8(h.q.core + 0x1c1, k % 40 < 20 ? 1 : 0); frame(); } release(h); for (let k = 0; k < 30; k++) frame(); }
   });
-  attempt('burst cut', ({ frame, request, release, parent }) => {
+  if (!SHAPES[cls]) attempt('burst cut', ({ frame, request, release, parent }) => {
     const h = request(512, parent, { position: [-30, 75, 150], scale: [1, 1, 1], type8: 3, colour2: RED });
     if (h){ for (let k = 0; k < 34; k++) frame(); release(h); for (let k = 0; k < 60; k++) frame(); }
   });
