@@ -532,6 +532,30 @@
    "stance": 0,
    "arrow": "621",
    "camera": "left"
+  },
+  "emi-ls125": {
+   "weapon": {
+    "cls": "w07",
+    "model": "125"
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "emi-cb070": {
+   "weapon": {
+    "cls": "w14",
+    "model": "070"
+   },
+   "drawn": true,
+   "stance": 0
+  },
+  "emi-gs136": {
+   "weapon": {
+    "cls": "w00",
+    "model": "136"
+   },
+   "drawn": true,
+   "stance": 0
   }
  }
 }

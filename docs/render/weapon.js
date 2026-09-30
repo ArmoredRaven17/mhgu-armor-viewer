@@ -13,9 +13,9 @@
 // is a reading: pl_wNN.plweplist (build/frag/weaponlist.json), shipped as models[id].g. Per-weapon models come from docs/weapons/wNN.json; textures come from the
 // game's own material files through render/materials-db.js.
 import * as THREE from 'three';
-import { loader, loadGlb, getTexture, weaponMotCache } from './assets.js';
+import { loader, loadGlb, getTexture, weaponMotCache, bust } from './assets.js';
 import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, allMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, applyRomUv, allMats } from './material.js';
 import { kinsectColours, ELEMENTS } from './kinsect.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
@@ -389,7 +389,8 @@ export class WeaponRig {
       o.material = mat; allMats.push(mat);
       if (rom && rom.ch) chan.push(mat);
       if (mat.userData.renderOrder) o.renderOrder = mat.userData.renderOrder;
-      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
+      if (tx && tx.albedo) jobs.push(getTexture(tx.albedo).then(t0 => { const t = applyRomUv(mat, t0);
+        mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
       if (rom){
         if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere) jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
         if (rom.spec && !rom.specIsAlbedo) jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
@@ -701,7 +702,7 @@ export class WeaponRig {
     if (!rec || !rec.file) return null;
     let g = weaponMotCache.get(rec.file);
     if (!g){
-      try { g = await loader.loadAsync(rec.file); } catch (_) { return null; }
+      try { g = await loader.loadAsync(bust(rec.file)); } catch (_) { return null; }
       weaponMotCache.set(rec.file, g);
     }
     return g;

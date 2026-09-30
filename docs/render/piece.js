@@ -4,7 +4,7 @@
 // the static pose) arrives through `opt` and `ctx`.
 import { loadGlb, getTexture } from './assets.js';
 import { skeletonClone, meshGroupId } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, setIrisMask, allMats, armorMats } from './material.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setIrisMask, applyRomUv, allMats, armorMats } from './material.js';
 import { specFor, refForPiece } from './materials-db.js';
 import { poseObject } from './pose.js';
 
@@ -199,7 +199,8 @@ export async function loadEntry(entry, opt, ctx){
       if (isOtEye) mat.userData.u.uAlphaCut.value = 1;
       if (isBlob) { o.visible = false; }
       else if (isSkin) { o.userData.isBody = true; o.visible = ctx.showBody; }
-      if (file) jobs.push(getTexture(file).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
+      if (file) jobs.push(getTexture(file).then(t0 => { const t = applyRomUv(mat, t0);
+      mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
     }
   });
   await Promise.all(jobs);
@@ -270,7 +271,8 @@ export async function loadCharPart(entry, opt, ctx){
       if (rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere) jobs.push(getTexture(rom.sphere).then(t => setEnvTexture(mat, t)));
       if (rom.spec && !rom.specIsAlbedo) jobs.push(getTexture(rom.spec).then(t => setSpecTexture(mat, t)));
     }
-    if (file) jobs.push(getTexture(file).then(t => { mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
+    if (file) jobs.push(getTexture(file).then(t0 => { const t = applyRomUv(mat, t0);
+      mat.map = t; if (mat.userData.emissiveFromMap) mat.emissiveMap = t; mat.needsUpdate = true; }));
     // the eye colour reaches the iris only, where a mask exists for this eye texture
     if (mat.userData.tintClass === 'eye' && file && IRIS_MASKS[file])
       jobs.push(getTexture(IRIS_MASKS[file], { linear: true }).then(t => setIrisMask(mat, t)));
