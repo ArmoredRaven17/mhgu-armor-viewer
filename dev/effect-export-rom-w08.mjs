@@ -81,6 +81,17 @@ const CLASS_SHAPES = {
     [204, 'parent', undefined],
     [900, 'unit', undefined], [901, 'unit', undefined], [902, 'unit', undefined], [920, 'unit', undefined],
   ],
+  // THE HEAVY BOWGUN (render/weapon-fx-w04.js): on the WEAPON unit with the root joint 0 -- row 3 = w04_000 10 (the
+  // class, motions 5001 / 5121), row 4 = w04_800 810 (act 63), row 5 = 820 (Gunpowder Infusion: act 65 and the holder's
+  // hook); on the weapon with the OFFSET override (+0x14 bit 0; (0, 3, 0) is gun model 0x84's) -- rows 8 / 10..14 = 901 /
+  // 911..915 (act 79); on the PLAYER -- row 6 = 940 on the root joint 0 (Guns Blazing: act 66 and the hook), row 20 = 1100
+  // (act 65), row 7 = cm002_002 211 (the base sharpening)
+  w04: [
+    [10, 'unit', { rootJoint: 0 }], [810, 'unit', { rootJoint: 0 }], [820, 'unit', { rootJoint: 0 }],
+    [901, 'unit', { offset: [0, 3, 0] }], [911, 'unit', { offset: [0, 3, 0] }], [912, 'unit', { offset: [0, 3, 0] }],
+    [913, 'unit', { offset: [0, 3, 0] }], [914, 'unit', { offset: [0, 3, 0] }], [915, 'unit', { offset: [0, 3, 0] }],
+    [940, 'parent', { rootJoint: 0 }], [1100, 'parent', undefined], [211, 'parent', undefined],
+  ],
   // THE LIGHT BOWGUN (render/weapon-fx-w06.js): on the WEAPON unit with the root joint 0 (+0x14 bit 5, +0x52 = 0) --
   // row 3 = w04_000 10 (the class, motions 5001 / 5121), row 1 = w06_800 800 (0x118f420), rows 5..8 = 910..913 (the
   // holder's hook 0x454058 by the charge level), row 12 = 1010 (the status function 0x11891dc); rows 9..11 = 1000..1002

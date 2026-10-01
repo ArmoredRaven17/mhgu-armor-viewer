@@ -527,6 +527,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <label class="chk" id="chargeShotField" style="display:none"><input type="checkbox" id="chargeShotChk">Charge Shot active (Hunter Art)</label>
           <div class="field" id="chargeLevelField" style="display:none"><label for="chargeLevel">Charge level</label><select id="chargeLevel"><option value="0">Off</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
           <label class="chk" id="aimingField" style="display:none"><input type="checkbox" id="aimingChk">Aiming Mode</label>
+          <label class="chk" id="gunsBlazingField" style="display:none"><input type="checkbox" id="gunsBlazingChk">Guns Blazing active (Hunter Art)</label>
+          <label class="chk" id="gunpowderField" style="display:none"><input type="checkbox" id="gunpowderChk">Gunpowder Infusion active (Hunter Art)</label>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
@@ -1240,6 +1242,7 @@ import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './rende
 import { DevouringDemonEffects, PLAYER_REQUESTS as LS_PLAYER_REQUESTS } from './render/weapon-fx-w07.js';
 import { HornSong, InvigorationEffects, hornRequests, loadSongs, playableSongs, defaultSong, noteColour } from './render/weapon-fx-w12.js';
 import { LightBowgunEffects, HolderShellEffects, PLAYER_REQUESTS as LBG_PLAYER_REQUESTS } from './render/weapon-fx-w06.js';
+import { HeavyBowgunEffects, PLAYER_REQUESTS as HBG_PLAYER_REQUESTS, REQUEST_JOINTS as HBG_REQUEST_JOINTS } from './render/weapon-fx-w04.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2277,6 +2280,7 @@ function saveState(){
       hornSong: document.getElementById('hornSong').value, invigoration: document.getElementById('invigorationChk').checked,
       chargeShot: document.getElementById('chargeShotChk').checked, chargeLevel: document.getElementById('chargeLevel').value,
       aiming: document.getElementById('aimingChk').checked,
+      gunsBlazing: document.getElementById('gunsBlazingChk').checked, gunpowder: document.getElementById('gunpowderChk').checked,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
@@ -2678,9 +2682,11 @@ swordFx.loadPalettes();
 // on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
-                                      w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS });
+                                      w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS, w04: HBG_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
-weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
+// the joints those requests root their records on, and the Heavy Bowgun's (render/weapon-fx-w04.js REQUEST_JOINTS: Guns
+// Blazing's aura on the player's root joint, which its own host asks)
+weaponFx.requestJoints = cls => Object.assign(playerReq.rootJoints(cls), cls === 'w04' ? HBG_REQUEST_JOINTS : {});
 // THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
 // sword unit while the Art's state lasts, drawn or sheathed -- the ROM tests neither -- so its host follows the sword part
 // wherever the rig puts it. The state is the user's control, as Demon Riot's and Tempest Axe's are.
@@ -2765,9 +2771,18 @@ const chargeShotChk = document.getElementById('chargeShotChk'), chargeLevelSel =
 const aimingChk = document.getElementById('aimingChk');
 chargeShotChk.onchange = () => { lbgFx.setChargeShot(chargeShotChk.checked); saveState(); };
 chargeLevelSel.onchange = () => { lbgFx.setLevel(+chargeLevelSel.value); saveState(); };
-aimingChk.onchange = () => { lbgFx.setAiming(aimingChk.checked); saveState(); };
+// THE HEAVY BOWGUN (render/weapon-fx-w04.js): one effect holder on two hosts -- the gun (the shot's effect on
+// Motion[121], Arts Motion[1]'s row, Gunpowder Infusion's glow, Arts Motion[151]'s loading rows) and the player (Guns
+// Blazing's aura, Gunpowder Infusion's activation; the sharpening is PlayerRequests'). Guns Blazing and Gunpowder
+// Infusion are the user's controls, as Aiming Mode is (both bowguns read player +0x2716).
+const hbgFx = new HeavyBowgunEffects();
+hbgFx.hunter = weaponFx;
+const gunsBlazingChk = document.getElementById('gunsBlazingChk'), gunpowderChk = document.getElementById('gunpowderChk');
+gunsBlazingChk.onchange = () => { hbgFx.setBlazing(gunsBlazingChk.checked); saveState(); };
+gunpowderChk.onchange = () => { hbgFx.setInfusion(gunpowderChk.checked); saveState(); };
+aimingChk.onchange = () => { lbgFx.setAiming(aimingChk.checked); hbgFx.setAiming(aimingChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); lbgShell.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); lbgShell.detach(); hbgFx.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2778,7 +2793,8 @@ function syncWeaponFx(){
                       ddFx.sync(inHand, mainPart, world),
                       invFx.sync(inHand, mainPart, world),
                       lbgFx.sync(inHand, mainPart, world),
-                      lbgShell.sync(inHand, [], world)]);
+                      lbgShell.sync(inHand, [], world),
+                      hbgFx.sync(inHand, mainPart, world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2828,6 +2844,8 @@ function stepWeaponFx(){
   invFx.step(t, clock, weaponClassSel.value === 'w12' && weapon.cls === 'w12' && weapon.drawn, weapon.onBack());
   lbgFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
   lbgShell.step(t, clock);
+  hbgFx.model = weapon.cls === 'w04' ? parseInt(weapon.modelId, 10) : null;   // act 79's offset is the gun model's
+  hbgFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn, weapon.onBack());
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3876,6 +3894,7 @@ function paintWeaponFx(){
   invFx.setEnabled(weaponFxOn);
   lbgFx.setEnabled(weaponFxOn);
   lbgShell.setEnabled(weaponFxOn);
+  hbgFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -4067,7 +4086,9 @@ async function buildWeaponLists(){
   document.getElementById('invigorationField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
   document.getElementById('chargeShotField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
   document.getElementById('chargeLevelField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
-  document.getElementById('aimingField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
+  document.getElementById('aimingField').style.display = weaponClassSel.value === 'w06' || weaponClassSel.value === 'w04' ? '' : 'none';
+  document.getElementById('gunsBlazingField').style.display = weaponClassSel.value === 'w04' ? '' : 'none';
+  document.getElementById('gunpowderField').style.display = weaponClassSel.value === 'w04' ? '' : 'none';
   document.getElementById('enragedGuardField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   document.getElementById('healShieldField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
@@ -5466,7 +5487,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx, invFx, lbgFx, lbgShell]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx, invFx, lbgFx, lbgShell, hbgFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5646,7 +5667,9 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.invigoration !== undefined){ invigorationChk.checked = !!SAVED.invigoration; invFx.setActive(!!SAVED.invigoration); }
   if (SAVED && SAVED.chargeShot !== undefined){ chargeShotChk.checked = !!SAVED.chargeShot; lbgFx.setChargeShot(!!SAVED.chargeShot); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.chargeLevel))){ chargeLevelSel.value = String(SAVED.chargeLevel); lbgFx.setLevel(+SAVED.chargeLevel); }
-  if (SAVED && SAVED.aiming !== undefined){ aimingChk.checked = !!SAVED.aiming; lbgFx.setAiming(!!SAVED.aiming); }
+  if (SAVED && SAVED.aiming !== undefined){ aimingChk.checked = !!SAVED.aiming; lbgFx.setAiming(!!SAVED.aiming); hbgFx.setAiming(!!SAVED.aiming); }
+  if (SAVED && SAVED.gunsBlazing !== undefined){ gunsBlazingChk.checked = !!SAVED.gunsBlazing; hbgFx.setBlazing(!!SAVED.gunsBlazing); }
+  if (SAVED && SAVED.gunpowder !== undefined){ gunpowderChk.checked = !!SAVED.gunpowder; hbgFx.setInfusion(!!SAVED.gunpowder); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
@@ -5768,6 +5791,11 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
            level: n => { chargeLevelSel.value = String(n | 0); lbgFx.setLevel(n | 0); return lbgFx.stats(); },
            aiming: on => { aimingChk.checked = !!on; lbgFx.setAiming(!!on); return lbgFx.stats(); },
            shell: () => lbgShell.stats(), shellObj: () => lbgShell, shellBounds: () => lbgShell.bounds() },
+    // the Heavy Bowgun (render/weapon-fx-w04.js): Guns Blazing, Gunpowder Infusion, the gun's host
+    hbg: { stats: () => hbgFx.stats(), raw: () => hbgFx.live, obj: () => hbgFx, bounds: () => hbgFx.bounds(),
+           blazing: on => { gunsBlazingChk.checked = !!on; hbgFx.setBlazing(!!on); return hbgFx.stats(); },
+           infusion: on => { gunpowderChk.checked = !!on; hbgFx.setInfusion(!!on); return hbgFx.stats(); },
+           aiming: on => { aimingChk.checked = !!on; lbgFx.setAiming(!!on); hbgFx.setAiming(!!on); return hbgFx.stats(); } },
     // the weapon model's own state (render/weapon-state.js): the Sword & Shield's oil, the Long Sword's Spirit Gauge
     parts: () => weapon.partAudit(),
     oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },
