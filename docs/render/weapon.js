@@ -24,7 +24,7 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // see placePart. Raven, 2026-09-03: the sheathed Sword & Shield's shield "is moved away
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
-import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor } from './weapons-index.js';
+import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, notesFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
 import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
 import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags } from './weapon-state.js';
@@ -233,6 +233,9 @@ export class WeaponRig {
   phialAmbiguous(){ return phialsFor(this.cj, this.modelId).length > 1; }
   // THE ELEMENT this weapon carries, by name, or null (weapons-index.js elementFor): the game's player parameter 17
   element(){ return elementFor(this.cj, this.modelId, this.weaponName); }
+  // THE HUNTING HORN'S NOTES this weapon carries ([n1, n2, n3], note numbers 1..8), by name, or null (weapons-index.js
+  // notesFor): the game's player parameters 27..29 (render/weapon-fx-w12.js)
+  notes(){ return notesFor(this.cj, this.modelId, this.weaponName); }
   // THE WEAPON ON THE BACK, AS THE GAME TESTS IT. The weapon unit's state word +0x13d4 is its mount INDEX (0x316edc switches
   // on it; build/notes/palico-weapon.md), and the game's test is (index | 0x10) == 0x12: index 2 (the carry on the back) or
   // 18 (the rest record) -- the effect holder's stop policy (0x454f6c) and Tempest Axe's gate (0x11a5db0) both ask it.

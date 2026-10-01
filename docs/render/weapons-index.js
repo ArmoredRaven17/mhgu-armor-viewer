@@ -74,6 +74,19 @@ export function elementFor(cj, modelId, name){
   return hit.element || null;
 }
 
+// THE HUNTING HORN'S NOTES ([n1, n2, n3], note numbers 1..8), or null -- a property of the WEAPON like the phial, so the
+// name decides where the model cannot. docs/weapons/w12.json `notes` is the horn's LAST level's set (table/
+// weapon12LevelData.w12d +14 -> table/fueMusicData.fmt; C:/MHGU-Extract/add-weapon-notes.py, every level agreeing with the
+// Collection Tracker); `notesFrom` holds every set by the level it starts at. The class reads note k as player parameter
+// 0x1b + k (render/weapon-fx-w12.js).
+export function notesFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && r.notes && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  const hit = (name && rows.find(r => r.name === name)) || rows[0];
+  return hit.notes;
+}
+
 export function rowFor(cj, modelId){
   return (cj.weapons || []).find(r => r.named && modelIdOf(r.model) === modelId) || null;
 }

@@ -522,6 +522,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field" id="enragedGuardField" style="display:none"><label for="enragedGuard">Enraged Guard</label><select id="enragedGuard"><option value="0">Off</option><option value="1">Power I</option><option value="2">Power II</option><option value="3">Power III</option></select></div>
           <label class="chk" id="healShieldField" style="display:none"><input type="checkbox" id="healShieldChk">Healing Shield active (Hunter Art)</label>
           <div class="field" id="devouringDemonField" style="display:none"><label for="devouringDemon">Devouring Demon</label><select id="devouringDemon"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
+          <div class="field" id="hornSongField" style="display:none"><label for="hornSong">Song</label><select id="hornSong"></select><span id="hornSongNotes" aria-hidden="true"></span></div>
+          <label class="chk" id="invigorationField" style="display:none"><input type="checkbox" id="invigorationChk">Invigoration active (Hunter Art)</label>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
@@ -1233,6 +1235,7 @@ import { createFloorGrid } from './render/grid.js';
 import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS } from './render/weapon-fx.js';
 import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
 import { DevouringDemonEffects, PLAYER_REQUESTS as LS_PLAYER_REQUESTS } from './render/weapon-fx-w07.js';
+import { HornSong, InvigorationEffects, hornRequests, loadSongs, playableSongs, defaultSong, noteColour } from './render/weapon-fx-w12.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2267,6 +2270,7 @@ function saveState(){
       weaponForm: weaponFormSel.value, kinsect: kinsectSel.value, kinsectEl: kinsectElSel.value, charge: document.getElementById('chargeChk').checked, tempest: document.getElementById('tempestChk').checked,
       chaosOil: document.getElementById('chaosOil').value,
       devouringDemon: document.getElementById('devouringDemon').value,
+      hornSong: document.getElementById('hornSong').value, invigoration: document.getElementById('invigorationChk').checked,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
@@ -2668,7 +2672,7 @@ swordFx.loadPalettes();
 // on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
-                                      w07: LS_PLAYER_REQUESTS });
+                                      w07: LS_PLAYER_REQUESTS, w12: {} });
 playerReq.host = weaponFx;
 weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
 // THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
@@ -2699,15 +2703,62 @@ playerReq.levelOf = cls => (cls === 'w03' && guardFx.tier) ? guardFx.tier - 1 : 
 const ddFx = new DevouringDemonEffects();
 const devouringDemonSel = document.getElementById('devouringDemon');
 devouringDemonSel.onchange = () => { ddFx.setLevel(+devouringDemonSel.value); saveState(); };
+// THE HUNTING HORN (render/weapon-fx-w12.js): the note each attack plays (row 1, ten frames into its motion, in the
+// note's colour), a recital's notes and Euphony's (505), the sharpening -- the player's rows by stance, rebuilt for the
+// horn in the hand and the song -- the song effect with its colour steps (HornSong, the hunter host) and Invigoration's
+// aura on the horn (InvigorationEffects). The song and Invigoration are the user's: the viewer plays no notes into a staff.
+const hornSong = new HornSong();
+hornSong.host = weaponFx;
+const invFx = new InvigorationEffects();
+const hornSongSel = document.getElementById('hornSong'), hornSongNotes = document.getElementById('hornSongNotes');
+const invigorationChk = document.getElementById('invigorationChk');
+let hornNotesKey = null;
+function hornSongId(){ const v = parseInt(hornSongSel.value, 10); return Number.isFinite(v) ? v : null; }
+// the Song list for the horn in the hand: the songs its notes can play (the game's names; the horn's note numbers in play
+// order), the class's own default song (0x11bf744) unless the user picked another it can play
+function syncHorn(){
+  const notes = weapon.cls === 'w12' ? weapon.notes() : null;
+  const key = notes ? notes.join(',') : '';
+  if (key !== hornNotesKey){
+    hornNotesKey = key;
+    const want = hornSongSel.dataset.want ? +hornSongSel.dataset.want : hornSongId();
+    hornSongSel.innerHTML = '';
+    for (const sg of playableSongs(notes)){
+      const o = document.createElement('option');
+      o.value = String(sg.id);
+      o.textContent = sg.name + ' (' + sg.notes.map(n => notes.indexOf(n) + 1).join(' ') + ')';
+      hornSongSel.appendChild(o);
+    }
+    const ids = [...hornSongSel.options].map(o => +o.value);
+    const pick = ids.includes(want) ? want : defaultSong(notes);
+    if (ids.includes(pick)) hornSongSel.value = String(pick);
+  }
+  // the song's notes as the palette colours them (pec_001, bytes R G B A)
+  hornSongNotes.innerHTML = '';
+  const sg = hornSongId() != null && playableSongs(notes).find(x => x.id === hornSongId());
+  for (const n of (sg ? sg.notes : [])){
+    const c = noteColour(n), d = document.createElement('span');
+    if (c === undefined) continue;
+    d.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:5px;vertical-align:middle;' +
+                      'background:rgb(' + (c & 255) + ',' + ((c >>> 8) & 255) + ',' + ((c >>> 16) & 255) + ')';
+    hornSongNotes.appendChild(d);
+  }
+  playerReq.tables.w12 = hornRequests(notes, hornSongId());
+}
+hornSongSel.onchange = () => { hornSongSel.dataset.want = hornSongSel.value; syncHorn(); saveState(); };
+invigorationChk.onchange = () => { invFx.setActive(invigorationChk.checked); saveState(); };
+loadSongs().then(() => { hornNotesKey = null; syncHorn(); });
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); return Promise.resolve(null); }
+  syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
   return Promise.all([weaponFx.sync(weaponClassSel.value, playerRoots(), world),
                       hunterFx.sync('co', playerRoots(), world),
                       swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world),
                       chaosFx.sync(inHand, mainPart, world),
-                      ddFx.sync(inHand, mainPart, world)]);
+                      ddFx.sync(inHand, mainPart, world),
+                      invFx.sync(inHand, mainPart, world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2750,6 +2801,11 @@ function stepWeaponFx(){
   chaosFx.step(t, clock);
   ddFx.stepArt(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn ? weapon.stance : null, t);
   ddFx.step(t, clock);
+  // the Horn: the song effect asked at its stance's frame and stepped through the song's colours; Invigoration's aura while
+  // the state stands, the horn drawn and not on the back (vtable +0x490)
+  hornSong.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t,
+                hornSongId(), clock);
+  invFx.step(t, clock, weaponClassSel.value === 'w12' && weapon.cls === 'w12' && weapon.drawn, weapon.onBack());
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3795,6 +3851,7 @@ function paintWeaponFx(){
   swordFx.setEnabled(weaponFxOn);
   chaosFx.setEnabled(weaponFxOn);
   ddFx.setEnabled(weaponFxOn);
+  invFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -3982,6 +4039,8 @@ async function buildWeaponLists(){
   document.getElementById('weaponOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('devouringDemonField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
+  document.getElementById('hornSongField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
+  document.getElementById('invigorationField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
   document.getElementById('enragedGuardField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   document.getElementById('healShieldField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
@@ -5380,7 +5439,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx, invFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5556,6 +5615,8 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.tempest !== undefined){ tempestChk.checked = !!SAVED.tempest; swordFx.setTempest(!!SAVED.tempest); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.chaosOil))){ chaosOilSel.value = String(SAVED.chaosOil); chaosFx.setLevel(+SAVED.chaosOil); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.devouringDemon))){ devouringDemonSel.value = String(SAVED.devouringDemon); ddFx.setLevel(+SAVED.devouringDemon); }
+  if (SAVED && /^\d+$/.test(String(SAVED.hornSong))){ hornSongSel.dataset.want = String(SAVED.hornSong); hornNotesKey = null; syncHorn(); }
+  if (SAVED && SAVED.invigoration !== undefined){ invigorationChk.checked = !!SAVED.invigoration; invFx.setActive(!!SAVED.invigoration); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
@@ -5664,6 +5725,13 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     // the Long Sword's Devouring Demon (render/weapon-fx-w07.js): its state and the weapon-unit host
     ls: { stats: () => ddFx.stats(), raw: () => ddFx.live, obj: () => ddFx, bounds: () => ddFx.bounds(),
           demon: level => { devouringDemonSel.value = String(level | 0); ddFx.setLevel(level | 0); return ddFx.stats(); } },
+    // the Hunting Horn (render/weapon-fx-w12.js): the song, the song effect, Invigoration's weapon-unit host
+    hh: { stats: () => ({ song: hornSong.stats(), invigoration: invFx.stats(), notes: weapon.notes(), songId: hornSongId(),
+                          stances: Object.keys(playerReq.tables.w12 || {}).length }),
+          song: id => { hornSongSel.dataset.want = String(id); hornNotesKey = null; syncHorn(); return hornSongId(); },
+          songs: () => [...hornSongSel.options].map(o => [+o.value, o.textContent]),
+          invigoration: on => { invigorationChk.checked = !!on; invFx.setActive(!!on); return invFx.stats(); },
+          requests: () => playerReq.tables.w12, obj: () => ({ hornSong, invFx }), raw: () => invFx.live, bounds: () => invFx.bounds() },
     // the weapon model's own state (render/weapon-state.js): the Sword & Shield's oil, the Long Sword's Spirit Gauge
     parts: () => weapon.partAudit(),
     oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },

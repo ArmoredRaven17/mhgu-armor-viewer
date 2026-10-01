@@ -81,6 +81,17 @@ const CLASS_SHAPES = {
     [204, 'parent', undefined],
     [900, 'unit', undefined], [901, 'unit', undefined], [902, 'unit', undefined], [920, 'unit', undefined],
   ],
+  // THE HUNTING HORN (render/weapon-fx-w12.js): every row but 11 on the PLAYER with the effect manager's colour slot 1 entry
+  // in the SECOND colour word (+0x94, +0x18 bit 6) -- row 1 = w12_000 500 (an attack's note, the state runner 0x11c7b08),
+  // rows 2 / 3 = 505 (a recital's notes 0x11c1ac0, Euphony's 0x11c2f60), rows 5..7 = 506..508 and row 8 = w12_800 806 (the
+  // song effect, 0x11c69e4); row 0 = cm002_002 208 (the sharpening) with no override; row 11 = w12_800 1100 (Invigoration)
+  // on the WEAPON unit (the class's hook 0x11c60a8), no override. The colours: pec_001 entries 0 / 3 / 2 (notes 1 / 4 / 3)
+  w12: [
+    [500, 'parent', { colour2: 0xffa0a0a0 }], [505, 'parent', { colour2: 0xffff1111 }],
+    [506, 'parent', { colour2: 0xff0000bf }], [507, 'parent', { colour2: 0xff0000bf }], [508, 'parent', { colour2: 0xff0000bf }],
+    [806, 'parent', { colour2: 0xff0000bf }], [208, 'parent', undefined],
+    [1100, 'unit', undefined],
+  ],
 };
 // a request that roots its record on a joint needs that joint on the parent, as the page's hunter host adds it
 // (render/weapon-fx.js WeaponEffects.useDef requestJoints): the Sword & Shield's joint 1
