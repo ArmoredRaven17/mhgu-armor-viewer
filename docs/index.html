@@ -2726,25 +2726,30 @@ function stepWeaponFx(){
     advance = d >= 0 ? d : (act.loop === THREE.LoopRepeat ? Math.max(0, t + clipDur(act) - fxLastTime) : 0);
   }
   fxLastClip = clip; fxLastTime = act ? t : null;
-  weaponFx.step(weapon.stance, t, act ? advance : null);
+  // A STILL POSE HAS NO ANIMATION TO FOLLOW. A zero-length stance -- the bowguns' drawn idle, Motion[1]_loop, is one frame --
+  // never moves its time, and three.js ends it the moment it starts, so on the animation's clock nothing it holds would
+  // ever step (the Light Bowgun's charge glow stood requested and never drew, 2026-09-30). The wall clock drives it, the
+  // runtime's rule for a still pose (rom/effect/live.js frameUnsafe: `advance` null).
+  const clock = act && clip && clip.duration > 0 ? advance : null;
+  weaponFx.step(weapon.stance, t, clock);
   // the hunter's own clip effects: keyed by the pose's LIST and motion number
   const gp = (!weapon.stance && curGamePose) ? curGamePose : null;
   const gm = gp && /Motion\[(\d+)\]/.exec(gp.clip || '');
-  hunterFx.stepClip(gm ? gp.src + ':' + gm[1] : null, t, act ? advance : null);
+  hunterFx.stepClip(gm ? gp.src + ':' + gm[1] : null, t, clock);
   // THE SWITCH AXE'S SWORD AURA: requested when a sword-mode stance starts, from the weapon-unit host (render/weapon-fx.js
   // WeaponUnitEffects), the way uPlayerQuest08's action code requests it -- the 27 main-list motions, the morph's Motion[3]
   // and the Arts' Motion[91], with the phial's stage colour. The bursts (510..523) fire at the two motion frames the
   // action code creates the burst shells on (render/weapon-fx.js BURSTS).
   // the last word is the Switch Axe IN THE HAND: Tempest Axe's aura is the player's request, gated on the weapon being
   // drawn (0x11a5db0), not on the weapon-unit host, which is seconds behind a draw (render/weapon-fx.js stepTempest)
-  swordFx.stepStance(weapon.stance, t, act ? advance : null, weapon.phial(), weapon.modeWord,
+  swordFx.stepStance(weapon.stance, t, clock, weapon.phial(), weapon.modeWord,
                      weaponClassSel.value === 'w08' && weapon.cls === 'w08' && weapon.drawn, weapon.element(), weapon.onBack());
   // the player's own rows: the class whose code runs is the one in the hand, playing a weapon stance
   playerReq.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t);
   guardFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn, weapon.onBack());
-  chaosFx.step(t, act ? advance : null);
+  chaosFx.step(t, clock);
   ddFx.stepArt(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.drawn ? weapon.stance : null, t);
-  ddFx.step(t, act ? advance : null);
+  ddFx.step(t, clock);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
