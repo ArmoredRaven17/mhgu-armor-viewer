@@ -81,6 +81,18 @@ const CLASS_SHAPES = {
     [204, 'parent', undefined],
     [900, 'unit', undefined], [901, 'unit', undefined], [902, 'unit', undefined], [920, 'unit', undefined],
   ],
+  // THE LIGHT BOWGUN (render/weapon-fx-w06.js): on the WEAPON unit with the root joint 0 (+0x14 bit 5, +0x52 = 0) --
+  // row 3 = w04_000 10 (the class, motions 5001 / 5121), row 1 = w06_800 800 (0x118f420), rows 5..8 = 910..913 (the
+  // holder's hook 0x454058 by the charge level), row 12 = 1010 (the status function 0x11891dc); rows 9..11 = 1000..1002
+  // (the hook, on the holder shell's own handle -- the page's shell host at the world origin, the policy moving the units
+  // to the camera; the audit asks them on the player parent); on the PLAYER -- row 13 = 1100 (0x118fb30), row 4 =
+  // cm002_002 212 (the base sharpening)
+  w06: [
+    [10, 'unit', { rootJoint: 0 }], [800, 'unit', { rootJoint: 0 }], [1010, 'unit', { rootJoint: 0 }],
+    [910, 'unit', { rootJoint: 0 }], [911, 'unit', { rootJoint: 0 }], [912, 'unit', { rootJoint: 0 }], [913, 'unit', { rootJoint: 0 }],
+    [1000, 'parent', undefined], [1001, 'parent', undefined], [1002, 'parent', undefined],
+    [1100, 'parent', undefined], [212, 'parent', undefined],
+  ],
   // THE HUNTING HORN (render/weapon-fx-w12.js): every row but 11 on the PLAYER with the effect manager's colour slot 1 entry
   // in the SECOND colour word (+0x94, +0x18 bit 6) -- row 1 = w12_000 500 (an attack's note, the state runner 0x11c7b08),
   // rows 2 / 3 = 505 (a recital's notes 0x11c1ac0, Euphony's 0x11c2f60), rows 5..7 = 506..508 and row 8 = w12_800 806 (the

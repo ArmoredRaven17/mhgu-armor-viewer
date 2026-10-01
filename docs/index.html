@@ -524,6 +524,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field" id="devouringDemonField" style="display:none"><label for="devouringDemon">Devouring Demon</label><select id="devouringDemon"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
           <div class="field" id="hornSongField" style="display:none"><label for="hornSong">Song</label><select id="hornSong"></select><span id="hornSongNotes" aria-hidden="true"></span></div>
           <label class="chk" id="invigorationField" style="display:none"><input type="checkbox" id="invigorationChk">Invigoration active (Hunter Art)</label>
+          <label class="chk" id="chargeShotField" style="display:none"><input type="checkbox" id="chargeShotChk">Charge Shot active (Hunter Art)</label>
+          <div class="field" id="chargeLevelField" style="display:none"><label for="chargeLevel">Charge level</label><select id="chargeLevel"><option value="0">Off</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+          <label class="chk" id="aimingField" style="display:none"><input type="checkbox" id="aimingChk">Aiming Mode</label>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
@@ -1236,6 +1239,7 @@ import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS
 import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
 import { DevouringDemonEffects, PLAYER_REQUESTS as LS_PLAYER_REQUESTS } from './render/weapon-fx-w07.js';
 import { HornSong, InvigorationEffects, hornRequests, loadSongs, playableSongs, defaultSong, noteColour } from './render/weapon-fx-w12.js';
+import { LightBowgunEffects, HolderShellEffects, PLAYER_REQUESTS as LBG_PLAYER_REQUESTS } from './render/weapon-fx-w06.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2271,6 +2275,8 @@ function saveState(){
       chaosOil: document.getElementById('chaosOil').value,
       devouringDemon: document.getElementById('devouringDemon').value,
       hornSong: document.getElementById('hornSong').value, invigoration: document.getElementById('invigorationChk').checked,
+      chargeShot: document.getElementById('chargeShotChk').checked, chargeLevel: document.getElementById('chargeLevel').value,
+      aiming: document.getElementById('aimingChk').checked,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
@@ -2672,7 +2678,7 @@ swordFx.loadPalettes();
 // on the PLAYER at a motion frame -- the Switch Axe's 550 and sharpening flash, the Sword & Shield's rows 0..4
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
-                                      w07: LS_PLAYER_REQUESTS, w12: {} });
+                                      w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 weaponFx.requestJoints = cls => playerReq.rootJoints(cls);   // the joints those requests root their records on
 // THE SWORD & SHIELD'S CHAOS OIL (render/weapon-fx-w01.js, Raven 2026-09-29: "Do SnS next"): the holder hangs it from the
@@ -2748,8 +2754,20 @@ function syncHorn(){
 hornSongSel.onchange = () => { hornSongSel.dataset.want = hornSongSel.value; syncHorn(); saveState(); };
 invigorationChk.onchange = () => { invFx.setActive(invigorationChk.checked); saveState(); };
 loadSongs().then(() => { hornNotesKey = null; syncHorn(); });
+// THE LIGHT BOWGUN (render/weapon-fx-w06.js): one effect holder, its slots on three hosts by the parent each row names --
+// the gun (the shot's effect on Motion[121], the Art's first shot, the charge level's glow, Charge Shot's rounds), the
+// player (Charge Shot's activation; the sharpening is PlayerRequests') and the holder shell's own handle at the world
+// origin (the charge level's overlay, levels 2..4, which the policy puts at the camera while aiming). The Art, the charge
+// level and Aiming Mode are the user's controls: the viewer holds no trigger and no aim.
+const lbgFx = new LightBowgunEffects(), lbgShell = new HolderShellEffects();
+lbgFx.hunter = weaponFx; lbgFx.shell = lbgShell; lbgFx.camera = camera;
+const chargeShotChk = document.getElementById('chargeShotChk'), chargeLevelSel = document.getElementById('chargeLevel');
+const aimingChk = document.getElementById('aimingChk');
+chargeShotChk.onchange = () => { lbgFx.setChargeShot(chargeShotChk.checked); saveState(); };
+chargeLevelSel.onchange = () => { lbgFx.setLevel(+chargeLevelSel.value); saveState(); };
+aimingChk.onchange = () => { lbgFx.setAiming(aimingChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); lbgShell.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2758,7 +2776,9 @@ function syncWeaponFx(){
                       swordFx.sync(weaponClassSel.value, weapon.drawn ? [weapon.parts.main] : [], world),
                       chaosFx.sync(inHand, mainPart, world),
                       ddFx.sync(inHand, mainPart, world),
-                      invFx.sync(inHand, mainPart, world)]);
+                      invFx.sync(inHand, mainPart, world),
+                      lbgFx.sync(inHand, mainPart, world),
+                      lbgShell.sync(inHand, [], world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2806,6 +2826,8 @@ function stepWeaponFx(){
   hornSong.step(weapon.drawn && weapon.stance && weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t,
                 hornSongId(), clock);
   invFx.step(t, clock, weaponClassSel.value === 'w12' && weapon.cls === 'w12' && weapon.drawn, weapon.onBack());
+  lbgFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
+  lbgShell.step(t, clock);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3852,6 +3874,8 @@ function paintWeaponFx(){
   chaosFx.setEnabled(weaponFxOn);
   ddFx.setEnabled(weaponFxOn);
   invFx.setEnabled(weaponFxOn);
+  lbgFx.setEnabled(weaponFxOn);
+  lbgShell.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -4041,6 +4065,9 @@ async function buildWeaponLists(){
   document.getElementById('devouringDemonField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('hornSongField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
   document.getElementById('invigorationField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
+  document.getElementById('chargeShotField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
+  document.getElementById('chargeLevelField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
+  document.getElementById('aimingField').style.display = weaponClassSel.value === 'w06' ? '' : 'none';
   document.getElementById('enragedGuardField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   document.getElementById('healShieldField').style.display = weaponClassSel.value === 'w03' ? '' : 'none';
   weaponFormSel.value = defaultFormValue();
@@ -5439,7 +5466,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx, invFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, ddFx, invFx, lbgFx, lbgShell]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5617,6 +5644,9 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && /^[0-3]$/.test(String(SAVED.devouringDemon))){ devouringDemonSel.value = String(SAVED.devouringDemon); ddFx.setLevel(+SAVED.devouringDemon); }
   if (SAVED && /^\d+$/.test(String(SAVED.hornSong))){ hornSongSel.dataset.want = String(SAVED.hornSong); hornNotesKey = null; syncHorn(); }
   if (SAVED && SAVED.invigoration !== undefined){ invigorationChk.checked = !!SAVED.invigoration; invFx.setActive(!!SAVED.invigoration); }
+  if (SAVED && SAVED.chargeShot !== undefined){ chargeShotChk.checked = !!SAVED.chargeShot; lbgFx.setChargeShot(!!SAVED.chargeShot); }
+  if (SAVED && /^[0-4]$/.test(String(SAVED.chargeLevel))){ chargeLevelSel.value = String(SAVED.chargeLevel); lbgFx.setLevel(+SAVED.chargeLevel); }
+  if (SAVED && SAVED.aiming !== undefined){ aimingChk.checked = !!SAVED.aiming; lbgFx.setAiming(!!SAVED.aiming); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
@@ -5732,6 +5762,12 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           songs: () => [...hornSongSel.options].map(o => [+o.value, o.textContent]),
           invigoration: on => { invigorationChk.checked = !!on; invFx.setActive(!!on); return invFx.stats(); },
           requests: () => playerReq.tables.w12, obj: () => ({ hornSong, invFx }), raw: () => invFx.live, bounds: () => invFx.bounds() },
+    // the Light Bowgun (render/weapon-fx-w06.js): Charge Shot, the charge level, the gun's host
+    lbg: { stats: () => lbgFx.stats(), raw: () => lbgFx.live, obj: () => lbgFx, bounds: () => lbgFx.bounds(),
+           chargeShot: on => { chargeShotChk.checked = !!on; lbgFx.setChargeShot(!!on); return lbgFx.stats(); },
+           level: n => { chargeLevelSel.value = String(n | 0); lbgFx.setLevel(n | 0); return lbgFx.stats(); },
+           aiming: on => { aimingChk.checked = !!on; lbgFx.setAiming(!!on); return lbgFx.stats(); },
+           shell: () => lbgShell.stats(), shellObj: () => lbgShell, shellBounds: () => lbgShell.bounds() },
     // the weapon model's own state (render/weapon-state.js): the Sword & Shield's oil, the Long Sword's Spirit Gauge
     parts: () => weapon.partAudit(),
     oil: n => { weaponOilSel.value = String(n | 0); weapon.setOil(n | 0); return weapon.partAudit(); },
