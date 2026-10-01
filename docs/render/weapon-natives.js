@@ -1,7 +1,8 @@
-// THE PLAYER EFFECTS' TWO NATIVE ANSWERS, shared by render/weapon-fx.js (the page) and dev/effect-export-rom-w08.mjs (the
+// THE PLAYER EFFECTS' NATIVE ANSWERS, shared by render/weapon-fx.js (the page) and dev/effect-export-rom-w08.mjs (the
 // page exporter's soak, which runs the same host in node and must answer them the same way).
-import { registerNative, clobber } from './rom/effect/cpu.js';
+import { registerNative, clobber, lifted } from './rom/effect/cpu.js';
 import { Unverified } from './rom/effect/mem.js';
+import './rom/effect/lifted-gpu.js';   // registered first: the GPU draw's early-out below wraps a lifted routine
 
 // TWO ROM ROUTINES THE LIFTER CANNOT REACH, answered here as the ROM answers them (2026-09-28). Every player
 // effect whose particle nodes take a colour walks them (0x43f38 -> 0x447b4 at start, 0x3273ec every frame:
@@ -26,4 +27,19 @@ registerNative(0x320e00, (m, c) => {
   c.r[0] = 1;
 });
 
-export const WEAPON_NATIVES = [0x43400, 0x320e00];
+// THE GPU EMITTER DRAW'S EARLY-OUT, a branch no recording took (2026-09-30, the Heavy Bowgun). 0xb978cc (reached
+// through a draw strategy's vtable +0xc, 0xb9a5f0, which returns its result unchanged) first reads the GPU particle
+// singleton (*[0x1835adc]) +0x110 and then the emitter's buffer +0xf8: with the byte set and the buffer null it takes
+// 0xb97910 -> 0xb97b64 (`mov r7, #0x11`) -> 0xb99724 (`mov r0, r7` and the epilogue that restores every register
+// the prologue saved) -- it returns 0x11 having written nothing. The page reached it with Guns Blazing's aura (holder
+// slot 3) stopped five frames after the Art's own request had replaced it, the Art's clip records live and the stance
+// changing: an emitter in state 2 whose buffer was never made (its caller then runs on recorded code). Answered here
+// exactly; everything else goes to the lifted routine.
+const gpuDraw = lifted(0xb978cc);
+if (gpuDraw) registerNative(0xb978cc, (m, c) => {
+  const gpu = m.u32(m.u32(0x1835adc));
+  if (m.u8(gpu + 0x110) && !m.u32((c.r[0] + 0xf8) >>> 0)){ clobber(c); c.r[0] = 0x11; return; }
+  return gpuDraw(m, c);
+});
+
+export const WEAPON_NATIVES = [0x43400, 0x320e00, 0xb978cc];

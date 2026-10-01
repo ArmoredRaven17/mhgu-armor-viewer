@@ -336,6 +336,14 @@ export class ProofRequest {
       m.w32(Q + 0x18, (m.u32(Q + 0x18) | 0x40) >>> 0);
       m.w32(Q + 0x94, requester.colour2 >>> 0);
     }
+    // THE OFFSET OVERRIDE: +0x14 bit 0 with a vector at +0x20 (w 0), the mask walker 0x31bbe8's first field (copied into
+    // the effect's params +0x10 in place of the record's offset). The Heavy Bowgun's Art (uPlayerQuest04 act 79,
+    // 0x1182164) sets (0, y, 0) by the gun model (its vtable +0x894). Same source and licence as above.
+    if (requester && requester.offset){
+      m.w32(Q + 0x14, (m.u32(Q + 0x14) | 1) >>> 0);
+      for (let k = 0; k < 3; k++) m.wf32(Q + 0x20 + 4 * k, requester.offset[k]);
+      m.w32(Q + 0x2c, 0);
+    }
     if (requester && !requester.positionOnly && (requester.scale || requester.rotationDeg != null || requester.flags14 != null || requester.type8 != null)){
       const r = requester, v4 = (a, v) => { for (let k = 0; k < 3; k++) m.wf32(a + 4 * k, v[k]); m.w32(a + 12, 0); };
       // a rock's shell sets no rotation override (shells-em043.md 9.4 step 6): +0x14 keeps 0x4a10c8's 0x40000000 alone
@@ -408,6 +416,15 @@ export function destroyUnit(m, u){ liftedCall(m, vslot(m, u, 0), [u]); }
 // one-shot does, so the request stays in the passes until finished().
 export function stopRequest(m, request){
   liftedCall(m, 0x329c40, [request.core, 0]);
+  request.stopped = true;
+}
+// A STOP AT ONCE, the way the player's effect holder ends a slot's effect when its policy answers 3 or a flag-1
+// request takes the slot (0x44bef0, 0x44c210: 0x329c40(core, 1)): the core's own kill (vtable +0xa4) and its state
+// byte +0x30 to 2. The request stays in the passes until finished(), as the game's manager deletes it on its own pass --
+// destroying its units outright while they still emit left the GPU particle manager drawing a freed object (the Heavy
+// Bowgun's Guns Blazing aura replaced at once: 0xb97910, a branch no recording took). (The Armor Viewer, 2026-09-30.)
+export function killRequest(m, request){
+  liftedCall(m, 0x329c40, [request.core, 1]);
   request.stopped = true;
 }
 export function releaseRequest(state, request){

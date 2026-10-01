@@ -32,7 +32,7 @@ import { drawEffect } from './draw.js';
 import { invoke } from './cpu.js';
 import * as modeldraw from './modeldraw.js';
 import './prim.js';
-import { proofStart, installRequests, ProofRequest, unitFrame, pruneUnits, releaseRequest, stopRequest, AREA } from './proof.js';
+import { proofStart, installRequests, ProofRequest, unitFrame, pruneUnits, releaseRequest, stopRequest, killRequest, AREA } from './proof.js';
 import { PARENT_GETDTI, PARENT_ADD_EFFECT, RESMGR_RELEASE, MATERIAL_VM, liftedCall } from './bridge.js';
 
 const IDENTITY = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
@@ -304,6 +304,8 @@ export class EffectHost {
   // outright while still emitting is what filled the slot pool and hit 0x418d4 (see stopClip).
   releaseRequest(request){ releaseRequest(this.requests, request); }
   stopRequest(request){ stopRequest(this.m, request); }
+  // the holder's stop at once (0x329c40(core, 1)); the request runs out of the passes on its own (proof.js killRequest)
+  killRequest(request){ killRequest(this.m, request); }
 
   // A parent unit for joint-bound nodes: 0x939278 at vtable +0x54, a live unit's +0xc, the joint
   // number -> index table at +0x498 and the joint array at +0x494 (0xa0 bytes each, the world matrix
