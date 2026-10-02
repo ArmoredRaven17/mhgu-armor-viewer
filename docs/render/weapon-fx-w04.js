@@ -44,6 +44,8 @@
 // NOT WIRED: the bullets (shell 0x2a, act 118 and the shots), the Art's projectile (shell 0x2c = pl_w04_101: 902..904
 // with 1001..1003, by act 80 and the policy), Motion[1]'s shot effect (the stance is the idle's too), rows 0 / 2
 // (w04_000 0 / 1: nothing asks them).
+// NO AIMING MODE in the viewer (Raven, 2026-10-01: "Remove aiming mode for Bowguns as well, that is a First Person camera
+// mode"): row 20, whose byte is NOT Aiming Mode, always shows.
 import * as THREE from 'three';
 import { WeaponEffects } from './weapon-fx.js';
 
@@ -105,7 +107,6 @@ export class HeavyBowgunEffects extends WeaponEffects {
     this.held = new Map();        // holder slot -> { q, key, host, live, stance, until, aim }
     this.blazing = false;         // Guns Blazing (status lo 0x80; the checkbox)
     this.infusion = false;        // Gunpowder Infusion's shots (status lo 0x40; the checkbox)
-    this.aiming = false;          // Aiming Mode, player +0x2716 (the checkbox the Light Bowgun shares)
     this.held5 = false;           // the holder's +0x16a0
     this.stance = null;           // { key, f, passes }
     this.hunter = null;           // the hunter host
@@ -158,7 +159,6 @@ export class HeavyBowgunEffects extends WeaponEffects {
   offset(){ return [0, OFFSET_Y[this.model] || 0, 0]; }
   setBlazing(on){ this.blazing = !!on; return this.blazing; }
   setInfusion(on){ this.infusion = !!on; return this.infusion; }
-  setAiming(on){ this.aiming = !!on; return this.aiming; }
   // every frame: `cls` the class in the hand (null otherwise), `stance` / `time` the weapon stance, `drawn` the rig's fact,
   // `onBack` the gun on the hunter's back (render/weapon.js onBack: the mount index the policy tests)
   step(cls, stance, time, advance, drawn, onBack){
@@ -197,10 +197,11 @@ export class HeavyBowgunEffects extends WeaponEffects {
       const y = this.ask(4, ROWS.loads, ROWS.loads.keys[n], true, 'gun', { offset: this.offset() });
       if (y) y.stance = key;
     }
-    // row 20's policy (code 20): the byte = NOT Aiming Mode; kept while act 65 stands below frame 95
+    // row 20's policy (code 20): the byte = NOT Aiming Mode, which the viewer never enters; kept while act 65 stands
+    // below frame 95
     for (const [s, x] of [...this.held]) if (x.until != null){
       if (key !== x.stance || f >= x.until) this.release(s, 3);
-      else if (x.aim) showByte(x.q, !this.aiming);
+      else if (x.aim) showByte(x.q, true);
     }
     // THE HOLDER'S HOOK, every frame the class is in the hand
     const motion = stance && /Motion\[(\d+)\]/.exec(stance.clip || '');
@@ -229,6 +230,6 @@ export class HeavyBowgunEffects extends WeaponEffects {
     for (const [k, x] of this.held) held[k] = { key: x.key, on: x.host === this ? 'gun' : 'player', running: running(x),
                                                 shown: x.q && x.q.m && x.q.core ? x.q.m.u8(x.q.core + 0x1c1) : null };
     return Object.assign(super.stats(), { unit: !!this.unitRoot, blazing: this.blazing, infusion: this.infusion,
-      aiming: this.aiming, held5: this.held5, held, stance: this.stance && this.stance.key, model: this.model });
+      held5: this.held5, held, stance: this.stance && this.stance.key, model: this.model });
   }
 }

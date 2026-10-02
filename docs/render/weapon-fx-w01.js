@@ -67,9 +67,12 @@ export const CHAOS_OIL = { keys: [1100, 1101, 1102], efl: 'cm123_013' };
 
 // The sword unit's host: its one "bone", gid 0, is the part's bone 0 (render/weapon.js placePart), as the Switch Axe's
 // weapon-unit host (render/weapon-fx.js WeaponUnitEffects), with a player part unit's angle order 0.
+// The same host serves another class's held aura on its weapon unit (`opts`: the class, the rows by level, a name): the
+// Hammer's Impact Press (render/weapon-fx-w02.js), whose holder hangs it from the hammer unit the same way.
 export class ChaosOilEffects extends WeaponEffects {
-  constructor(){
+  constructor(opts){
     super();
+    this.opts = Object.assign({ cls: 'w01', rows: CHAOS_OIL, name: 'chaos oil' }, opts || {});
     this.unitRoot = null;
     this.level = 0;               // 0 off, 1..3 the Art's level (the state's +0x332c - 4)
     this.held = null;             // the holder's slot 1: { q, key, live }
@@ -79,7 +82,7 @@ export class ChaosOilEffects extends WeaponEffects {
     const part = roots && roots[0];
     const node = part ? (part.userData.bone || part) : null;
     const host = new THREE.Group();
-    host.name = 'chaos-oil-fx-host';
+    host.name = this.opts.name.replace(/ /g, '-') + '-fx-host';
     host.userData.gidBones = node ? [{ gid: 0, node, d: 0 }] : [];
     host.userData.joints = [];
     return host;
@@ -88,7 +91,7 @@ export class ChaosOilEffects extends WeaponEffects {
   // these records sit on the unit itself (payload joint -1, space 0, no root-joint override: rom/effect/live.js
   // unitFromOrigin), where the Switch Axe's weapon records all ride joint 0's matrix through their requester's override
   useDef(def){
-    const keys = new Set(CHAOS_OIL.keys);
+    const keys = new Set(this.opts.rows.keys);
     return Object.assign({}, def, { clips: {}, parentOrder: 0x30000, unitFromOrigin: true,
       effects: (def.effects || []).filter(e => e.when === 'state' && e.record && e.record.array === 'UNIQUE' && keys.has(e.record.key) &&
                                                 !this.refused.has(e.record.key))
@@ -97,7 +100,7 @@ export class ChaosOilEffects extends WeaponEffects {
   // the sword part, drawn or on the back: re-attach when the part changes, not on every stance
   async sync(cls, roots, parent){
     const part = (roots && roots[0]) || null;
-    if (cls !== 'w01' || !part || !this.on){ if (this.live || this.unitRoot) this.detach(); this.unitRoot = null; this.lastSync = null; return null; }
+    if (cls !== this.opts.cls || !part || !this.on){ if (this.live || this.unitRoot) this.detach(); this.unitRoot = null; this.lastSync = null; return null; }
     this.lastSync = { cls, roots: [part], parent };
     if (this.cls === cls && this.live && this.unitRoot === part) return this.live;
     this.unitRoot = part;
@@ -122,17 +125,17 @@ export class ChaosOilEffects extends WeaponEffects {
   stepHeld(){
     if (this.held && this.held.live !== this.live) this.held = null;   // gone with a rebuilt host
     if (!this.level || !this.live || this.held) return;
-    const key = CHAOS_OIL.keys[this.level - 1];
+    const key = this.opts.rows.keys[Math.min(this.level, this.opts.rows.keys.length) - 1];
     if (this.refused.has(key)) return;
     this.lastRequested = key;
-    const q = this.startState(key, CHAOS_OIL.efl, null);
+    const q = this.startState(key, this.opts.rows.efl, null);
     if (q) this.held = { q, key, live: this.live };
   }
   // every frame: the host's clock is the animation's, as every host's
   step(time, advance){
     if (this.live && this.live.failed){
       if (this.lastRequested != null) this.refused.add(this.lastRequested);
-      console.warn('chaos oil: record ' + this.lastRequested + ' refused, dropped for this session');
+      console.warn(this.opts.name + ': record ' + this.lastRequested + ' refused, dropped for this session');
       this.detach(); this.unitRoot = null;
       if (this.lastSync) this.sync(this.lastSync.cls, this.lastSync.roots, this.lastSync.parent);
       return;

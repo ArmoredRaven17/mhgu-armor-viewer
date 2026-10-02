@@ -24,10 +24,11 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // see placePart. Raven, 2026-09-03: the sheathed Sword & Shield's shield "is moved away
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
-import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, notesFor } from './weapons-index.js';
+import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, notesFor, chargesFor, shellFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
 import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
-import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags } from './weapon-state.js';
+import { bowMotion } from './weapon-fx-w10.js';   // the Bow's pitch variants: a variant's flags are its main motion's
+import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags, dbFlags, dbPulse, DB_BLUE, DB_RED } from './weapon-state.js';
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -86,61 +87,22 @@ const FORM_NAMES = {
 // triggers the game fires by itself from the player's state: 0 at rest, 1 drawn, 2 display,
 // 3 hold -- never an attachment, so never offered in the select
 const STATE_TRIGGERS = new Set([0, 1, 2, 3]);
-// The Bow's nocked arrow: which record, and when.
-// The record: the code that requests the arrow was not found (no motion schedule asks for any
-// of the arrow records, and none of the request calls found passes their numbers; 2026-09-19,
-// the board), so it is picked by where the ROM's own placement puts the arrow: 521 (joint 12,
-// the drawing hand, 120 cm along its -X, turned -90 deg about Y) lays it along the draw line,
-// nock 4 cm from the hand. 520 (the same hand, 45 cm along +Z, no turn) stands 90 deg across
-// it, which is what Raven saw ("the orientation of the arrow is incorrect"). 620 is 521's
-// placement with a particle parameter; 621 (the bow hand) is as straight but leaves the nock
-// 21-27 cm behind the drawing hand.
-const ARROW_RECORD = '521';
-// When: Raven, 2026-09-19, "Bow Stand 5 and 10 are two stances where the arrow should be
-// shown", then "Some draw animations lack the arrow, while others have it". Every Bow stance
-// was reviewed frame by frame (30 a second) for where record 521 would put the arrow; it is
-// NOCKED where that arrow lies on the bow's own arrow line (joint 8's +X, where 621 lays it):
-// within 20 deg of it, the grip within 12 cm of the arrow and ahead of the nock, the drawing
-// hand 0.08-1.45 m from the grip. Gaps of up to 2 frames are merged, runs under 3 frames
-// dropped unless they touch the clip's first or last frame. The windows below (seconds of the
-// stance clip; END = its end) are that rule's output: every draw from the nock -- the hand at
-// the bow, before the string moves -- to the release. It agrees with the bow's own string
-// where the bow has the clip: the string starts stretching at the nock or up to 0.2 s after
-// it (Motion[16]: both at 0.14 s; Motion[105]_start: nock 0.23 s, string 0.40 s). A shot clip
-// opens on the full draw it releases, so it keeps the arrow for its first frame only (133-136,
-// sa 7-9 and 18-20); the rest of every shot, the idles, walks, dodges and the coating action
-// (Motion[114], the hand at the bow 0.7 s without drawing) have none. Stance 5 and Stance 10
-// are among them (Stance 10 from its nock at 0.14 s). The review and the rule's script:
-// C:\MHGU-Extract\bow-arrow-review (arrow-windows.py prints this table).
-const END = Infinity;
-const ARROW_WINDOWS = {
-  w10: {
-    'Motion[5]_loop': [[0, END]],        'Motion[16]': [[0.138, END]],        'Motion[20]': [[0.515, END]],
-    'Motion[60]': [[0, END]],            'Motion[105]_start': [[0.232, END]], 'Motion[105]_loop': [[0, END]],
-    'Motion[106]_start': [[0.266, END]], 'Motion[106]_loop': [[0, END]],      'Motion[107]_start': [[0.232, END]],
-    'Motion[107]_loop': [[0, END]],      'Motion[118]': [[0.171, END]],       'Motion[119]': [[0.24, END]],
-    'Motion[120]': [[0.171, END]],       'Motion[122]': [[0, END]],           'Motion[123]': [[0, END]],
-    'Motion[124]': [[0, END]],           'Motion[125]': [[0.105, END]],       'Motion[126]': [[0, END]],
-    'Motion[127]': [[0, END]],           'Motion[128]': [[0, END]],           'Motion[133]': [[0, 0.034]],
-    'Motion[134]': [[0, 0.034]],         'Motion[135]': [[0, 0.034]],         'Motion[136]': [[0, 0.034]],
-    'Motion[185]': [[0.356, END]],       'Motion[189]': [[0.486, END]],       'Motion[190]': [[0.518, END]],
-    'Motion[191]': [[0.486, END]],       'Motion[192]_start': [[0.699, END]], 'Motion[192]_loop': [[0, END]],
-    'Motion[193]_start': [[0.666, END]], 'Motion[193]_loop': [[0, END]],      'Motion[194]_start': [[0.632, END]],
-    'Motion[194]_loop': [[0, END]],      'Motion[197]_start': [[0.499, END]], 'Motion[197]_loop': [[0, END]],
-    'Motion[198]_start': [[0.432, END]], 'Motion[198]_loop': [[0, END]],      'Motion[199]_start': [[0.499, END]],
-    'Motion[199]_loop': [[0, END]],      'Motion[253]': [[0.356, END]],
-  },
-  w10_sa: {
-    'Motion[1]': [[0.31, END]],          'Motion[2]': [[0.31, END]],          'Motion[3]': [[0.31, END]],
-    'Motion[4]': [[0, 0.034], [0.487, END]], 'Motion[5]': [[0, 0.034], [0.487, END]], 'Motion[6]': [[0, 0.034], [0.487, END]],
-    'Motion[7]': [[0, 0.034]],           'Motion[8]': [[0, 0.034]],           'Motion[9]': [[0, 0.034]],
-    'Motion[10]': [[0.814, END]],        'Motion[11]': [[0.814, END]],        'Motion[12]': [[0.814, END]],
-    'Motion[15]': [[0, END]],            'Motion[16]': [[0, END]],            'Motion[17]': [[0.105, END]],
-    'Motion[18]': [[0, 0.034]],          'Motion[19]': [[0, 0.034]],          'Motion[20]': [[0, 0.034]],
-    'Motion[51]': [[0.805, 1.109]],      'Motion[151]': [[0.455, END]],       'Motion[152]': [[0, END]],
-    'Motion[153]': [[0, 0.068]],
-  },
-};
+// THE BOW'S NOCKED ARROW: which record, and when -- the ROM's own rule (read 2026-09-30, render/weapon-fx-w10.js).
+// The arrow is not a weapon part: it is a MODEL record of w10_000 (effect\base\cm100_900: the .pel record's byte +0x3d
+// = 1, the proof effect's +0x158 = 1 -> 0x323dc8 loads the rModel and the effect draws it), drawn here as a part at the
+// record's own placement (shared.arrow.records). The Bow's effect holder (uShellPlEffectW10) creates three of them at its
+// setup (vtable +0x148 = 0x455e3c), hidden: slot 3 = 620 (joint 12, the drawing hand, 120 cm along its -X, turned -90 deg
+// about Y: the draw line, nock at the hand), slot 4 = 640 (joint 12, (-10, 0, -55) cm, turned 180 deg) and slot 5 = 621
+// (joint 8, the bow hand, 22 cm along +X, turned +90 deg). Its stop policy (+0x160 = 0x456094) writes their show bytes
+// every frame: 620 = BIT 0 and 640 = BIT 1 of the playing motion's GROUP-2 sequence track at its frame (0x281de4(self,
+// 1, bit) = player +0x14e4, filled by 0x280254; shared.arrow.flags, C:/MHGU-Extract/add-bow-arrow-flags.py); 621 =
+// Motion[52] played by acts 19 / 45 (0x456ac0), or base motions this app does not play (bank 0's 121 / 122 with group
+// 1's acts 128..130; Motion[51] / [52] with group 4's act 10). A bow whose pl_w10.plweplist mSubParam[0] is 1 (models
+// 17, 73, 158: the Kelbi Stingshot, Genie's Grimoire and Kayamcha Slinger) holds 630 / 650 / 631 instead (650 another
+// model, cm020_001) -- NOT reproduced: such a bow shows none. (Until 2026-09-30 the code that asks the arrow had not been
+// found, and record 521, which has 620's placement, was shown through windows read off each stance by eye, 2026-09-19.)
+const ARROW_BITS = [['620', 1], ['640', 2]];
+const ARROW_HELD = { draw: { 52: '621' } };
 // Hunter clips a weapon's own list has no clip for, and the weapon clip they take instead of
 // the drawn idle bindMotion falls back to, by stance file (w10 and w10_sa share clip names).
 // The Bow's string is its bone 2 SCALED along Z by the list (x2.2 in Motion[16], x2.65 in the
@@ -209,6 +171,10 @@ export class WeaponRig {
     // (0 none, 1..3, 4 Valor's) and the Sword & Shield's oil (0 none, 1 Affinity, 2 Destroyer, 3 Stamina, 4 Mind's Eye)
     this.spirit = 0;
     this.oil = 0;
+    // the Dual Blades' states the blades' part code reads (render/weapon-state.js dbFlags): Demon Mode (vtable +0x4c4) and
+    // Valor State (style 5 with the second status word's hi 0x40000) -- the user's switches
+    this.demonMode = false;
+    this.valorState = false;
     this.shieldCoat = false;         // the Lance's Healing Shield: pl_lance_up over the shield (applyShieldCoat)
     this._ps = null;                 // the part state's memory: the last frame's triggers, the colours written, the pulse
     this._appliedKey = null;
@@ -236,6 +202,11 @@ export class WeaponRig {
   // THE HUNTING HORN'S NOTES this weapon carries ([n1, n2, n3], note numbers 1..8), by name, or null (weapons-index.js
   // notesFor): the game's player parameters 27..29 (render/weapon-fx-w12.js)
   notes(){ return notesFor(this.cj, this.modelId, this.weaponName); }
+  // THE BOW'S OPEN CHARGE LEVELS (2..4), by name, or null (weapons-index.js chargesFor): the game's player parameter 28,
+  // the cap of the class's charge level (render/weapon-fx-w10.js)
+  charges(){ return chargesFor(this.cj, this.modelId, this.weaponName); }
+  // THE GUNLANCE'S SHELLING, { type, level } by name, or null (weapons-index.js shellFor): player parameters 27 / 28
+  shell(){ return shellFor(this.cj, this.modelId, this.weaponName); }
   // THE WEAPON ON THE BACK, AS THE GAME TESTS IT. The weapon unit's state word +0x13d4 is its mount INDEX (0x316edc switches
   // on it; build/notes/palico-weapon.md), and the game's test is (index | 0x10) == 0x12: index 2 (the carry on the back) or
   // 18 (the rest record) -- the effect holder's stop policy (0x454f6c) and Tempest Axe's gate (0x11a5db0) both ask it.
@@ -438,6 +409,8 @@ export class WeaponRig {
   // here the select is how the user asks for a look, so each pick starts from nothing.)
   setSpirit(n){ n = +n; this.spirit = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
   setOil(n){ n = +n; this.oil = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
+  setDemonMode(on){ this.demonMode = !!on; this._appliedTrg = null; this.step(); }
+  setValorState(on){ this.valorState = !!on; this._appliedTrg = null; this.step(); }
   // THE LANCE'S HEALING SHIELD (render/weapon-state.js LANCE_UP): the user's control, as the Arts' states are. While it
   // stands the shield's materials outside colour channel 10 take pl_lance_up's constants and its looping clip, the green
   // pulse (material.js stepMaterialAnim runs it every frame) -- drawn or sheathed: nothing in the request (0x1179d88) or
@@ -478,14 +451,27 @@ export class WeaponRig {
   // the player's angle order the arrow's joint is decomposed with (MT enum 0..5; see mounts())
   setPlayerOrder(n){ n = Number(n); this.playerOrder = (n >= 0 && n < MT_ORDER.length) ? n : 4; this.step(); return MT_ORDER[this.playerOrder]; }
   arrowOptions(){ const r = this.cj && this.cj.shared.arrow && this.cj.shared.arrow.records; return r ? Object.keys(r) : []; }
-  // the record the current stance shows at time t (default: now) -- ARROW_RECORD inside one of
-  // the stance clip's ARROW_WINDOWS, else null
+  // the record the current stance shows at time t (default: now), as the holder's policy shows it: the motion's group-2
+  // bit at its frame (620 / 640), else the motion that holds 621; null for none
   stanceArrow(t){
-    const byFile = this.drawn && this.stance && ARROW_WINDOWS[this.stanceKey()];
-    const wins = byFile && byFile[this.stance.clip];
-    if (!wins) return null;
+    const arrow = this.cj && this.cj.shared.arrow, fl = arrow && arrow.flags;
+    if (!fl || !this.stance) return null;
+    const m = this.cj.models && this.cj.models[this.modelId];
+    if (m && m.sub && m.sub[0] === 1) return null;                 // 630 / 650 / 631: not reproduced
+    const set = /_sa\./.test(this.stance.file || '') ? 'sa' : 'draw';
+    const mm = /Motion\[(\d+)\]/.exec(this.stance.clip || '');
+    if (!mm) return null;
+    // a pitch variant (Motion[106] of [105] ...) is blended into its main motion, whose flags the game reads
+    const n = String(bowMotion(set, +mm[1]));
+    // the motion frame (player +0x500): a `_loop` stance is the second half of one LMT motion (its start, stance.t0)
     const at = t === undefined ? this.poseTime() : t;
-    return wins.some(([t0, t1]) => at >= t0 && at <= t1) ? ARROW_RECORD : null;
+    const total = fl.frames && fl.frames[set] && fl.frames[set][n];
+    const f = Math.floor((at + (this.stance.t0 || 0)) * 60 + 1e-6);
+    let bits = 0;
+    const spans = fl[set] && fl[set][n];
+    if (spans && f < total) for (const [from, b] of spans){ if (f >= from) bits = b; else break; }
+    for (const [key, bit] of ARROW_BITS) if (bits & bit) return key;
+    return (ARROW_HELD[set] && ARROW_HELD[set][n]) || null;
   }
   // the select's label for a record: its number, joint, position (cm) and rotation (deg)
   arrowLabel(k){
@@ -565,10 +551,9 @@ export class WeaponRig {
       if (!this.parts[kind]) continue;
       if (kind === 'arrow'){
         // One of the proof-effect records of docs/weapons/wNN.json shared.arrow.records --
-        // joint, position (cm), rotation (deg) and its angle order as the PEL says. Which
-        // record an animation requests could not be read from the ROM (no request site
-        // found): ARROW_WINDOWS shows ARROW_RECORD from each draw's nock to its release, and
-        // the hidden Arrow select picks one by hand everywhere else.
+        // joint, position (cm), rotation (deg) and its angle order as the PEL says. Which one
+        // shows is the Bow's effect holder's (stanceArrow, above); the hidden Arrow select
+        // picks one by hand where it shows none.
         // The game composes a joint-following model effect (uProofEffect, 0x0031d16c with
         // mode 0 / sub-mode 0) as: position = the joint's world matrix applied to the
         // record's position; rotation = the joint's rows normalised, DECOMPOSED into angles
@@ -588,7 +573,7 @@ export class WeaponRig {
         out[kind] = a ? { type: null, index: null, joint: a.joint, rec: { pos: a.pos, rot: a.rot, order },
                           frame: { decompose: pord, rebuild: order },
                           scale: a.scale || 1, record: key,
-                          prov: a.prov + (byStance ? '; shown by the stance (Raven, 2026-09-19)' : '; chosen by the user') +
+                          prov: a.prov + (byStance ? '; shown by the holder (the motion\'s group-2 flags, 0x456094)' : '; chosen by the user') +
                                 '; joint re-composed ' + pord + '->' + order + ' (0x0031d16c; player order 0x000a50dc)' } : null;
         continue;
       }
@@ -1061,13 +1046,20 @@ export class WeaponRig {
   // The motion is the stance's while the weapon is drawn; sheathed, the hunter plays a Hunter Pose, no weapon motion.
   partState(){
     const cls = this.cls;
-    if ((cls !== 'w07' && cls !== 'w01' && cls !== 'w03') || !this.cj) return null;
+    if ((cls !== 'w07' && cls !== 'w01' && cls !== 'w03' && cls !== 'w11') || !this.cj) return null;
     const mo = motionAt(this.drawn ? this.stance : null, this.poseTime());
     const o = { drawn: drawnFlag(this.drawn, mo), motion: mo.id, frame: mo.frame, onBack: this.onBack(), disp: this.gmkGroup | 0 };
     if (cls === 'w07'){
       const f = spiritFlags(Object.assign(o, { level: this.spirit }));
       const trg = f.t23 ? 23 : f.t22 ? 22 : f.t21 ? 21 : f.t20 ? 20 : null;
       return { cls, t1: f.t1, t0: f.t0, trg, blue: f.blue, show: null, oil: 0, key: 'ls:' + trg };
+    }
+    if (cls === 'w11'){
+      // Valor State stands for the style byte 5 with its status: in Valor the class enters no Demon Mode, and the reader
+      // replaces Demon Mode's bits with Valor's
+      const f = dbFlags(Object.assign(o, { demon: this.demonMode, valor: this.valorState, valorState: this.valorState }));
+      const trg = f.t24 ? 24 : f.t25 ? 25 : null;
+      return { cls, t1: f.t1, t0: f.t0, trg, blue: f.colour, red: f.red, pulse: f.t24, show: null, oil: 0, key: 'db:' + trg };
     }
     if (cls === 'w03'){
       const f = lanceFlags(o);
@@ -1085,7 +1077,7 @@ export class WeaponRig {
     if (!ps){ if (this._ps) this.clearPartState(); return; }
     const main = this.parts.main;
     // the Lance's shield is a unit of its own that runs the same triggers (kind 5 = 0x30de60 asks 0x30dab4 too)
-    const units = ps.cls === 'w03' ? [main, this.parts.second] : [main];
+    const units = ps.cls === 'w03' || ps.cls === 'w11' ? [main, this.parts.second] : [main];   // the Dual Blades: kinds 16 / 17
     const chan = ch => units.flatMap(p => (p && p.userData.chanMats) || []).filter(m => m.userData.rom.ch === ch);
     const now = performance.now() / 1000;
     let e = this._ps;
@@ -1102,7 +1094,21 @@ export class WeaponRig {
       if (r && r.anime !== undefined && r.anime !== null) for (const m of chan(ps.cls === 'w07' && t >= 20 && t <= 23 ? 2 : 8)) setMaterialClip(m, r.anime, now);
     }
     e.trgs = new Set(now1);
-    if (ps.cls === 'w07'){
+    if (ps.cls === 'w11'){
+      // 0x3136a4: the timer runs while trigger 24 stands; with bit 0x10 the pulse is channel 2's colour and transparency
+      if (ps.pulse){
+        const p = dbPulse(e.timer, Math.min(Math.max(now - e.last, 0), 0.1) * MAT_FPS);
+        e.timer = p.timer; e.pulse = p.value;
+      }
+      if (ps.blue){
+        const rgb = ps.red ? DB_RED : DB_BLUE;
+        for (const m of chan(2)){
+          setMaterialClip(m, -1, now);
+          setCbWrite(m, { reflective: rgb, specular: rgb, transparency: e.pulse == null ? 1 : e.pulse });
+        }
+      } else if (e.blue) for (const m of chan(2)) setCbWrite(m, null);
+      e.blue = ps.blue;
+    } else if (ps.cls === 'w07'){
       if (ps.blue){
         const p = spiritPulse(e.timer, Math.min(Math.max(now - e.last, 0), 0.1) * MAT_FPS);
         e.timer = p.timer; e.pulse = p.value;

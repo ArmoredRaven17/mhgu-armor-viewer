@@ -87,6 +87,31 @@ export function notesFor(cj, modelId, name){
   return hit.notes;
 }
 
+// THE BOW'S OPEN CHARGE LEVELS (2..4), or null -- a property of the WEAPON like the phial, so the name decides where the
+// model cannot. docs/weapons/w10.json `charges` is table/weapon10LevelData.w10d +14 (weapon field 0xe, player parameter 28,
+// which caps the class's charge level: render/weapon-fx-w10.js), the bow's last level's (C:/MHGU-Extract/add-bow-charges.py,
+// every level row agreeing with the Collection Tracker's).
+export function chargesFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && r.charges && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  const hit = (name && rows.find(r => r.name === name)) || rows[0];
+  return hit.charges;
+}
+
+// THE GUNLANCE'S SHELLING, { type, level } or null -- a property of the WEAPON, by name where the model cannot say.
+// docs/weapons/w09.json `shell`: type = weapon09BaseData +18 (0 Normal, 1 Wide, 2 Long; player parameter 27, which picks
+// the shelling shell's row and the heat thresholds: render/weapon-fx-w09.js), level = weapon09LevelData +14 of the last
+// level (0-based; parameter 28) -- C:/MHGU-Extract/add-gunlance-shells.py, every level row agreeing with the Collection
+// Tracker's.
+export function shellFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && r.shell && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  const hit = (name && rows.find(r => r.name === name)) || rows[0];
+  return hit.shell;
+}
+
 export function rowFor(cj, modelId){
   return (cj.weapons || []).find(r => r.named && modelIdOf(r.model) === modelId) || null;
 }

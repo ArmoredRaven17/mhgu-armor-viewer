@@ -40,7 +40,8 @@
 //     them (0x8a4dfc, in the unit's own rotation order), 0x329c9c moves unit 0 to the eye, and every unit's scale
 //     (+0x60 / +0x64) becomes the camera's +0x3c (its field of view) x 1.25 / k, +0x68 = 1 -- k the camera's +0xabc
 //     when it is a uQuestCamera (the field of view it saved at its last transition, 0xbe37cc), else 1. So rows
-//     9..11 are not an aura on the hunter: they are the charge drawn around the VIEW while aiming.
+//     9..11 are not an aura on the hunter: they are the charge drawn around the VIEW while aiming. NOT WIRED since
+//     2026-10-01 (no Aiming Mode in the viewer, below); the page drew them so from 2026-09-30.
 //   * code 12 (the rounds): 3 unless the weapon is drawn, the status and the ammo stand, and not past frame 15 of
 //     Motion[197] (motion 5197); else 0.
 //   * code 13 (the activation): the byte = NOT Aiming Mode; 0 while action 81 stands and its motion frame is below 110,
@@ -51,7 +52,9 @@
 // Scope - Hold: Quick Aim") is player +0x2716: the base's 0x29f3cc sets it while the aim buttons are held (0x282930 0x61
 // / 0x62) or toggles it on a press (0x2856fc 0x29), handing the camera singleton (sFestaCamera) the aim mode each time
 // (0x1baa4); vtable +0x1c8 reads it, the class picks its command table by it (2000 / 2040, 0x1189588) and its Arts clear
-// it (act 81's start, 0x118fc04). The viewer has no aim: it is the user's switch.
+// it (act 81's start, 0x118fc04). THE VIEWER HAS NO AIMING MODE (Raven, 2026-10-01: "Remove aiming mode for Bowguns as
+// well, that is a First Person camera mode"): row 13 always shows, as it does outside Aiming Mode, and rows 9..11, shown
+// only in it, are not asked.
 // ROW 4 = cm002_002 212 (cm002_007.efl): the base sharpening (0x2d5e74, weapon type 6 -> code 4) at Motion[255] frame 274.
 // Rows 0 / 2 (w04_000 5 / 6): nothing in the class, the holder or the base asks them.
 // THE LISTS: the Light Bowgun plays the HEAVY Bowgun's w04_000 as its _000 list, from the shared archive
@@ -60,26 +63,19 @@
 // THE HUNTER ARTS (hunterArtsData_eng.gmd, by the ids the code tests): FULL HOUSE 0x56..0x58 (act 71, Arts Motion[51] /
 // [52]: its schedule's), CHARGE SHOT 0x5c..0x5e (act 81 above; the charged shots 0x118fedc). Acts 65 / 66 / 68 (Arts
 // Motion[101..106]), 69 (Arts Motion[1]), 70 ([2] / [3]) and 72 ([109]) test no id here: named by their motions only.
-// THE HOSTS: one holder, its slots on three hosts by the parent each row names -- the weapon unit (this module's gun
-// host), the player (the hunter host: row 13) and the holder shell's own handle (shell +0xfd0: rows 9..11). The shell
-// host's one joint is the world origin: the policy writes world coordinates into the units (the eye), which land there
-// only in a frame that is the world's. The viewer's camera is the game's: its eye, the direction it looks, and its field
-// of view equal to the one it saved (no aim zoom), so the scale is 1.25.
+// THE HOSTS: one holder, its slots on the hosts its rows' parents name -- the weapon unit (this module's gun host) and
+// the player (the hunter host: row 13). Rows 9..11's parent, the holder shell's own handle (shell +0xfd0), would be a
+// third at the world origin (the policy writes the camera's eye into the units): with Aiming Mode it went (the page held
+// it as a host of its own from 2026-09-30 to 2026-10-01, at the game's scale 1.25 -- 0x4548a0 -- for the viewer's camera).
 // NOT WIRED: the bullets (shells 0x2a / 0x2b, the charged shots, pl_w04_000's 90 ammo rows in wbc.arc) -- the viewer
-// fires nothing; Motion[1]'s shot effect (the stance is the idle's too).
+// fires nothing; Motion[1]'s shot effect (the stance is the idle's too); rows 9..11 (1000..1002, cm123_063: Aiming Mode).
 import * as THREE from 'three';
 import { WeaponEffects } from './weapon-fx.js';
-import { liftedCall } from './rom/effect/bridge.js';
-
-const MT_TO_VIEW = 0.01;   // the runtime's game units to this app's world (rom/effect/live.js)
-const TURN = 10430.3779296875, TURN_DEG = 0.0054931640625;   // 0x4549ec, 0x4549f0
-const OVERLAY_SCALE = 1.25;                                    // 0x4548a0; the field of view over the one it saved: 1
 
 export const ROWS = {
   shot: { key: 10, efl: 'w04_002' },
   artShot: { key: 800, efl: 'cm120_061' },
   level: { keys: [910, 911, 912, 913], efl: 'cm123_061' },
-  levelOverlay: { keys: [1000, 1001, 1002], efl: 'cm123_063' },
   chargeShot: { key: 1010, efl: 'cm123_063' },
   activation: { key: 1100, efl: 'cm121_142' },
   sharpen: { key: 212, efl: 'cm002_007' },
@@ -87,7 +83,7 @@ export const ROWS = {
 const UNIT = { rootJoint: 0 };                  // +0x14 bit 5, +0x52 = 0: the weapon unit's root joint
 
 // The player's requests by stance that no policy of the holder's watches beyond the stance (render/weapon-fx.js
-// PlayerRequests on the hunter host); Charge Shot's activation is the holder's below (its policy reads Aiming Mode)
+// PlayerRequests on the hunter host); Charge Shot's activation is the holder's below (its policy keeps it to a frame)
 export const PLAYER_REQUESTS = {
   'draw:255': [{ at: 274, key: ROWS.sharpen.key, efl: ROWS.sharpen.efl }],                       // the sharpening
 };
@@ -106,13 +102,6 @@ function stanceKey(stance){
 const running = x => !(x.q.finished && x.q.finished());
 // the show byte the holder's update and policy write (+0x1c1 of the slot's effect: the request's core)
 function showByte(q, on){ if (q && q.m && q.core) q.m.w8(q.core + 0x1c1, on ? 1 : 0); }
-// the effect's unit has flag 0x4000 (unit +0xd bit 0x40): the policy's test before it sets +0x16a1
-function unitReady(q){
-  const m = q && q.m, core = q && q.core;
-  if (!m || !core) return false;
-  const u = m.u32(core + 0x150);
-  return !!u && (m.u8(u + 0xd) & 0x40) !== 0;
-}
 // the holder's answer for a slot's effect on `host`: 3 at once, 2 the effect's own end (the schedule drops it when done)
 function stopOn(host, x, answer){
   const sc = host && host.live && host.live.schedule;
@@ -123,54 +112,8 @@ function stopOn(host, x, answer){
   } catch (_) {}
 }
 
-// THE HOLDER SHELL'S OWN HANDLE, the parent of rows 9..11: a host whose one joint is the world origin
-export class HolderShellEffects extends WeaponEffects {
-  makeHost(){
-    const host = new THREE.Group();
-    host.name = 'light-bowgun-holder-shell';
-    host.userData.gidBones = [{ gid: 0, node: host, d: 0 }];
-    host.userData.joints = [];
-    return host;
-  }
-  useDef(def){
-    const keys = new Set(ROWS.levelOverlay.keys);
-    return Object.assign({}, def, { clips: {},
-      effects: (def.effects || []).filter(e => e.when === 'state' && e.record && e.record.array === 'UNIQUE' && keys.has(e.record.key) &&
-                                                !this.refused.has(e.record.key)) });
-  }
-  async sync(cls, roots, parent){
-    if (cls !== 'w06' || !this.on){ if (this.live) this.detach(); this.lastSync = null; return null; }
-    this.lastSync = { cls, roots: [], parent };
-    if (this.cls === cls && this.live) return this.live;
-    return this.attach(cls, [], parent);
-  }
-  step(time, advance){ this.stepClip(null, time, advance); }
-  // 0x4547fc on the emulated memory: unit 0 turned to the camera's angles and moved to its eye (the ROM's own 0x329d04
-  // and 0x329c9c, lifted), every unit's scale `s`; `eye` in game units, `dir` the direction the camera looks
-  toCamera(q, eye, dir, s){
-    const m = q && q.m, core = q && q.core, sc = this.live && this.live.schedule;
-    if (!m || !core || !sc) return false;
-    const F = Math.fround, turn = a => F(((Math.trunc(F(F(a * TURN) + 0.5)) & 0xffff) >>> 0) * TURN_DEG);
-    const [dx, dy, dz] = dir;
-    const yaw = turn(Math.atan2(dx, dz)), pitch = turn(Math.atan2(-dy, Math.sqrt(dx * dx + dz * dz)));
-    const v = this.cameraVec || (this.cameraVec = sc.host.malloc(0x20));
-    m.wf32(v, pitch); m.wf32(v + 4, yaw); m.wf32(v + 8, 0); m.w32(v + 12, 0);
-    m.wf32(v + 16, eye[0]); m.wf32(v + 20, eye[1]); m.wf32(v + 24, eye[2]); m.w32(v + 28, 0);
-    liftedCall(m, 0x329d04, [core, v, 0]);
-    liftedCall(m, 0x329c9c, [core, v + 16, 0]);
-    const n = m.u32(core + 0x15c);
-    for (let i = 0; i < n; i++){
-      const u = m.u32(core + 0x150 + 4 * i);
-      if (!u) continue;
-      m.wf32(u + 0x60, s); m.wf32(u + 0x64, s); m.wf32(u + 0x68, 1); m.w32(u + 0x6c, 0);
-    }
-    return true;
-  }
-  detach(){ this.cameraVec = null; super.detach(); }
-}
-
 // THE GUN: a weapon-unit host on the gun's bone 0 (as Devouring Demon's, render/weapon-fx-w07.js). It keeps the holder's
-// slots for all three hosts: `hunter` (the player's) and `shell` (the holder shell's) are the page's
+// slots for both hosts: `hunter` (the player's) is the page's
 export class LightBowgunEffects extends WeaponEffects {
   constructor(){
     super();
@@ -178,13 +121,9 @@ export class LightBowgunEffects extends WeaponEffects {
     this.held = new Map();        // holder slot -> { q, key, host, live, while }
     this.chargeShot = false;      // the Art's state (the checkbox)
     this.level = 0;               // the charge level (the select), 0..4
-    this.aiming = false;          // Aiming Mode, player +0x2716 (the checkbox)
     this.lastLevel = 0;           // the holder's +0x16a0
-    this.ready = false;           // the holder's +0x16a1
     this.stance = null;           // { key, f }
     this.hunter = null;           // the hunter host (row 13)
-    this.shell = null;            // the holder shell's host (rows 9..11)
-    this.camera = null;           // the viewer's camera: the game's current camera for the overlay
   }
   makeHost(roots){
     const part = roots && roots[0];
@@ -211,8 +150,8 @@ export class LightBowgunEffects extends WeaponEffects {
     return this.attach(cls, [part], parent);
   }
   // the holder goes with the class: every slot on every host
-  detach(){ for (const s of [...this.held.keys()]) this.release(s, 3); this.lastLevel = 0; this.ready = false; super.detach(); }
-  hostOf(on){ return on === 'player' ? this.hunter : on === 'shell' ? this.shell : this; }
+  detach(){ for (const s of [...this.held.keys()]) this.release(s, 3); this.lastLevel = 0; super.detach(); }
+  hostOf(on){ return on === 'player' ? this.hunter : this; }
   alive(x){ return !!x.host && x.live === x.host.live && running(x); }
   release(slot, answer){ const x = this.held.get(slot); this.held.delete(slot); if (x) stopOn(x.host, x, answer); }
   // 0x281ffc -> 0x44c164: flag 1 stops the slot's occupant at once and asks the row; flag 0 keeps an occupied slot's
@@ -230,7 +169,6 @@ export class LightBowgunEffects extends WeaponEffects {
   }
   setChargeShot(on){ this.chargeShot = !!on; if (!this.chargeShot && this.held.has(4)) this.release(4, 3); return this.chargeShot; }
   setLevel(level){ this.level = Math.max(0, Math.min(4, level | 0)); return this.level; }
-  setAiming(on){ this.aiming = !!on; return this.aiming; }
   // every frame: `cls` the class in the hand (null otherwise), `stance` / `time` the weapon stance, `drawn` the rig's fact
   step(cls, stance, time, advance, drawn){
     if (this.live && this.live.failed){
@@ -255,54 +193,32 @@ export class LightBowgunEffects extends WeaponEffects {
       const x = this.held.get(r.slot);
       if (r.on === 'gun') x.while = r.while || [key];
     }
-    // row 13's policy (code 13): kept while act 81 stands below frame 110, else stopped at once; shown outside Aiming Mode
+    // row 13's policy (code 13): kept while act 81 stands below frame 110, else stopped at once; its byte = NOT Aiming
+    // Mode, which the viewer never enters
     const act = this.held.get(0);
     if (act && act.key === ROWS.activation.key){
       if (key !== 'sa:151' || f >= ACTIVATION_UNTIL) this.release(0, 3);
-      else showByte(act.q, !this.aiming);
+      else showByte(act.q, true);
     }
-    // THE HOLDER'S HOOK, every frame the class is in the hand: the level's rows, flag 1 only when the level rose
+    // THE HOLDER'S HOOK, every frame the class is in the hand: the level's glow, flag 1 only when the level rose (its
+    // overlay, rows 9..11, shows only in Aiming Mode: not asked)
     const level = on ? this.level : 0;
     const rose = this.lastLevel < level;
-    if (rose) this.ready = false;
     this.lastLevel = level;
-    if (level){
-      this.ask(2, ROWS.level, ROWS.level.keys[level - 1], rose);
-      if (level >= 2) this.ask(3, ROWS.levelOverlay, ROWS.levelOverlay.keys[level - 2], rose, 'shell');
-    }
-    // the policy, codes 5..11: kept while the level stands, else left to end (2); the overlay shown by +0x16a1 and
-    // Aiming Mode, and put at the camera while shown
-    if (!level){
-      if (this.held.has(2)) this.release(2, 2);
-      if (this.held.has(3)) this.release(3, 2);
-      this.ready = false;
-    }
-    const overlay = this.held.get(3);
-    if (overlay && level){
-      const show = this.ready && this.aiming;
-      showByte(overlay.q, show);
-      if (show) this.placeOverlay(overlay.q);
-      if (unitReady(overlay.q)) this.ready = true;
-    }
+    if (level) this.ask(2, ROWS.level, ROWS.level.keys[level - 1], rose);
+    // the policy, codes 5..8: kept while the level stands, else left to end (2)
+    if (!level && this.held.has(2)) this.release(2, 2);
     // Charge Shot's rounds (the status function 0x11891dc, flag 0; the policy's code 12 stops them at once)
     const hold = key === 'sa:151' && f < 46;
     const stop = key === 'draw:197' && f > 15;
     if (on && this.chargeShot && drawn && !stop){ if (!hold) this.ask(4, ROWS.chargeShot, ROWS.chargeShot.key, false); }
     else if (this.held.has(4)) this.release(4, 3);
   }
-  // the viewer's camera as the game's current one: its eye in game units and the direction it looks
-  placeOverlay(q){
-    const cam = this.camera, shell = this.shell;
-    if (!cam || !shell) return false;
-    cam.updateWorldMatrix(true, false);
-    const p = new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld), d = cam.getWorldDirection(new THREE.Vector3());
-    return shell.toCamera(q, [p.x / MT_TO_VIEW, p.y / MT_TO_VIEW, p.z / MT_TO_VIEW], [d.x, d.y, d.z], OVERLAY_SCALE);
-  }
   stats(){
     const held = {};
-    for (const [k, x] of this.held) held[k] = { key: x.key, on: x.host === this ? 'gun' : x.host === this.hunter ? 'player' : 'shell',
+    for (const [k, x] of this.held) held[k] = { key: x.key, on: x.host === this ? 'gun' : 'player',
                                                 running: running(x), shown: x.q && x.q.m && x.q.core ? x.q.m.u8(x.q.core + 0x1c1) : null };
-    return Object.assign(super.stats(), { unit: !!this.unitRoot, chargeShot: this.chargeShot, level: this.level, aiming: this.aiming,
-      ready: this.ready, held, stance: this.stance && this.stance.key });
+    return Object.assign(super.stats(), { unit: !!this.unitRoot, chargeShot: this.chargeShot, level: this.level,
+      held, stance: this.stance && this.stance.key });
   }
 }

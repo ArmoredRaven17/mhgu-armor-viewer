@@ -204,3 +204,64 @@ export function snsFlags({ drawn, motion: m, frame: fr, onBack, disp }){
   else if (disp === 2 && b6 && m === 5255 && fr >= 20 && fr < 324){ b7 = 1; b6 = 0; }
   return { t1: !!b7, t0: !!b6 };
 }
+
+// ---- the Dual Blades (kinds 16 / 17, 0x3136a4) -----------------------------------------------------------------------
+// THE BLADES' OWN GLOW (Raven, 2026-10-01: "Dual Blades like Long Sword has Demon and Valor effects"). Both blades are part
+// units (kinds 16 and 17 run the same 0x3136a4). While the player's mode word +0x13c8 is 0 it asks dbFlags and fires, in
+// order, trigger 1 (bit 0, drawn), 0 (bit 1, sheathed), 24 (bits 0x14) and 25 (bits 0x28), all with CHANNEL 8; with bit
+// 0x10 it also writes channel 2's fReflectiveColor / fSpecularColor (0x53a254 flag 1, 0x53a3bc) and fTransparency
+// (0x53a738) = dbPulse: red (255, 0, 0) with bit 0x40, else (0, 128, 255). Every display type's record (docs/weapons/w11.json
+// shared.gmk) shows mesh group 20 on 24 and hides it on 25 (with clips on some types). Not ported: its gimmick-motion tail
+// (+0x13f0 = 1, 3 or 4: the weapon's own motion, 0x307ae8 / 0x307a50).
+//   0x3139fc(part, disp, player): DEMON MODE (vtable +0x4c4) turns a drawn blade's 8 (trigger 25) into 4 (trigger 24); the
+// demon toggle motions show it from a frame (Motion[18] / [27] / [241] after 26, [24] / [234] after 16, the exit [19] and
+// [25] before 16 / 12); VALOR (style 5) replaces bits 2..5 with 0x10 (Valor State: the second status word's hi 0x40000,
+// vtable +0x1b0) or 0x20, and an input held in Motion[122] past 36 / Motion[111] to 132 (0x282930(0x10, 0x4c): no viewer
+// counterpart, false) adds 0x40.
+export function dbFlags({ drawn, motion: m, frame: fr, onBack, disp, demon, valor, valorState, input = false }){
+  const general = () => (drawn && !onBack ? 1 | (demon ? 4 : 8) : 2);            // 0x313ca8
+  const after = lim => (fr > lim ? 5 : 9), before = lim => (fr < lim ? 5 : 9);
+  let r7;
+  if (m <= 5094){
+    if (m === 5003 || m === 5009) r7 = onBack ? 2 : 1 | (demon ? 4 : 8);       // 0x313aa4
+    else if (m === 5018 || m === 5027) r7 = after(26);                          // 0x313b70
+    else if (m === 5019) r7 = before(16);                                       // 0x313c0c
+    else if (m === 5024) r7 = after(16);                                        // 0x313b3c
+    else if (m === 5025) r7 = before(12);                                       // 0x313c18
+    else r7 = general();
+  } else if (m >= 5234 && m <= 5255){
+    if (m === 5234) r7 = after(16);
+    else if (m === 5241) r7 = after(26);
+    else if (m === 5252) r7 = fr < 80 ? 1 : 2;                                 // 0x313b98
+    else if (m === 5255) r7 = fr > 20 && fr < 324 ? 9 : 2;                     // 0x313bcc
+    else r7 = general();
+  } else if (m === 5195 || m === 5196) r7 = 1;
+  else if (m === 5095) r7 = fr < 32 ? 1 : 2;                                   // 0x313b68
+  else r7 = general();
+  if (disp === 4){                                                              // 0x313d38
+    if (!(r7 & 1)){ if (m === 5255 && !onBack) r7 = (r7 & ~3) | 1; }
+    else {
+      const lim = m === 5105 ? 10 : m === 5002 ? 22 : null;
+      if (lim !== null && fr <= lim) r7 = (r7 & ~7) | 2;
+    }
+  } else if (disp === 1 && (m === 5252 || m === 5095)) r7 = onBack ? (r7 | 2) & 0xfe : (r7 | 1) & 0xfd;
+  if (valor){                                                                   // 0x313db0: style 5
+    const v = (r7 & 1) && valorState ? 0x10 : 0;
+    const r5 = v | (r7 & ~0x3c);
+    r7 = v ? r5 : r5 | 0x20;
+    if (input && ((m === 5122 && fr > 36) || (m === 5111 && fr <= 132))) r7 = r5 | 0x50;
+  }
+  r7 &= 0xff;
+  return { t1: !!(r7 & 1), t0: !!(r7 & 2), t24: !!(r7 & 0x14), t25: !!(r7 & 0x28), colour: !!(r7 & 0x10), red: !!(r7 & 0x40), bits: r7 };
+}
+// 0x3136a4's pulse, every frame trigger 24 stands: the part's timer +0x1404 runs by the unit's delta (0x539d48, frames);
+// to 40 the value falls 1 -> 0.3, to 70 it rises back, to 120 it holds 1, and the timer goes back to 0 (the literals at
+// 0x3139e0..0x3139f0). The value is the colour's alpha (x 255) and fTransparency.
+export const DB_BLUE = [0, 128 / 255, 1], DB_RED = [1, 0, 0];
+export function dbPulse(timer, dt){
+  timer += dt;
+  if (timer <= 40) return { timer, value: 1 - timer / 40 * 0.7 };
+  if (timer - 40 <= 30) return { timer, value: 0.3 + (timer - 40) / 30 * 0.7 };
+  if (timer - 70 >= 50) return { timer: 0, value: 1 };
+  return { timer, value: 1 };
+}

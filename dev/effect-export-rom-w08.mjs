@@ -115,6 +115,19 @@ const CLASS_SHAPES = {
     [806, 'parent', { colour2: 0xff0000bf }], [208, 'parent', undefined],
     [1100, 'unit', undefined],
   ],
+  // THE BOW (render/weapon-fx-w10.js): every row on the PLAYER with no override -- rows 1..3 = w10_000 500..502 (the charge
+  // level, slot 0, through the player's own block +0x2550: vtable +0x8b4), rows 8 / 12..14 / 16 / 22..25 = 545..552 (the
+  // shots, fire and forget, the same block), row 21 = w10_800 850 (the Art's shot), row 11 = w10_800 940 (Haste Rain: the
+  // holder's hook through its own block +0x15c0, parent the player), row 20 = cm002_002 213 (the base sharpening); row 4 =
+  // w10_000 510 on the holder shell's own handle with the root joint 0xffff (the unit itself; the setup +0x148 = 0x455e3c,
+  // the policy moving the shell to the player's joint 8) -- asked here on the player parent
+  w10: [
+    [500, 'parent', undefined], [501, 'parent', undefined], [502, 'parent', undefined],
+    [545, 'parent', undefined], [546, 'parent', undefined], [547, 'parent', undefined], [548, 'parent', undefined],
+    [549, 'parent', undefined], [550, 'parent', undefined], [551, 'parent', undefined], [552, 'parent', undefined],
+    [850, 'parent', undefined], [940, 'parent', undefined], [213, 'parent', undefined],
+    [510, 'parent', { rootJoint: 0xffff }],
+  ],
 };
 // a request that roots its record on a joint needs that joint on the parent, as the page's hunter host adds it
 // (render/weapon-fx.js WeaponEffects.useDef requestJoints): the Sword & Shield's joint 1
