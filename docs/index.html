@@ -1255,6 +1255,7 @@ import { BowEffects, PLAYER_REQUESTS as BOW_PLAYER_REQUESTS } from './render/wea
 import { DualBladesEffects, PLAYER_REQUESTS as DB_PLAYER_REQUESTS } from './render/weapon-fx-w11.js';
 import { HammerEffects, PLAYER_REQUESTS as HAMMER_PLAYER_REQUESTS, ROWS as HAMMER_ROWS } from './render/weapon-fx-w02.js';
 import { GunlanceEffects, PLAYER_REQUESTS as GL_PLAYER_REQUESTS } from './render/weapon-fx-w09.js';
+import { GreatSwordEffects, PLAYER_REQUESTS as GS_PLAYER_REQUESTS } from './render/weapon-fx-w00.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2700,7 +2701,7 @@ swordFx.loadPalettes();
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
                                       w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS, w04: HBG_PLAYER_REQUESTS,
-                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS });
+                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS, w00: GS_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 // the joints those requests root their records on, and the Heavy Bowgun's (render/weapon-fx-w04.js REQUEST_JOINTS: Guns
 // Blazing's aura on the player's root joint, which its own host asks)
@@ -2835,13 +2836,17 @@ impactPressChk.onchange = () => { hammerFx.setImpact(impactPressChk.checked); sa
 // THE GUNLANCE (render/weapon-fx-w09.js): the holder's rows on the gunlance (the charged shell's and Wyvern's Fire's
 // muzzle flames, Dragon Breath's, the overheat's steam the hook keeps) and the shelling shells on the hunter host, at
 // the player's position. The overheat is the user's switch, or the Wyvern's Fire blast's cooldown, or Dragon Breath.
+// THE GREAT SWORD (render/weapon-fx-w00.js, a first pass): the charge's glow the charge holds build and the releases'
+// flashes by the level.
+const gsFx = new GreatSwordEffects();
+gsFx.hunter = weaponFx;
 const glFx = new GunlanceEffects();
 glFx.hunter = weaponFx;
 const overheatChk = document.getElementById('overheatChk'), dragonBreathChk = document.getElementById('dragonBreathChk');
 overheatChk.onchange = () => { glFx.setOverheat(overheatChk.checked); saveState(); };
 dragonBreathChk.onchange = () => { glFx.setBreath(dragonBreathChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2921,6 +2926,7 @@ function stepWeaponFx(){
   glFx.setModel(weapon.cls === 'w09' && weapon.cj && weapon.cj.models && weapon.cj.models[weapon.modelId] ?
                 weapon.cj.models[weapon.modelId].sub : null, weapon.cls === 'w09' ? weapon.shell() : null);
   glFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
+  gsFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -5894,6 +5900,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           archdemon: on => { archdemonChk.checked = !!on; dbFx.setArchdemon(!!on); return dbFx.stats(); },
           valor: on => { valorStateChk.checked = !!on; dbFx.setValor(!!on); weapon.setValorState(!!on); return dbFx.stats(); },
           maw: on => { wolfsMawChk.checked = !!on; dbFx.setMaw(!!on); return dbFx.stats(); } },
+    gs: { stats: () => gsFx.stats(), obj: () => gsFx },
     gl: { stats: () => glFx.stats(), raw: () => glFx.live, obj: () => glFx, bounds: () => glFx.bounds(),
           overheat: on => { overheatChk.checked = !!on; glFx.setOverheat(!!on); return glFx.stats(); },
           breath: on => { dragonBreathChk.checked = !!on; glFx.setBreath(!!on); return glFx.stats(); },
