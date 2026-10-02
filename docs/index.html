@@ -3070,6 +3070,7 @@ async function refreshChar(){
 // armours ended up in the scene at once. Every call takes a ticket; a load that comes back
 // stale drops its result instead of mounting it.
 const slotSeq = { helm:0, body:0, arm:0, wst:0, leg:0 };
+const slotToken = {};      // the token setSlot last mounted, per slot
 // Belt and braces: clear the slot by sweeping the SCENE, not just the `mounted` entry.
 // If anything ever slips out of that bookkeeping it would otherwise sit there forever,
 // and a stacked armour is not obvious until you rotate the model.
@@ -3080,6 +3081,7 @@ function clearSlot(slot){
 }
 async function setSlot(slot, token){
   const seq = ++slotSeq[slot];
+  slotToken[slot] = token;                    // the piece a pigment row's default is read from
   clearSlot(slot);
   const setId = modelOf(slot, token);
   if (setId) {
@@ -3435,7 +3437,13 @@ function rebuildSelects(filter){
 
 for (const slot of SLOTS) {
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
-  sel.onchange = () => setSlot(slot, sel.value).then(saveState);
+  sel.onchange = () => {
+    const follow = pigOnDefault(slot, slotToken[slot] || 'none');   // read before the piece changes
+    return setSlot(slot, sel.value).then(() => {
+      if (follow && sel.value === slotToken[slot]) followDefaultPig(slot);
+      saveState();
+    });
+  };
 }
 document.getElementById('filter').oninput = e => rebuildSelects(e.target.value);
 document.getElementById('htype').onchange = e => {
@@ -3990,6 +3998,7 @@ function paintWeaponFx(){
   lbgFx.setEnabled(weaponFxOn);
   hbgFx.setEnabled(weaponFxOn);
   glFx.setEnabled(weaponFxOn);
+  igFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -3998,7 +4007,6 @@ function paintFloorGrid(){
   gridBtn.classList.toggle('on', floorGridOn);
 }
 gridBtn.onclick = () => { floorGridOn = !floorGridOn; paintFloorGrid(); saveState(); };
-  igFx.setEnabled(weaponFxOn);
 paintFloorGrid();
 
 // Debug: give every distinct ARMOUR material its own hue and list them, so a specific
@@ -4908,7 +4916,8 @@ pigModal.querySelector('.modal-card').onclick = e => {
 // removing the tint: it reads the equipped piece's own `defaultPig` (mSymbolCol) and puts
 // that colour in the row. A piece with no pigment to restore -- an empty slot, one of the
 // 28 undyeable pieces, or one of the 42 that join to no series -- falls back to off.
-function defaultPigHex(slot){
+// `token` is the piece to read (the one equipped when left out).
+function defaultPigHex(slot, token){
   // The Palico's own default. `cOtArmorBase` has no mSymbolCol; its only colour fields are
   // mBaseColHelm / mBaseColBody (otArmorData +31 / +32), and those track the dyeable
   // region closely enough to use -- of the pieces carrying a `_sym_` material, 478 of 480
@@ -4916,13 +4925,14 @@ function defaultPigHex(slot){
   // read zero 45-62% of the time.
   if (slot === 'ohelm' || slot === 'obody'){
     const k = slot.slice(1);
-    const e = OT && OT.pieces['o' + otModelOf(k, otState[k]) + '_' + k];
+    const e = OT && OT.pieces['o' + otModelOf(k, token === undefined ? otState[k] : token) + '_' + k];
     if (!e || e.defaultPig === undefined) return null;
     const p = PIGMENTS.find(x => x.i === e.defaultPig);
     return p ? p.hex : null;
   }
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
-  const id = sel ? modelOf(slot, sel.value) : null;      // the select holds a token
+  const tok = token === undefined ? (sel ? sel.value : null) : token;
+  const id = tok ? modelOf(slot, tok) : null;            // the select holds a token
   if (!id) return null;
   const e = manifest.pieces[gender + id + '_' + slot];
   if (!e || e.undyeable || e.defaultPig === undefined) return null;
@@ -4946,6 +4956,25 @@ document.getElementById('pigDefault').onclick = () => {
   readSlotPigments(); paintHexLabels(); saveState();
   closePig();
 };
+// A row ON ITS PIECE'S DEFAULT follows the piece (Raven, 2026-10-02: "make it so Default
+// Pigment updates on armor selection"): it shows the default of `token`, the piece being
+// replaced -- off for a piece with none to restore -- with no deviant and All not speaking
+// for it. A colour of the row's own stays where it is.
+function pigOnDefault(sl, token){
+  if (slotDeviant[sl]) return false;
+  if ((OT_PIG.indexOf(sl) >= 0 ? otAllCb : allCb).checked) return false;
+  const hex = defaultPigHex(sl, token);
+  const on = document.getElementById('pgOn_' + sl).checked;
+  if (!hex) return !on;
+  return on && document.getElementById('pg_' + sl).value.toLowerCase() === hex.toLowerCase();
+}
+// ...and the new piece's default goes in, the same as the Default button would put there
+function followDefaultPig(sl){
+  const hex = defaultPigHex(sl);
+  document.getElementById('pgOn_' + sl).checked = !!hex;
+  document.getElementById('pg_' + sl).value = hex || PIG_NONE;
+  readSlotPigments();
+}
 document.getElementById('pigClose').onclick = closePig;
 pigModal.onclick = e => { if (e.target === pigModal) closePig(); };
 // Changing a pigment's animation rewrites the table entry and follows through to every
@@ -5672,7 +5701,9 @@ otBuildSelects('');
 otBuildParts();
 for (const slot of OT_SLOTS)
   otSel[slot].onchange = async () => {
+    const follow = pigOnDefault('o' + slot, otState[slot]);   // the piece being replaced
     otState[slot] = otSel[slot].value;
+    if (follow) followDefaultPig('o' + slot);
     await otMount(slot);
     // a new piece brings new materials: they need the fur map, the colours and the pigment
     await otApplyFur(); otApplyMasks(); applyCharColors(); readSlotPigments(); saveState();
@@ -5915,6 +5946,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           valor: on => { valorStateChk.checked = !!on; dbFx.setValor(!!on); weapon.setValorState(!!on); return dbFx.stats(); },
           maw: on => { wolfsMawChk.checked = !!on; dbFx.setMaw(!!on); return dbFx.stats(); } },
     gs: { stats: () => gsFx.stats(), obj: () => gsFx },
+    ig: { stats: () => igFx.stats(), raw: () => igFx.live, obj: () => igFx },
     gl: { stats: () => glFx.stats(), raw: () => glFx.live, obj: () => glFx, bounds: () => glFx.bounds(),
           overheat: on => { overheatChk.checked = !!on; glFx.setOverheat(!!on); return glFx.stats(); },
           breath: on => { dragonBreathChk.checked = !!on; glFx.setBreath(!!on); return glFx.stats(); },
@@ -5946,7 +5978,6 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
       if (act && pose.mixer){
         act.enabled = true; act.paused = false; act.timeScale = 0;
         if (typeof from === 'number') act.time = Math.max(0, from);
-    ig: { stats: () => igFx.stats(), raw: () => igFx.live, obj: () => igFx },
       }
       for (let i = 0; i < n; i++){
         if (act && pose.mixer){
