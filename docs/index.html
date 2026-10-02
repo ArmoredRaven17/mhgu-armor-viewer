@@ -1259,6 +1259,7 @@ import { DualBladesEffects, PLAYER_REQUESTS as DB_PLAYER_REQUESTS } from './rend
 import { HammerEffects, PLAYER_REQUESTS as HAMMER_PLAYER_REQUESTS, ROWS as HAMMER_ROWS } from './render/weapon-fx-w02.js';
 import { GunlanceEffects, PLAYER_REQUESTS as GL_PLAYER_REQUESTS } from './render/weapon-fx-w09.js';
 import { GreatSwordEffects, PLAYER_REQUESTS as GS_PLAYER_REQUESTS } from './render/weapon-fx-w00.js';
+import { InsectGlaiveEffects, PLAYER_REQUESTS as IG_PLAYER_REQUESTS } from './render/weapon-fx-w13.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2704,7 +2705,7 @@ swordFx.loadPalettes();
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
                                       w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS, w04: HBG_PLAYER_REQUESTS,
-                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS, w00: GS_PLAYER_REQUESTS });
+                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS, w00: GS_PLAYER_REQUESTS, w13: IG_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 // the joints those requests root their records on, and the Heavy Bowgun's (render/weapon-fx-w04.js REQUEST_JOINTS: Guns
 // Blazing's aura on the player's root joint, which its own host asks)
@@ -2843,13 +2844,17 @@ impactPressChk.onchange = () => { hammerFx.setImpact(impactPressChk.checked); sa
 // flashes by the level.
 const gsFx = new GreatSwordEffects();
 gsFx.hunter = weaponFx;
+// THE INSECT GLAIVE (render/weapon-fx-w13.js, a first pass): the hunter-side rows -- the Extract Charge's glow on the
+// glaive, the glaive's flashes, Extract Hunter's; the kinsect itself is not in the viewer.
+const igFx = new InsectGlaiveEffects();
+igFx.hunter = weaponFx;
 const glFx = new GunlanceEffects();
 glFx.hunter = weaponFx;
 const overheatChk = document.getElementById('overheatChk'), dragonBreathChk = document.getElementById('dragonBreathChk');
 overheatChk.onchange = () => { glFx.setOverheat(overheatChk.checked); saveState(); };
 dragonBreathChk.onchange = () => { glFx.setBreath(dragonBreathChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); igFx.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2862,7 +2867,8 @@ function syncWeaponFx(){
                       invFx.sync(inHand, mainPart, world),
                       lbgFx.sync(inHand, mainPart, world),
                       hbgFx.sync(inHand, mainPart, world),
-                      glFx.sync(inHand, mainPart, world)]);
+                      glFx.sync(inHand, mainPart, world),
+                      igFx.sync(inHand, mainPart, world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2930,6 +2936,10 @@ function stepWeaponFx(){
                 weapon.cj.models[weapon.modelId].sub : null, weapon.cls === 'w09' ? weapon.shell() : null);
   glFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
   gsFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
+  // the glaive model's mSubParam: its two ends' offsets
+  igFx.setModel(weapon.cls === 'w13' && weapon.cj && weapon.cj.models && weapon.cj.models[weapon.modelId] ?
+                weapon.cj.models[weapon.modelId].sub : null);
+  igFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3988,6 +3998,7 @@ function paintFloorGrid(){
   gridBtn.classList.toggle('on', floorGridOn);
 }
 gridBtn.onclick = () => { floorGridOn = !floorGridOn; paintFloorGrid(); saveState(); };
+  igFx.setEnabled(weaponFxOn);
 paintFloorGrid();
 
 // Debug: give every distinct ARMOUR material its own hue and list them, so a specific
@@ -5579,7 +5590,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, impactFx, ddFx, invFx, lbgFx, hbgFx, glFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, impactFx, ddFx, invFx, lbgFx, hbgFx, glFx, igFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5935,6 +5946,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
       if (act && pose.mixer){
         act.enabled = true; act.paused = false; act.timeScale = 0;
         if (typeof from === 'number') act.time = Math.max(0, from);
+    ig: { stats: () => igFx.stats(), raw: () => igFx.live, obj: () => igFx },
       }
       for (let i = 0; i < n; i++){
         if (act && pose.mixer){
