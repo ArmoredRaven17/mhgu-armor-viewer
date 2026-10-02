@@ -1219,10 +1219,13 @@ if (document.fonts) document.fonts.load('1em MHFU').then(() => {
 }, () => {});
 </script>
 
+<!-- three.js 0.169.0, kept in the repo (vendor/three: the build and the addons the page imports, with their own
+     imports) so the viewer runs with no internet (Raven, 2026-10-02: "I want to be able to run locally without
+     internet") -->
 <script type="importmap">
 {"imports":{
-  "three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+  "three":"./vendor/three/build/three.module.js",
+  "three/addons/":"./vendor/three/examples/jsm/"
 }}
 </script>
 
