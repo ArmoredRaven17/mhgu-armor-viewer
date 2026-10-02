@@ -30,7 +30,7 @@
 // Interfaces the draws never select (FFogVTF, FAlphaTest, ...) run their own bodies (no fog, no alpha test).
 import * as THREE from 'three';
 import { EffectHost } from './host.js';
-import { linkPrimitive, linkProgram, GPU_PARTICLE, alphaTestOf, cbUniforms, FORMATS } from './primshader.js';
+import { linkPrimitive, linkProgram, GPU_PARTICLE, INF_PARTICLE, alphaTestOf, cbUniforms, FORMATS } from './primshader.js';
 import { linkMaterial } from './modelshader.js';
 import { EffectSchedule } from './schedule.js';
 import { SHELL_DATA } from '../../shells.js';
@@ -854,12 +854,12 @@ export class LiveEffects {
       const d = draws[k];
       // A TECHNIQUE THE VIEWER CANNOT LINK YET is skipped and counted, not thrown -- the same choice construct.js makes
       // for an undecoded generator, and for the same reason: failing here stops EVERY effect of the monster, so one
-      // layer we cannot draw would take the whole monster dark. cParticleNodeInfinite's draws come through as
-      // TInfParticle: its ROM side is translated and runs (it builds, updates and submits), but the viewer's GL side
-      // still lacks three things the decode named -- glsl.py has no op37 (`%`, which FInfParticleTexturePattern uses),
-      // primshader.js names attributes `a_` + semantic so the layout's two Attribute elements collide, and
-      // gpu-shaders.json carries no InfParticle programs. Until those land the node runs and draws nothing.
-      if (d.technique !== 'TGPUParticle'){
+      // layer we cannot draw would take the whole monster dark. TGPUParticle is a cParticleNode's; TInfParticle is
+      // cParticleNodeInfinite's (the Armor Viewer, 2026-10-01: the Bow's charge glow drew without its particles), whose
+      // GL side needed glsl.py's op37, vector index and square mat x mat, `glsl.py --gpu-inf` merged into
+      // gpu-shaders.json (efx/shader/merge_gpu.py) and primshader.js binding IAInfParticle's two Attribute elements.
+      const entry = d.technique === 'TGPUParticle' ? GPU_PARTICLE : d.technique === 'TInfParticle' ? INF_PARTICLE : null;
+      if (!entry){
         this.stats.skippedTechnique = (this.stats.skippedTechnique || 0) + 1;
         (this.skippedTechniques || (this.skippedTechniques = new Set())).add(d.technique);
         const hide = this.gpuMeshes[k];
@@ -872,7 +872,27 @@ export class LiveEffects {
       const key = 'gpu|' + d.inputLayout + '|' + Object.keys(d.features).sort().map(f => d.features[f]).join(',') + '|' +
                   (alphaTest ? alphaTest.func + ':' + alphaTest.ref : 'none');
       let p = this.programs.get(key);
-      if (!p){ p = linkProgram(this.gpuShaders, d.inputLayout, d.features, GPU_PARTICLE, alphaTest); p.label = 'node ' + d.inputLayout; this.programs.set(key, p); }
+      if (p === undefined){
+        // an Infinite node whose variant gpu-shaders.json does not export yet (only the variants of the recordings
+        // `glsl.py --gpu-inf` was given are) is skipped and counted like a technique, and the program is not retried:
+        // the first export took the Bow glow's FInfParticlePosBezier, and its shots' FInfParticlePosSpline then refused
+        // the whole host (2026-10-01). TGPUParticle still throws, as it always has.
+        if (entry === INF_PARTICLE){
+          try { p = linkProgram(this.gpuShaders, d.inputLayout, d.features, entry, alphaTest); }
+          catch (e){
+            this.programs.set(key, null);
+            (this.unlinked || (this.unlinked = new Set())).add(String(e && e.message || e));
+          }
+        } else p = linkProgram(this.gpuShaders, d.inputLayout, d.features, entry, alphaTest);
+        if (p){ p.label = 'node ' + d.inputLayout; this.programs.set(key, p); }
+      }
+      if (!p){
+        this.stats.skippedTechnique = (this.stats.skippedTechnique || 0) + 1;
+        (this.skippedTechniques || (this.skippedTechniques = new Set())).add(d.technique + ' (unlinked)');
+        const hide = this.gpuMeshes[k];
+        if (hide) hide.visible = false;
+        continue;
+      }
       let mesh = this.gpuMeshes[k];
       if (!mesh){
         mesh = new THREE.Mesh(new THREE.BufferGeometry(), null);
@@ -890,7 +910,8 @@ export class LiveEffects {
       const u = mat.uniforms;
       for (const [name, { type, value }] of Object.entries(cbUniforms(this.gpuShaders, d.cb))){
         if (VIEW_BUFFER.test(name)) continue;                      // the renderer's (the header)
-        const v = type === 'float' ? value[0] : type === 'vec2' ? new THREE.Vector2(...value) : type === 'vec3' ? new THREE.Vector3(...value)
+        // an int member (CBInfParticleTexture's pattern counts) is set as one: three uploads it as the program's int
+        const v = type === 'float' || type === 'int' ? value[0] : type === 'vec2' ? new THREE.Vector2(...value) : type === 'vec3' ? new THREE.Vector3(...value)
                 : type === 'vec4' ? new THREE.Vector4(...value) : type === 'mat4' ? new THREE.Matrix4().fromArray(value) : null;
         if (v !== null) u[name] = { value: v };
       }
@@ -898,7 +919,10 @@ export class LiveEffects {
       u.tBaseMap = { value: this.texture(d.textures.tBaseMap) };
       applyState(mat, this.gpuShaders, d.blend, d.depth, d.raster);
       mesh.renderOrder = 1000 + k;                     // until order() places it among the batches
-      mesh.visible = !!(u.tBaseMap.value || !/BaseMap/.test(d.features.FGPUParticleSample || ''));
+      // a sample variant that reads tBaseMap waits for it: FGPUParticleSampleBaseMap*, FInfParticleSampleAlbedo
+      const reads = entry === INF_PARTICLE ? /Albedo|BaseMap/.test(d.features.FInfParticleSample || '')
+                                           : /BaseMap/.test(d.features.FGPUParticleSample || '');
+      mesh.visible = !!(u.tBaseMap.value || !reads);
     }
     for (let k = draws.length; k < this.gpuMeshes.length; k++) if (this.gpuMeshes[k]) this.gpuMeshes[k].visible = false;
   }

@@ -96,6 +96,9 @@ export function linkPrimitive(shaders, layoutName, features){
 const PRIMITIVE = { vs: 'VS_Primitive', ps: 'PS_Primitive', input: 'PRIMITIVE_VS_INPUT', output: 'PRIMITIVE_VS_OUTPUT' };
 // TGPUParticle pass 0, sGpuParticle's record A draw (effects-node.md 5.5; docs/effects/gpu-shaders.json)
 export const GPU_PARTICLE = { vs: 'VS_GpuParticle', ps: 'PS_GpuParticle', input: 'GPU_PARTICLE_VS_INPUT', output: 'GPU_PARTICLE_PS_INPUT' };
+// cParticleNodeInfinite's draw (record E 0xb978cc, technique TInfParticle, IAInfParticle; the Armor Viewer, 2026-10-01):
+// the particles' vertices are built once and VS_InfParticle animates them from CBInfParticleContext's loop clock
+export const INF_PARTICLE = { vs: 'VS_InfParticle', ps: 'PS_InfParticle', input: 'INF_PARTICLE_VS_INPUT', output: 'INF_PARTICLE_PS_INPUT' };
 
 // THE FIXED-FUNCTION ALPHA TEST a draw's state carries in ctx+0x154 (effects-node.md 5.2 / 5.4): with bit 19 or 20 set
 // the command executor binds the colour state for the function field (bits 3..10) through table 0x211cee0 = {1..8}[func]
@@ -131,18 +134,22 @@ export function linkProgram(shaders, layoutName, features, entry = PRIMITIVE, al
     return lines.join('\n');
   };
 
-  // vertex: attributes by semantic
+  // vertex: attributes by semantic. A semantic the layout repeats binds its k-th element to the input's k-th member with
+  // it, named a_<semantic><k> past the first: IAInfParticle's two Attribute elements (U8 x4, U16 x2) are
+  // INF_PARTICLE_VS_INPUT's attr0 and attr1 (the Armor Viewer, 2026-10-01; a layout without a repeat keeps its names)
   const input = shaders.structs[entry.input].members;
   const output = shaders.structs[entry.output].members;
   const attributes = [];
   const assign = [];
+  const nth = {};
   for (const [semantic, offset, count, format] of layout.elements){
-    const member = input.find(m => m[2] === semantic);
+    const k = nth[semantic] = nth[semantic] === undefined ? 0 : nth[semantic] + 1;
+    const member = input.filter(m => m[2] === semantic)[k];
     if (!member) continue;
     const f = FORMATS[format];
     if (!f) throw new Error('primshader: element format ' + format + ' (' + semantic + ')');
     const components = f.components || count;
-    const name = 'a_' + semantic;
+    const name = 'a_' + semantic + (k ? k : '');
     attributes.push({ name, semantic, offset, count: components, format });
     const want = member[1], have = GLSL_TYPE(components);
     assign.push('  I.' + member[0] + ' = ' + (want === have ? name : want + '(' + name + (want === 'float' ? '' : '') + ')') + ';');
@@ -222,7 +229,9 @@ export function cbUniforms(shaders, cb){
     if (!members) continue;
     for (const [member, type, offset, count] of members){
       const v = [];
-      for (let i = 0; i < count; i++) v.push(floatOf(words[offset + i]));
+      // an int member is its stored word, signed (CBInfParticleTexture's pattern counts; no other buffer has one)
+      const word = type === 'int' ? (w => w | 0) : floatOf;
+      for (let i = 0; i < count; i++) v.push(word(words[offset + i]));
       out[name + '_' + member] = { type, value: v };
     }
   }

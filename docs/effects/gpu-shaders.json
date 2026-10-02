@@ -1076,6 +1076,54 @@
      1
     ]
    ]
+  },
+  "IAInfParticle": {
+   "index": 113,
+   "stride": 32,
+   "elements": [
+    [
+     "Position",
+     0,
+     4,
+     5
+    ],
+    [
+     "VertexColor",
+     8,
+     1,
+     14
+    ],
+    [
+     "Scale",
+     12,
+     2,
+     3
+    ],
+    [
+     "Life",
+     16,
+     2,
+     3
+    ],
+    [
+     "Attribute",
+     20,
+     4,
+     8
+    ],
+    [
+     "Attribute",
+     24,
+     2,
+     4
+    ],
+    [
+     "Reserved",
+     28,
+     1,
+     1
+    ]
+   ]
   }
  },
  "variants": {
@@ -1098,16 +1146,40 @@
    "FGPUParticleCalcDepthBlendNone"
   ],
   "FGPUParticleFogVS": [
-   "FGPUParticleFogVSColor"
+   "FGPUParticleFogVSColor",
+   "FGPUParticleFogVSAlpha"
   ],
   "FGPUParticleFogPS": [
-   "FGPUParticleFogPSDefault"
+   "FGPUParticleFogPSDefault",
+   "FGPUParticleFogPS"
   ],
   "FGPUParticleVSAlphaClip": [
    "FGPUParticleVSAlphaClipDefault"
   ],
   "FGpuParticleLevelCorrection": [
    "FGpuParticleLevelCorrection"
+  ],
+  "FInfParticleRandomizePos": [
+   "FInfParticleRandomizePos"
+  ],
+  "FInfParticlePos": [
+   "FInfParticlePosBezier",
+   "FInfParticlePosSpline"
+  ],
+  "FInfParticleColor": [
+   "FInfParticleColorLerp"
+  ],
+  "FInfParticleSample": [
+   "FInfParticleSampleAlbedo"
+  ],
+  "FInfParticleCalcTexCoord": [
+   "FInfParticleCalcTexCoordPattern"
+  ],
+  "FInfParticleTexturePattern": [
+   "FInfParticleTexturePatternIndependent"
+  ],
+  "FInfParticleVSAlphaClip": [
+   "FInfParticleVSAlphaClipDefault"
   ]
  },
  "structs": {
@@ -1217,6 +1289,70 @@
      "tangent",
      "vec4",
      "Tangent"
+    ]
+   ],
+   "uses": []
+  },
+  "INF_PARTICLE_PS_INPUT": {
+   "glsl": "struct INF_PARTICLE_PS_INPUT {\n  vec4 position;\n  vec4 color;\n  vec2 texcoord;\n  FOG_OUT fog;\n};\nINF_PARTICLE_PS_INPUT zero_INF_PARTICLE_PS_INPUT() { INF_PARTICLE_PS_INPUT z; z.position = vec4(0.0); z.color = vec4(0.0); z.texcoord = vec2(0.0); z.fog = zero_FOG_OUT(); return z; }\n",
+   "members": [
+    [
+     "position",
+     "vec4",
+     "SV_POSITION"
+    ],
+    [
+     "color",
+     "vec4",
+     "VertexColor"
+    ],
+    [
+     "texcoord",
+     "vec2",
+     "TexCoord"
+    ],
+    [
+     "fog",
+     "FOG_OUT",
+     "Fog"
+    ]
+   ],
+   "uses": [
+    "FOG_OUT"
+   ]
+  },
+  "INF_PARTICLE_VS_INPUT": {
+   "glsl": "struct INF_PARTICLE_VS_INPUT {\n  vec4 position;\n  vec4 color;\n  vec2 scale;\n  vec2 life;\n  vec4 attr0;\n  vec2 attr1;\n};\nINF_PARTICLE_VS_INPUT zero_INF_PARTICLE_VS_INPUT() { INF_PARTICLE_VS_INPUT z; z.position = vec4(0.0); z.color = vec4(0.0); z.scale = vec2(0.0); z.life = vec2(0.0); z.attr0 = vec4(0.0); z.attr1 = vec2(0.0); return z; }\n",
+   "members": [
+    [
+     "position",
+     "vec4",
+     "Position"
+    ],
+    [
+     "color",
+     "vec4",
+     "VertexColor"
+    ],
+    [
+     "scale",
+     "vec2",
+     "Scale"
+    ],
+    [
+     "life",
+     "vec2",
+     "Life"
+    ],
+    [
+     "attr0",
+     "vec4",
+     "Attribute"
+    ],
+    [
+     "attr1",
+     "vec2",
+     "Attribute"
     ]
    ],
    "uses": []
@@ -1342,6 +1478,108 @@
     "fViewProjI",
     "mat4",
     92,
+    16,
+    0
+   ]
+  ],
+  "CBInfParticleTexture": [
+   [
+    "fInfParticleTexSize",
+    "vec2",
+    0,
+    2,
+    0
+   ],
+   [
+    "fInfParticleTexInvSize",
+    "vec2",
+    2,
+    2,
+    0
+   ],
+   [
+    "fInfParticlePatternRect",
+    "vec4",
+    4,
+    4,
+    0
+   ],
+   [
+    "fInfParticlePatternRowNum",
+    "int",
+    8,
+    1,
+    0
+   ],
+   [
+    "fInfParticlePatternColumnNum",
+    "int",
+    9,
+    1,
+    0
+   ],
+   [
+    "fInfParticlePatternNum",
+    "int",
+    10,
+    1,
+    0
+   ],
+   [
+    "fInfParticlePatternConst",
+    "int",
+    11,
+    1,
+    0
+   ]
+  ],
+  "CBInfParticleContext": [
+   [
+    "fGenWMatrix",
+    "mat4",
+    0,
+    16,
+    0
+   ],
+   [
+    "fParticlePath",
+    "mat4",
+    16,
+    16,
+    0
+   ],
+   [
+    "fLoopLength",
+    "float",
+    32,
+    1,
+    0
+   ],
+   [
+    "fCurrentLoop",
+    "float",
+    33,
+    1,
+    0
+   ],
+   [
+    "fParticleIntScale",
+    "float",
+    34,
+    1,
+    0
+   ],
+   [
+    "fBoundingBox",
+    "mat4",
+    36,
+    16,
+    0
+   ],
+   [
+    "fNodeColor",
+    "mat4",
+    52,
     16,
     0
    ]
@@ -1801,6 +2039,423 @@
     [
      "GPU_PARTICLE_VS_INPUT",
      "I",
+     "",
+     ""
+    ]
+   ]
+  },
+  "PS_InfParticle": {
+   "glsl": "vec4 PS_InfParticle(INF_PARTICLE_PS_INPUT I) {\n  vec4 o_color = I.color;\n  vec4 tex = FInfParticleSample(I.texcoord);\n  o_color *= tex;\n  o_color.xyz = FGPUParticleToneMap(o_color.xyz);\n  o_color = FGpuParticleLevelCorrection(o_color);\n  o_color = FGPUParticleFogPS(o_color, I.fog);\n  FAlphaTest(o_color.w);\n  return o_color;\n}\n",
+   "calls": [
+    "FAlphaTest",
+    "FGPUParticleFogPS",
+    "FGPUParticleToneMap",
+    "FGpuParticleLevelCorrection",
+    "FInfParticleSample"
+   ],
+   "ret": "vec4",
+   "params": [
+    [
+     "INF_PARTICLE_PS_INPUT",
+     "I",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleSampleAlbedo": {
+   "glsl": "vec4 FInfParticleSampleAlbedo(vec2 uv) {\n  return texture(tBaseMap, uv);\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleSample": {
+   "glsl": "vec4 FInfParticleSample(vec2 uv) {\n  return vec4(1.0);\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec2",
+     "uv",
+     "",
+     ""
+    ]
+   ]
+  },
+  "VS_InfParticle": {
+   "glsl": "INF_PARTICLE_PS_INPUT VS_InfParticle(INF_PARTICLE_VS_INPUT I) {\n  INF_PARTICLE_PS_INPUT O = zero_INF_PARTICLE_PS_INPUT();\n  int tc = 0;\n  vec4 color = vec4(0.0);\n  float ratio = calcParticleRatio(I.life[0], I.life[1], I.attr1.x);\n  vec3 rand_pos = FInfParticleRandomizePos(I.position.xyz, I.life[0], I.life[1], I.attr1.x, I.scale[0]);\n  vec4 pos = calcParticleRotation(vec4(I.scale, 0.0, 0.0), I.attr0.y);\n  vec3 r_pos = FInfParticlePos(rand_pos, ratio);\n  vec3 c_pos = ((CBViewProjection_fViewI * pos).xyz + r_pos);\n  color = FInfParticleColor(I.color, ratio);\n  O.color = calcParticleIntensity(I.attr1.y, color);\n  O.position = FViewProj(c_pos, vec2(0.0));\n  O.position.w *= (step(9.999999974752427e-07, ratio) * FInfParticleVSAlphaClip(color.w));\n  O.fog = FGPUParticleFogVS(O.color, r_pos, O.position);\n  tc = FInfParticleTexturePattern(int(I.attr0.x), int(I.attr0.w));\n  O.texcoord = FInfParticleCalcTexCoord(tc, I.scale);\n  return O;\n}\n",
+   "calls": [
+    "FGPUParticleFogVS",
+    "FInfParticleCalcTexCoord",
+    "FInfParticleColor",
+    "FInfParticlePos",
+    "FInfParticleRandomizePos",
+    "FInfParticleTexturePattern",
+    "FInfParticleVSAlphaClip",
+    "FViewProj",
+    "calcParticleIntensity",
+    "calcParticleRatio",
+    "calcParticleRotation"
+   ],
+   "ret": "INF_PARTICLE_PS_INPUT",
+   "params": [
+    [
+     "INF_PARTICLE_VS_INPUT",
+     "I",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleCalcTexCoordPattern": {
+   "glsl": "vec2 FInfParticleCalcTexCoordPattern(int ipn, vec2 scl) {\n  vec2 uv = (scl / abs(scl));\n  int pcn = CBInfParticleTexture_fInfParticlePatternColumnNum;\n  int prn = CBInfParticleTexture_fInfParticlePatternRowNum;\n  int cn = (ipn % pcn);\n  int rn = ((ipn - cn) / prn);\n  vec2 sz = (CBInfParticleTexture_fInfParticlePatternRect.zw - CBInfParticleTexture_fInfParticlePatternRect.xy);\n  vec2 pat_sz = (sz / vec2(float(CBInfParticleTexture_fInfParticlePatternColumnNum), float(CBInfParticleTexture_fInfParticlePatternRowNum)));\n  vec2 pat_uv = (pat_sz * vec2(float(cn), float(rn)));\n  uv *= 0.5;\n  uv += vec2(0.5, (-0.5));\n  uv *= vec2(1.0, (-1.0));\n  uv = (1.0 - uv);\n  uv = (pat_uv + (uv * pat_sz));\n  uv += CBInfParticleTexture_fInfParticlePatternRect.xy;\n  return uv;\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "int",
+     "ipn",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "scl",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleCalcTexCoord": {
+   "glsl": "vec2 FInfParticleCalcTexCoord(int ipn, vec2 scl) {\n  return vec2(0.0);\n}\n",
+   "calls": [],
+   "ret": "vec2",
+   "params": [
+    [
+     "int",
+     "ipn",
+     "",
+     ""
+    ],
+    [
+     "vec2",
+     "scl",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleTexturePatternIndependent": {
+   "glsl": "int FInfParticleTexturePatternIndependent(int ipn, int pat_num) {\n  int pnum = CBInfParticleTexture_fInfParticlePatternNum;\n  return (ipn % pnum);\n}\n",
+   "calls": [],
+   "ret": "int",
+   "params": [
+    [
+     "int",
+     "ipn",
+     "",
+     ""
+    ],
+    [
+     "int",
+     "pat_num",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleTexturePattern": {
+   "glsl": "int FInfParticleTexturePattern(int ipn, int pat_num) {\n  int pnum = CBInfParticleTexture_fInfParticlePatternNum;\n  int pcn = CBInfParticleTexture_fInfParticlePatternConst;\n  return (pcn % pnum);\n}\n",
+   "calls": [],
+   "ret": "int",
+   "params": [
+    [
+     "int",
+     "ipn",
+     "",
+     ""
+    ],
+    [
+     "int",
+     "pat_num",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FGPUParticleFogVSAlpha": {
+   "glsl": "FOG_OUT FGPUParticleFogVSAlpha(inout vec4 color, vec3 w_pos, vec4 sv_pos) {\n  FOG_OUT f_out = FFogVTF(w_pos, sv_pos);\n  color.w = mix(color.w, 0.0, f_out.effect);\n  return f_out;\n}\n",
+   "calls": [
+    "FFogVTF"
+   ],
+   "ret": "FOG_OUT",
+   "params": [
+    [
+     "vec4",
+     "color",
+     "",
+     "inout"
+    ],
+    [
+     "vec3",
+     "w_pos",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "sv_pos",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleVSAlphaClipDefault": {
+   "glsl": "float FInfParticleVSAlphaClipDefault(float aa) {\n  return step(9.999999974752427e-07, aa);\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "float",
+     "aa",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleVSAlphaClip": {
+   "glsl": "float FInfParticleVSAlphaClip(float aa) {\n  return 1.0;\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "float",
+     "aa",
+     "",
+     ""
+    ]
+   ]
+  },
+  "calcParticleIntensity": {
+   "glsl": "vec4 calcParticleIntensity(float intensity, vec4 col) {\n  vec4 ret = col;\n  ret.xyz *= ((intensity / 256.0) * CBInfParticleContext_fParticleIntScale);\n  return ret;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "float",
+     "intensity",
+     "",
+     ""
+    ],
+    [
+     "vec4",
+     "col",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleColorLerp": {
+   "glsl": "vec4 FInfParticleColorLerp(vec4 clr, float ratio) {\n  float r_ratio = (ratio * 3.0);\n  vec3 c_ratio = vec3(0.0);\n  vec3 n_ratio = vec3(0.0);\n  vec4 ret = vec4(0.0);\n  c_ratio.x = step(2.0, r_ratio);\n  c_ratio.y = (step(1.0, r_ratio) - c_ratio.x);\n  c_ratio.z = (1.0 - (c_ratio.x + c_ratio.y));\n  n_ratio = min(max((vec3(3.0, 2.0, 1.0) - r_ratio), vec3(0.0)), vec3(1.0));\n  ret = (mix(CBInfParticleContext_fNodeColor[3], CBInfParticleContext_fNodeColor[2], n_ratio.x) * c_ratio.x);\n  ret += (mix(CBInfParticleContext_fNodeColor[2], CBInfParticleContext_fNodeColor[1], n_ratio.y) * c_ratio.y);\n  ret += (mix(CBInfParticleContext_fNodeColor[1], CBInfParticleContext_fNodeColor[0], n_ratio.z) * c_ratio.z);\n  return ret;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "clr",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "ratio",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleColor": {
+   "glsl": "vec4 FInfParticleColor(vec4 clr, float ratio) {\n  return clr;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "clr",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "ratio",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticlePosSpline": {
+   "glsl": "vec3 FInfParticlePosSpline(vec3 pos, float ratio) {\n  float t_ratio = (ratio * 3.0);\n  mat4 SplineMatrix = mat4(1.0, ((-11.0) / 6.0), 1.0, ((-1.0) / 6.0), 0.0, 3.0, ((-5.0) / 2.0), (1.0 / 2.0), 0.0, ((-3.0) / 2.0), 2.0, ((-1.0) / 2.0), 0.0, (1.0 / 3.0), ((-1.0) / 2.0), (1.0 / 6.0));\n  mat4 curve_mtr = calcCurvePosition(SplineMatrix, pos);\n  return (curve_mtr[0] + ((curve_mtr[1] + ((curve_mtr[2] + (curve_mtr[3] * t_ratio)) * t_ratio)) * t_ratio)).xyz;\n}\n",
+   "calls": [
+    "calcCurvePosition"
+   ],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "pos",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "ratio",
+     "",
+     ""
+    ]
+   ]
+  },
+  "calcCurvePosition": {
+   "glsl": "mat4 calcCurvePosition(mat4 c_matrix, vec3 pos) {\n  mat4 curve_mtr = mat4(0.0);\n  mat4 path = mat4(CBInfParticleContext_fParticlePath[0].x, CBInfParticleContext_fParticlePath[0].y, CBInfParticleContext_fParticlePath[0].z, 1.0, CBInfParticleContext_fParticlePath[1].x, CBInfParticleContext_fParticlePath[1].y, CBInfParticleContext_fParticlePath[1].z, 1.0, CBInfParticleContext_fParticlePath[2].x, CBInfParticleContext_fParticlePath[2].y, CBInfParticleContext_fParticlePath[2].z, 1.0, CBInfParticleContext_fParticlePath[3].x, CBInfParticleContext_fParticlePath[3].y, CBInfParticleContext_fParticlePath[3].z, 1.0);\n  mat4 wp = (CBInfParticleContext_fGenWMatrix * path);\n  vec4 bb_0 = vec4(((CBInfParticleContext_fBoundingBox[0].x * pos.x) + wp[0].x), ((CBInfParticleContext_fBoundingBox[1].x * pos.x) + wp[1].x), ((CBInfParticleContext_fBoundingBox[2].x * pos.x) + wp[2].x), ((CBInfParticleContext_fBoundingBox[3].x * pos.x) + wp[3].x));\n  vec4 bb_1 = vec4(((CBInfParticleContext_fBoundingBox[0].y * pos.y) + wp[0].y), ((CBInfParticleContext_fBoundingBox[1].y * pos.y) + wp[1].y), ((CBInfParticleContext_fBoundingBox[2].y * pos.y) + wp[2].y), ((CBInfParticleContext_fBoundingBox[3].y * pos.y) + wp[3].y));\n  vec4 bb_2 = vec4(((CBInfParticleContext_fBoundingBox[0].z * pos.z) + wp[0].z), ((CBInfParticleContext_fBoundingBox[1].z * pos.z) + wp[1].z), ((CBInfParticleContext_fBoundingBox[2].z * pos.z) + wp[2].z), ((CBInfParticleContext_fBoundingBox[3].z * pos.z) + wp[3].z));\n  bb_0 = (c_matrix * bb_0);\n  bb_1 = (c_matrix * bb_1);\n  bb_2 = (c_matrix * bb_2);\n  curve_mtr[0] = vec4(bb_0.x, bb_1.x, bb_2.x, 0.0);\n  curve_mtr[1] = vec4(bb_0.y, bb_1.y, bb_2.y, 0.0);\n  curve_mtr[2] = vec4(bb_0.z, bb_1.z, bb_2.z, 0.0);\n  curve_mtr[3] = vec4(bb_0.w, bb_1.w, bb_2.w, 0.0);\n  return curve_mtr;\n}\n",
+   "calls": [],
+   "ret": "mat4",
+   "params": [
+    [
+     "mat4",
+     "c_matrix",
+     "",
+     ""
+    ],
+    [
+     "vec3",
+     "pos",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticlePosBezier": {
+   "glsl": "vec3 FInfParticlePosBezier(vec3 pos, float ratio) {\n  mat4 BezierMatrix = mat4((-1.0), 3.0, (-3.0), 1.0, 3.0, (-6.0), 3.0, 0.0, (-3.0), 3.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);\n  mat4 curve_mtr = calcCurvePosition(BezierMatrix, pos);\n  return (curve_mtr[3] + ((curve_mtr[2] + ((curve_mtr[1] + (curve_mtr[0] * ratio)) * ratio)) * ratio)).xyz;\n}\n",
+   "calls": [
+    "calcCurvePosition"
+   ],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "pos",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "ratio",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticlePos": {
+   "glsl": "vec3 FInfParticlePos(vec3 pos, float ratio) {\n  return pos;\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "pos",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "ratio",
+     "",
+     ""
+    ]
+   ]
+  },
+  "calcParticleRotation": {
+   "glsl": "vec4 calcParticleRotation(vec4 pos, float rot) {\n  float c_rot = ((rot / 127.5) - 1.0);\n  c_rot *= (3.1415927410125732 * 2.0);\n  float sin_rz = sin(c_rot);\n  float cos_rz = cos(c_rot);\n  vec4 posr = pos;\n  posr.x = ((pos.x * cos_rz) - (pos.y * sin_rz));\n  posr.y = ((pos.x * sin_rz) + (pos.y * cos_rz));\n  return posr;\n}\n",
+   "calls": [],
+   "ret": "vec4",
+   "params": [
+    [
+     "vec4",
+     "pos",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "rot",
+     "",
+     ""
+    ]
+   ]
+  },
+  "FInfParticleRandomizePos": {
+   "glsl": "vec3 FInfParticleRandomizePos(vec3 pos, float birth, float life_time, float time_shift, float sz) {\n  return pos;\n}\n",
+   "calls": [],
+   "ret": "vec3",
+   "params": [
+    [
+     "vec3",
+     "pos",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "birth",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "life_time",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "time_shift",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "sz",
+     "",
+     ""
+    ]
+   ]
+  },
+  "calcParticleRatio": {
+   "glsl": "float calcParticleRatio(float birth, float life_time, float time_shift) {\n  float c_time = ((CBInfParticleContext_fCurrentLoop + time_shift) - CBInfParticleContext_fLoopLength * trunc((CBInfParticleContext_fCurrentLoop + time_shift) / CBInfParticleContext_fLoopLength));\n  float total_lt = (birth + life_time);\n  float rem_v = (c_time - total_lt * trunc(c_time / total_lt));\n  return (max((rem_v - birth), 0.0) / life_time);\n}\n",
+   "calls": [],
+   "ret": "float",
+   "params": [
+    [
+     "float",
+     "birth",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "life_time",
+     "",
+     ""
+    ],
+    [
+     "float",
+     "time_shift",
      "",
      ""
     ]

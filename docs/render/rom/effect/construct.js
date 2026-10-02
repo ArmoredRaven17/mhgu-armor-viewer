@@ -199,6 +199,17 @@ const GENERATOR_TYPES = {
   // which stores *(0x183c9a4) + 8 = 0x1789b34; that vtable's getDTI 0xaae0a0 reaches MtDTI 0x211cb5c, and
   // the registration at 0xaae138 builds that MtDTI with the rodata string "cParticleGeneratorPolygonStrip".
   15: { got: 0x183c9a4, name: 'PolygonStrip' }, // vtable 0x1789b34
+  // genType 20, cParticleGeneratorSizeBillboard, pinned the same way (the Armor Viewer, 2026-10-01): the factory's jump
+  // table (0x9badec) sends type 20 to 0x9bb150, which allocates through 0xa7e274 (0x1d0) and constructs with 0xa7e2b0 --
+  // the generic 0xa55db4, then *(0x183c8b4) + 8 = 0x178918c; that vtable's getDTI 0xa81ef4 reaches MtDTI 0x211c6ac,
+  // "cParticleGeneratorSizeBillboard". It is type 0's vtable but for its own +0x04 / +0x18 / +0x20 / +0x3c / +0x54 /
+  // +0x5c / +0x60. cm001_500.efl rows 21 / 24 / 27 (the Lance's guard, the Sword & Shield's swirl), cm123_030..035, the
+  // Bow's shots (w10_500.efl rows 5 / 8 / 11). NOT BUILT YET: its init, start, transform, move and spawn run lifted
+  // (registered below; efx/lift-w08.sh), but its draw 0xa7e41c takes a path type 0's never does -- it allocates its own
+  // buffer from the renderer's frame heap (0x87f6ac -> 0xbbf498, 4 KB pages; 376 callers) and calls 0xa806f4 / 0xa80b64
+  // (-> 0xafd310), none of which the viewer has: built, every shot with such a row refused (2026-10-01). Until that draw
+  // has its stand-in the rows stay skipped, as before.
+  // 20: { got: 0x183c8b4, name: 'SizeBillboard' }, // vtable 0x178918c
 };
 // Undecoded generator types (anything not in GENERATOR_TYPES, and not the cParticleNode branch) the factory meets and skips, kept so the omission is
 // reportable rather than silent. genType -> how many rows were skipped. (Soulseer's eye flame em082_04_004 has
@@ -1295,6 +1306,14 @@ registerCode(0xaf1330, (m, g, owner, row, index) => liftedCall(m, 0xaf1330, [g, 
 registerCode(0xaf1334, (m, g) => liftedCall(m, 0xaf1334, [g]).r[0]);
 registerCode(0xaf1450, (m, g) => liftedCall(m, 0xaf1450, [g]).r[0]);
 registerCode(0xaf15a8, (m, g) => liftedCall(m, 0xaf15a8, [g]).r[0]);
+// cParticleGeneratorSizeBillboard (genType 20, vtable 0x178918c; the Armor Viewer, 2026-10-01): its own slots the start
+// above reaches from here -- +0x18 init 0xa7e300, +0x20 start 0xa7e348, +0x3c transform 0xa7e3ac (must return 1) --
+// each the lifted ROM routine (efx/lift-w08.sh EXTRA_request; vectors/w10_u545..548, the Bow's shots). Its +0x1c /
+// +0x24 / +0x30 / +0x48 / +0x50 are type 0's (registered above and in owner.js); its move (+0x5c 0xa7faa0, +0x60
+// 0xa80180), draw (+0x54 0xa7e41c) and teardown (+0x04 0xa7e2d0) are reached from lifted code.
+registerCode(0xa7e300, (m, g, owner, row, index) => liftedCall(m, 0xa7e300, [g, owner, row, index]).r[0]);
+registerCode(0xa7e348, (m, g) => liftedCall(m, 0xa7e348, [g]).r[0]);
+registerCode(0xa7e3ac, (m, g) => liftedCall(m, 0xa7e3ac, [g]).r[0]);
 
 export const internals = {
   allocGenerator: (m, size, align) => m.svc.alloc(size, align),
