@@ -2314,7 +2314,8 @@ function saveState(){
       // by NAME, so reordering DEVIANTS cannot silently shift which pigment a piece has
       slotDev: slotDevState(), devAnim: devAnimOverride,
       allPig: [document.getElementById('pgOn_all').checked,
-               document.getElementById('pg_all').value]
+               document.getElementById('pg_all').value],
+      pigDef: pigDefState()          // the rows on Default, which follow the armor
     }));
   } catch(e){ /* private window, blocked storage - not worth failing over */ }
 }
@@ -3070,7 +3071,6 @@ async function refreshChar(){
 // armours ended up in the scene at once. Every call takes a ticket; a load that comes back
 // stale drops its result instead of mounting it.
 const slotSeq = { helm:0, body:0, arm:0, wst:0, leg:0 };
-const slotToken = {};      // the token setSlot last mounted, per slot
 // Belt and braces: clear the slot by sweeping the SCENE, not just the `mounted` entry.
 // If anything ever slips out of that bookkeeping it would otherwise sit there forever,
 // and a stacked armour is not obvious until you rotate the model.
@@ -3081,7 +3081,6 @@ function clearSlot(slot){
 }
 async function setSlot(slot, token){
   const seq = ++slotSeq[slot];
-  slotToken[slot] = token;                    // the piece a pigment row's default is read from
   clearSlot(slot);
   const setId = modelOf(slot, token);
   if (setId) {
@@ -3437,13 +3436,10 @@ function rebuildSelects(filter){
 
 for (const slot of SLOTS) {
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
-  sel.onchange = () => {
-    const follow = pigOnDefault(slot, slotToken[slot] || 'none');   // read before the piece changes
-    return setSlot(slot, sel.value).then(() => {
-      if (follow && sel.value === slotToken[slot]) followDefaultPig(slot);
-      saveState();
-    });
-  };
+  sel.onchange = () => setSlot(slot, sel.value).then(() => {
+    if (pigOnDef.has(slot)) followDefaultPig(slot);   // reads the select, so a superseded load is harmless
+    saveState();
+  });
 }
 document.getElementById('filter').oninput = e => rebuildSelects(e.target.value);
 document.getElementById('htype').onchange = e => {
@@ -3485,7 +3481,8 @@ function captureGender(){
                               document.getElementById('pg_'+sl).value]),
     slotDev: slotDevState(),
     allPig: [document.getElementById('pgOn_all').checked,
-             document.getElementById('pg_all').value] };
+             document.getElementById('pg_all').value],
+    pigDef: pigDefState().filter(sl => SLOTS.includes(sl)) };
 }
 function applyCharColorState(cc){
   if (!cc) return;
@@ -3572,6 +3569,8 @@ async function setGenderBody(g){
         document.getElementById('pg_all').value = want.allPig[1];
     }
     readSlotPigments();     // repaints the materials and the hex labels
+    for (const sl of SLOTS) pigOnDef.delete(sl);
+    for (const sl of want.pigDef || []) pigOnDef.add(sl);
   }
   if (want.pose && want.pose !== document.getElementById('pose').value){
     const ps = document.getElementById('pose');
@@ -3616,6 +3615,7 @@ function genderStateToSet(g, st){
   const cc = st.charColor || {};
   const ci = CLOTHING.indexOf(st.clothing);
   return { app: 'MHGU Armor Viewer', version: 3, gender: g, pieces, pigment, deviant, devAnim: {},
+    pigDefault: Array.isArray(st.pigDef) ? st.pigDef.slice() : [],
     hunter: { face: st.face === false ? null : 'Type ' + ((+st.faceStyle || 0) + 1),
               hair: st.hair === false ? null : 'Type ' + ((+st.hairStyle || 0) + 1),
               body: st.body !== false, faceStyle: +st.faceStyle || 0, hairStyle: +st.hairStyle || 0,
@@ -4653,13 +4653,15 @@ if (document.getElementById('otSlotPig'))
 // every pigment row, including the ones outside the Pigment panel
 const PIG_ROWS = SLOTS.concat(['all', 'cloth', 'oall', 'ohelm', 'obody']);
 const OT_PIG = ['ohelm', 'obody'];
+const pigOnDef = new Set();   // the rows on Default (see the Default button)
 
 // the hex label doubles as a copy button
 function paintHexLabels(){
   for (const id of PIG_ROWS){
     const b = document.getElementById('pgHex_'+id);
     if (b && b.dataset.busy !== '1' && document.activeElement !== b)
-      b.value = document.getElementById('pg_'+id).value;
+      // a row on Default says so (Raven, 2026-10-02: "We can have the hex code show Default")
+      b.value = pigOnDef.has(id) ? 'Default' : document.getElementById('pg_'+id).value;
   }
 }
 // The hex field is the only place a value can be TYPED -- it accepts nothing but a hex
@@ -4668,8 +4670,14 @@ function paintHexLabels(){
 for (const id of PIG_ROWS){
   const f = document.getElementById('pgHex_'+id);
   const col = document.getElementById('pg_'+id);
-  // one click selects the whole value, ready to copy
-  f.onfocus = () => f.select();
+  // one click selects the whole value, ready to copy. On a row on Default the field shows its
+  // hex again and the row counts as modified from here (Raven, 2026-10-02: "if a user selects
+  // the field have it revert to the hex value so they can copy it and then it is considered
+  // modified"): the colour stays when the armor changes.
+  f.onfocus = () => {
+    if (pigOnDef.delete(id)) { f.value = col.value; saveState(); }
+    f.select();
+  };
   f.onclick = () => { if (f.selectionStart === f.selectionEnd) f.select(); };
   function commit(){
     let v = f.value.trim();
@@ -4814,6 +4822,31 @@ if (BASE_PALETTE_UI) {
 // which had no way to say which piece it applied to.
 const slotDeviant = { helm:null, body:null, arm:null, wst:null, leg:null, cloth:null,
                       ohelm:null, obody:null };
+// The rows ON DEFAULT: Default puts a piece's own pigment in a row and marks it, and a marked
+// row follows the armor -- a new piece brings its own default (Raven, 2026-10-02: "make it so
+// Default Pigment updates on armor selection"). Any edit of the row after that keeps the
+// colour where it is ("If a user updates a pigment field after applying the default, we
+// maintain that color"), so the mark is the Default button's, never a colour that happens to
+// match a default. (pigOnDef itself is declared with PIG_ROWS, ahead of paintHexLabels.)
+const PIG_DEF_ROWS = SLOTS.concat(OT_PIG);
+function pigDefState(){ return PIG_DEF_ROWS.filter(sl => pigOnDef.has(sl)); }
+function applyPigDef(list){
+  pigOnDef.clear();
+  if (Array.isArray(list)) for (const sl of list) if (PIG_DEF_ROWS.indexOf(sl) >= 0) pigOnDef.add(sl);
+}
+// the rows an edit of `id` speaks for: All writes through to its figure's pieces
+const pigRowsOf = id => id === 'all' ? SLOTS : id === 'oall' ? OT_PIG : [id];
+// an edit by hand -- the checkbox, the swatch, the hex field -- is the row's own colour
+for (const box of ['slotPig', 'otSlotPig']){
+  const el = document.getElementById(box);
+  if (!el) continue;
+  const unmark = e => {
+    const m = /^pg(?:On|Hex)?_(\w+)$/.exec(e.target.id || '');
+    if (m) for (const sl of pigRowsOf(m[1])) pigOnDef.delete(sl);
+  };
+  el.addEventListener('input', unmark, true);
+  el.addEventListener('change', unmark, true);
+}
 // every row a deviant pigment can be assigned to. The Palico's two were missing from all
 // of these lists, so a deviant could be PICKED for a Palico piece and then never animated,
 // never saved and never restored.
@@ -4897,7 +4930,7 @@ pigModal.querySelector('.modal-card').onclick = e => {
   const dev = e.target.closest('button[data-dev]');
   if (dev) {
     const idx = +dev.dataset.dev;
-    for (const sl of pigTargets()) setSlotDeviant(sl, idx);
+    for (const sl of pigTargets()){ setSlotDeviant(sl, idx); pigOnDef.delete(sl); }
     if (pigTarget === 'all' || pigTarget === 'oall') {
       pigAllCb().checked = false; pigAllCol().value = PIG_NONE;
     }
@@ -4906,7 +4939,7 @@ pigModal.querySelector('.modal-card').onclick = e => {
   }
   const b = e.target.closest('button[data-hex]');
   if (!b) return;
-  for (const sl of pigTargets()) slotDeviant[sl] = null;
+  for (const sl of pigTargets()){ slotDeviant[sl] = null; pigOnDef.delete(sl); }
   const f = document.getElementById('pgHex_' + pigTarget);
   f.value = b.dataset.hex;
   f.onchange();            // the one commit path -- validates, ticks the row, pushes All
@@ -4916,8 +4949,7 @@ pigModal.querySelector('.modal-card').onclick = e => {
 // removing the tint: it reads the equipped piece's own `defaultPig` (mSymbolCol) and puts
 // that colour in the row. A piece with no pigment to restore -- an empty slot, one of the
 // 28 undyeable pieces, or one of the 42 that join to no series -- falls back to off.
-// `token` is the piece to read (the one equipped when left out).
-function defaultPigHex(slot, token){
+function defaultPigHex(slot){
   // The Palico's own default. `cOtArmorBase` has no mSymbolCol; its only colour fields are
   // mBaseColHelm / mBaseColBody (otArmorData +31 / +32), and those track the dyeable
   // region closely enough to use -- of the pieces carrying a `_sym_` material, 478 of 480
@@ -4925,14 +4957,13 @@ function defaultPigHex(slot, token){
   // read zero 45-62% of the time.
   if (slot === 'ohelm' || slot === 'obody'){
     const k = slot.slice(1);
-    const e = OT && OT.pieces['o' + otModelOf(k, token === undefined ? otState[k] : token) + '_' + k];
+    const e = OT && OT.pieces['o' + otModelOf(k, otState[k]) + '_' + k];
     if (!e || e.defaultPig === undefined) return null;
     const p = PIGMENTS.find(x => x.i === e.defaultPig);
     return p ? p.hex : null;
   }
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
-  const tok = token === undefined ? (sel ? sel.value : null) : token;
-  const id = tok ? modelOf(slot, tok) : null;            // the select holds a token
+  const id = sel ? modelOf(slot, sel.value) : null;      // the select holds a token
   if (!id) return null;
   const e = manifest.pieces[gender + id + '_' + slot];
   if (!e || e.undyeable || e.defaultPig === undefined) return null;
@@ -4949,6 +4980,7 @@ document.getElementById('pigDefault').onclick = () => {
     const cb = document.getElementById('pgOn_' + sl), col = document.getElementById('pg_' + sl);
     cb.checked = !!hex;
     col.value = hex || PIG_NONE;
+    if (sl !== 'cloth') pigOnDef.add(sl);     // and it follows the armor from here
   }
   // the rows are now each on their own default, so All no longer speaks for them
   if (pigTarget !== 'cloth') pigAllCb().checked = false;
@@ -4956,19 +4988,7 @@ document.getElementById('pigDefault').onclick = () => {
   readSlotPigments(); paintHexLabels(); saveState();
   closePig();
 };
-// A row ON ITS PIECE'S DEFAULT follows the piece (Raven, 2026-10-02: "make it so Default
-// Pigment updates on armor selection"): it shows the default of `token`, the piece being
-// replaced -- off for a piece with none to restore -- with no deviant and All not speaking
-// for it. A colour of the row's own stays where it is.
-function pigOnDefault(sl, token){
-  if (slotDeviant[sl]) return false;
-  if ((OT_PIG.indexOf(sl) >= 0 ? otAllCb : allCb).checked) return false;
-  const hex = defaultPigHex(sl, token);
-  const on = document.getElementById('pgOn_' + sl).checked;
-  if (!hex) return !on;
-  return on && document.getElementById('pg_' + sl).value.toLowerCase() === hex.toLowerCase();
-}
-// ...and the new piece's default goes in, the same as the Default button would put there
+// The new piece's default goes in, the same as the Default button would put there
 function followDefaultPig(sl){
   const hex = defaultPigHex(sl);
   document.getElementById('pgOn_' + sl).checked = !!hex;
@@ -4995,6 +5015,7 @@ document.getElementById('cusApply').onclick = () => {
         an = document.getElementById('cusAnim').value;
   for (const sl of pigTargets()){
     slotDeviant[sl] = { name:'Custom', a, b, anim:an };
+    pigOnDef.delete(sl);
     const cb = document.getElementById('pgOn_' + sl);
     if (cb && !cb.checked) cb.checked = true;
     document.getElementById('pg_' + sl).value = a;
@@ -5098,6 +5119,7 @@ if (SAVED && Array.isArray(SAVED.slotPig)) {
     if (typeof v[1] === 'string') document.getElementById('pg_'+sl).value = v[1];
   });
 }
+if (SAVED) applyPigDef(SAVED.pigDef);
 if (SAVED && Array.isArray(SAVED.allPig)) {
   document.getElementById('pgOn_all').checked = !!SAVED.allPig[0];
   if (typeof SAVED.allPig[1] === 'string') document.getElementById('pg_all').value = SAVED.allPig[1];
@@ -5701,9 +5723,8 @@ otBuildSelects('');
 otBuildParts();
 for (const slot of OT_SLOTS)
   otSel[slot].onchange = async () => {
-    const follow = pigOnDefault('o' + slot, otState[slot]);   // the piece being replaced
     otState[slot] = otSel[slot].value;
-    if (follow) followDefaultPig('o' + slot);
+    if (pigOnDef.has('o' + slot)) followDefaultPig('o' + slot);
     await otMount(slot);
     // a new piece brings new materials: they need the fur map, the colours and the pigment
     await otApplyFur(); otApplyMasks(); applyCharColors(); readSlotPigments(); saveState();
@@ -6181,6 +6202,8 @@ function currentSet(){
   return {
     app: 'MHGU Armor Viewer', version: 3,
     gender, pieces, pigment, deviant, devAnim: devAnimOverride,
+    // the slots whose pigment is on Default and follows the armor
+    pigDefault: SLOTS.filter(sl => pigOnDef.has(sl)),
     hunter: {
       face: document.getElementById('face').checked ? styleLabel('faceStyle') : null,
       hair: document.getElementById('hair').checked ? styleLabel('hairStyle') : null,
@@ -6240,6 +6263,8 @@ function otomoSet(){
   const partName = (p) => (OT.parts[p][otState[p]] || {}).name || null;
   return {
     pieces, pigment, deviant,
+    // the pieces whose pigment is on Default and follows the armor
+    pigDefault: OT_SLOTS.filter((slot, i) => pigOnDef.has(OT_PIG[i])),
     palico: {
       ear: partName('ear'), eye: partName('eye'), tail: partName('tail'),
       fur: ((OT.fur || [])[otState.fur] || {}).name || null,
@@ -6335,6 +6360,12 @@ function readOtomoSet(o){
       document.getElementById('pgOn_' + row).checked = on;
       if (on) document.getElementById('pg_' + row).value = hex;
     });
+  if (o.pigment)
+    OT_PIG.forEach((row, i) => {
+      if (Array.isArray(o.pigDefault) && o.pigDefault.includes(OT_SLOTS[i])) pigOnDef.add(row);
+      else pigOnDef.delete(row);
+    });
+  paintHexLabels();
   {
     // slotDevState()'s shape: one entry per DEV_SLOTS row, so build a full-length list
     const list = DEV_SLOTS.map(sl => slotDeviant[sl]
@@ -6563,6 +6594,8 @@ async function applySet(d, opt){
     const allCbEl = document.getElementById('pgOn_all');
     allCbEl.checked = uniform;
     if (uniform) document.getElementById('pg_all').value = vals[0];
+    for (const sl of SLOTS) pigOnDef.delete(sl);
+    if (Array.isArray(d.pigDefault)) for (const sl of d.pigDefault) if (SLOTS.includes(sl)) pigOnDef.add(sl);
     readSlotPigments();
   }
   const map = {};
