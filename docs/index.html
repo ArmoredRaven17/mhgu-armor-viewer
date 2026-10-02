@@ -3883,7 +3883,7 @@ paintSpin();
 }
 document.getElementById('maskdbg').onchange = e => {
   const v = e.target.checked ? 1 : 0;
-  setDebug(armorMats, v);
+  setDebug(allMats, v);     // every material, the hunter's face and the weapon too
 };
 function pushMask(){
   const s0=+document.getElementById('sat0').value/100;

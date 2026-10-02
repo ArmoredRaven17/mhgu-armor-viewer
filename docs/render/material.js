@@ -58,6 +58,8 @@ export const envAmount = 0.55;
 export const allMats = [];
 // pigment applies to ARMOUR only -- never the hunter's face or hair
 export const armorMats = [];
+// the dye-mask view's state (setDebug)
+let dyeMaskOn = 0;
 
 // ---- the ROM's render states ---------------------------------------------------------------
 // The rasterizer's cull mode. RSMesh culls BACK faces, so the front faces render: FrontSide.
@@ -263,7 +265,7 @@ export function applyTint(mat){
       // ROM's colour as it is -- the Lance's Healing Shield pulses the shield's reflection green. (17 CBMaterial records
       // and 654 clip tracks carry a non-grey reflective colour elsewhere and are still averaged: a separate matter.)
       uReflTint: { value: new THREE.Vector3(1, 1, 1) },
-      uDbg: { value: 0 },
+      uDbg: { value: dyeMaskOn },     // the dye-mask view: on for a material built while it is shown
       uKey: { value: new THREE.Color(1,1,1) },          // the armor's AUTHORED color
       uHasKey: { value: 0 },
       uKeyTol: { value: 0.15 },
@@ -426,7 +428,9 @@ export function applyTint(mat){
           `#ifdef USE_EMISSIVEMAP
              totalEmissiveRadiance *= gBase;
            #endif
-           totalEmissiveRadiance *= 1.0 - uDark;`)
+           totalEmissiveRadiance *= 1.0 - uDark;
+           // the dye-mask view greys the glow too: no colour but the mask's magenta
+           if ( uDbg > 0.5 ) totalEmissiveRadiance = vec3( dot( totalEmissiveRadiance, vec3( 0.299, 0.587, 0.114 ) ) * 0.55 );`)
         // MHGU shades armor with a 64x64 spherical env map (a matcap) scaled by gloss.
         // Sample it with the view-space normal and screen it over the lit colour. The screen
         // has always run on the sRGB-ENCODED colour -- it sat after <colorspace_fragment>,
@@ -455,7 +459,9 @@ export function applyTint(mat){
     mat.needsUpdate = true;
   }
   const u = mat.userData.u;
-  u.uRegion.value = mat.userData.dyeRegion ? 1 : 0;
+  // the dye region is the ARMOUR pigment's: a material the pigment never reaches (the face, the hair -- whose ROM flag
+  // marks the hair colour's region -- the weapon) is no dye region, so the dye-mask view greys it
+  u.uRegion.value = mat.userData.dyeRegion && !mat.userData.noTint ? 1 : 0;
   const own = tint.useDefaults && mat.userData.own ? mat.userData.own.rgb : null;
   const slotCol = tint.slotPigment[mat.userData.slot] || null;
   const use = own || slotCol || (tint.useDefaults ? null : tint.pigment);
@@ -734,9 +740,13 @@ export function setWire(mats, on){
   mats.forEach(m => m.wireframe = on);
 }
 
-// the dye-mask debug view (magenta = selected)
+// the dye-mask debug view (magenta = selected, every other texel grey): it covers EVERY material the viewer builds --
+// the hunter's face, hair and body and the weapon, not only the armour (Raven, 2026-10-01: "the hunters face does not
+// gray out when Dye Mask is displayed, I would like everything non-dye to be grayed out") -- and a material built while
+// it is shown (a piece swapped in, a weapon drawn) starts in it (dyeMaskOn, with the registries)
 export function setDebug(mats, v){
-  mats.forEach(m => { if (m.userData.u) m.userData.u.uDbg.value = v; });
+  dyeMaskOn = v ? 1 : 0;
+  mats.forEach(m => { const u = m.userData.u; if (u && u.uDbg) u.uDbg.value = dyeMaskOn; });
 }
 
 // the saturation / value window the fallback mask uses, plus the debug boost
