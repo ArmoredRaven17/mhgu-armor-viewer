@@ -538,6 +538,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <label class="chk" id="overheatField" style="display:none"><input type="checkbox" id="overheatChk">Overheated</label>
           <label class="chk" id="dragonBreathField" style="display:none"><input type="checkbox" id="dragonBreathChk">Dragon Breath active (Hunter Art)</label>
           <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
+          <div class="field" id="cbGaugeField" style="display:none"><label for="cbGauge">Charge Gauge</label><select id="cbGauge" title="The Charge Blade's gauge (+0x2780), filled by hits: its level is above 29, 45 or 71 (0x11dc73c)"><option value="0">Empty</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option></select></div>
+          <div class="field" id="shieldChargeField" style="display:none"><label for="shieldCharge">Shield Charge</label><select id="shieldCharge" title="The shield's charge (+0x3344): yellow or red, or Valor State's blue"><option value="0">Off</option><option value="1">Yellow</option><option value="2">Red</option><option value="3">Valor (blue)</option></select></div>
           <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
           <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
           <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
@@ -1260,6 +1262,7 @@ import { HammerEffects, PLAYER_REQUESTS as HAMMER_PLAYER_REQUESTS, ROWS as HAMME
 import { GunlanceEffects, PLAYER_REQUESTS as GL_PLAYER_REQUESTS } from './render/weapon-fx-w09.js';
 import { GreatSwordEffects, PLAYER_REQUESTS as GS_PLAYER_REQUESTS } from './render/weapon-fx-w00.js';
 import { InsectGlaiveEffects, PLAYER_REQUESTS as IG_PLAYER_REQUESTS } from './render/weapon-fx-w13.js';
+import { ChargeBladeEffects, PLAYER_REQUESTS as CB_PLAYER_REQUESTS } from './render/weapon-fx-w14.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
@@ -2304,6 +2307,7 @@ function saveState(){
       impactPress: document.getElementById('impactPressChk').checked,
       overheat: document.getElementById('overheatChk').checked, dragonBreath: document.getElementById('dragonBreathChk').checked,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
+      cbGauge: cbGaugeSel.value, shieldCharge: shieldChargeSel.value,
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
@@ -2706,7 +2710,8 @@ swordFx.loadPalettes();
 // (render/weapon-fx-w01.js) -- on the hunter host, gated on the class in the hand and the stance playing
 const playerReq = new PlayerRequests({ w08: PLAYER_TIMED_REQUESTS, w01: SNS_PLAYER_REQUESTS, w03: LANCE_PLAYER_REQUESTS,
                                       w07: LS_PLAYER_REQUESTS, w12: {}, w06: LBG_PLAYER_REQUESTS, w04: HBG_PLAYER_REQUESTS,
-                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS, w00: GS_PLAYER_REQUESTS, w13: IG_PLAYER_REQUESTS });
+                                      w10: BOW_PLAYER_REQUESTS, w11: DB_PLAYER_REQUESTS, w02: HAMMER_PLAYER_REQUESTS, w09: GL_PLAYER_REQUESTS, w00: GS_PLAYER_REQUESTS, w13: IG_PLAYER_REQUESTS,
+                                      w14: CB_PLAYER_REQUESTS });
 playerReq.host = weaponFx;
 // the joints those requests root their records on, and the Heavy Bowgun's (render/weapon-fx-w04.js REQUEST_JOINTS: Guns
 // Blazing's aura on the player's root joint, which its own host asks)
@@ -2849,13 +2854,21 @@ gsFx.hunter = weaponFx;
 // glaive, the glaive's flashes, Extract Hunter's; the kinsect itself is not in the viewer.
 const igFx = new InsectGlaiveEffects();
 igFx.hunter = weaponFx;
+// THE CHARGE BLADE (render/weapon-fx-w14.js, a first pass): hosts on the blade and the shield, the charged slash on the
+// hunter, and the shield's coat, which the rig lays (weapon.setCbCoat)
+const cbFx = new ChargeBladeEffects();
+cbFx.hunter = weaponFx;
+cbFx.onCoat = c => weapon.setCbCoat(c);
+const cbGaugeSel = document.getElementById('cbGauge'), shieldChargeSel = document.getElementById('shieldCharge');
+cbGaugeSel.onchange = () => { cbFx.setGauge(+cbGaugeSel.value); weapon.setCbGauge(+cbGaugeSel.value); saveState(); };
+shieldChargeSel.onchange = () => { cbFx.setShieldCharge(+shieldChargeSel.value); saveState(); };
 const glFx = new GunlanceEffects();
 glFx.hunter = weaponFx;
 const overheatChk = document.getElementById('overheatChk'), dragonBreathChk = document.getElementById('dragonBreathChk');
 overheatChk.onchange = () => { glFx.setOverheat(overheatChk.checked); saveState(); };
 dragonBreathChk.onchange = () => { glFx.setBreath(dragonBreathChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); igFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); igFx.detach(); cbFx.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2869,7 +2882,8 @@ function syncWeaponFx(){
                       lbgFx.sync(inHand, mainPart, world),
                       hbgFx.sync(inHand, mainPart, world),
                       glFx.sync(inHand, mainPart, world),
-                      igFx.sync(inHand, mainPart, world)]);
+                      igFx.sync(inHand, mainPart, world),
+                      cbFx.sync(inHand, weapon.parts ? weapon.parts.main : null, weapon.parts ? weapon.parts.second : null, world)]);
 }
 // THE ANIMATION IS THE EFFECTS' CLOCK, not the wall (render/weapon-fx.js explains why). This is the
 // seconds of animation the stance moved since the last frame: 0 while paused or scrubbed, and across a
@@ -2941,6 +2955,7 @@ function stepWeaponFx(){
   igFx.setModel(weapon.cls === 'w13' && weapon.cj && weapon.cj.models && weapon.cj.models[weapon.modelId] ?
                 weapon.cj.models[weapon.modelId].sub : null);
   igFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
+  cbFx.step(weapon.cls === weaponClassSel.value ? weapon.cls : null, weapon.stance, t, clock, weapon.drawn);
 }
 
 // The player character: face000 + hair000 are standalone assets; the BODY is not --
@@ -3999,6 +4014,7 @@ function paintWeaponFx(){
   hbgFx.setEnabled(weaponFxOn);
   glFx.setEnabled(weaponFxOn);
   igFx.setEnabled(weaponFxOn);
+  cbFx.setEnabled(weaponFxOn);
   if (weaponFxOn) syncWeaponFx();
 }
 const gridBtn = document.getElementById('gridBtn');
@@ -4185,6 +4201,8 @@ async function buildWeaponLists(){
   document.getElementById('chaosOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('weaponOilField').style.display = weaponClassSel.value === 'w01' ? '' : 'none';
   document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
+  document.getElementById('cbGaugeField').style.display = weaponClassSel.value === 'w14' ? '' : 'none';
+  document.getElementById('shieldChargeField').style.display = weaponClassSel.value === 'w14' ? '' : 'none';
   document.getElementById('devouringDemonField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('hornSongField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
   document.getElementById('invigorationField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
@@ -5641,7 +5659,7 @@ function setFigure(f){
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
   // down (render/weapon-fx.js setSuppressed: rebuilding the three hosts on the way back took 9 s), and stepWeaponFx
   // asks nothing of them meanwhile; the sync on the way back builds any host that a sync took down in between.
-  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, impactFx, ddFx, invFx, lbgFx, hbgFx, glFx, igFx]) fx.setSuppressed(!h);
+  for (const fx of [weaponFx, hunterFx, swordFx, chaosFx, impactFx, ddFx, invFx, lbgFx, hbgFx, glFx, igFx, cbFx]) fx.setSuppressed(!h);
   if (h) syncWeaponFx();
   // The pose system drives ONE figure at a time, so hand it to whichever is now on
   // screen -- otherwise the hunter's clip keeps writing into bones nobody can see and the
@@ -5835,6 +5853,12 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.wolfsMaw !== undefined){ wolfsMawChk.checked = !!SAVED.wolfsMaw; dbFx.setMaw(!!SAVED.wolfsMaw); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.weaponOil))){ weaponOilSel.value = String(SAVED.weaponOil); weapon.setOil(+SAVED.weaponOil); }
   if (SAVED && /^[0-4]$/.test(String(SAVED.spirit))){ spiritSel.value = String(SAVED.spirit); weapon.setSpirit(+SAVED.spirit); }
+  if (SAVED && /^[0-3]$/.test(String(SAVED.cbGauge))){ cbGaugeSel.value = String(SAVED.cbGauge); cbFx.setGauge(+SAVED.cbGauge, true); weapon.setCbGauge(+SAVED.cbGauge); }
+  // a save from the first pass holds a boolean: on was the red
+  if (SAVED && SAVED.shieldCharge !== undefined){
+    const n = SAVED.shieldCharge === true ? 2 : /^[0-3]$/.test(String(SAVED.shieldCharge)) ? +SAVED.shieldCharge : 0;
+    shieldChargeSel.value = String(n); cbFx.setShieldCharge(n);
+  }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
   if (SAVED && SAVED.healShield !== undefined){ healShieldChk.checked = !!SAVED.healShield; weapon.setShieldCoat(!!SAVED.healShield); }
   if (SAVED && SAVED.kinsect && [...kinsectSel.options].some(o => o.value === SAVED.kinsect))
@@ -5968,6 +5992,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           maw: on => { wolfsMawChk.checked = !!on; dbFx.setMaw(!!on); return dbFx.stats(); } },
     gs: { stats: () => gsFx.stats(), obj: () => gsFx },
     ig: { stats: () => igFx.stats(), raw: () => igFx.live, obj: () => igFx },
+    cb: { stats: () => cbFx.stats(), blade: () => cbFx.blade.live, shield: () => cbFx.shield.live, obj: () => cbFx },
     gl: { stats: () => glFx.stats(), raw: () => glFx.live, obj: () => glFx, bounds: () => glFx.bounds(),
           overheat: on => { overheatChk.checked = !!on; glFx.setOverheat(!!on); return glFx.stats(); },
           breath: on => { dragonBreathChk.checked = !!on; glFx.setBreath(!!on); return glFx.stats(); },

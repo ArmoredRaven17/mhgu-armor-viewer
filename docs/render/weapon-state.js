@@ -265,3 +265,22 @@ export function dbPulse(timer, dt){
   if (timer - 70 >= 50) return { timer: 0, value: 1 };
   return { timer, value: 1 };
 }
+
+// ---- the Charge Blade (kinds 21 / 22: the sword 0x315e04, the shield 0x3168c8) -------------------------------------------
+// THE PHIALS (read 2026-10-03; Raven: "it does not show the phial color on the weapon"). The sword's part function asks the
+// reader 0x316070 and fires, beside the forms' channel-8 triggers (1 / 35 drawn, 0 / 34 sheathed, 5 / 40 sword, 4 / 39 axe),
+// five on CHANNEL 30 -- the phial layer -- by the Charge Gauge, +0x2780 (vtable +0x470(n) = 0x2a2894: the gauge >= n for
+// weapon types 7, 11, 14, 15): 29 at 46 and over, else 28 at 30 and over, else 41; and 13 at 72 and over, else 14 -- the
+// levels 1 / 2 / 3 of 0x11dc73c exactly. With the weapon on the back (mount index 2 / 18), or sheathed outside motions
+// 5240 / 5241 / 5003 / 5009, 29 / 28 fall to 41; the sharpening's Motion[255] frames [20, 324) skip both tests. The records
+// (docs/weapons/w14.json shared.gmk, display group 0): 28 shows part 24 and plays clip 1 on the channel-30 materials, 29
+// shows it with clip 0, 41 hides it; 13 shows part 3, 14 hides it. The shield fires channel 8 only.
+export function cbPhialTriggers({ drawn, motion: m, frame: fr, onBack, level }){
+  let t = level >= 2 ? 29 : level >= 1 ? 28 : 41;
+  const sharpening = m === 5255 && fr >= 20 && fr < 324;
+  if (!sharpening){
+    if (onBack) t = 41;
+    else if (!drawn && !(m === 5240 || m === 5241 || m === 5003 || m === 5009)) t = 41;
+  }
+  return [level >= 3 ? 13 : 14, t];                 // 0x315e04's order: 13 / 14 before 29 / 28 / 41
+}

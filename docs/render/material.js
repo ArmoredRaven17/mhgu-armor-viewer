@@ -180,8 +180,17 @@ export function setAlphaOverride(v){
 // fUVTransform2 is the second UV set, which the sphere lookup does not read.
 // The arithmetic runs on the texel as the file holds it (the sRGB-encoded value) and is decoded again, as the lit path's
 // sheen is: the ROM's colour constants act on its texture values.
-function isReflectOverlay(rom){
-  return !!(rom && rom.ch === 2 && rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere && rom.cbm);
+// THE CHARGE BLADE'S PHIAL LAYER is the same layer on channel 30 (2026-10-03; Raven: "it does not show the phial color on
+// the weapon"): `m30_gaxeNNN_add_`, additive, a sphere map, fDiffuseColor (0, 0, 0), no specular or emission -- and its two
+// clips, "red" and "yellow", drive fReflectiveColor and fTransparency, which the albedo path drew as a white fade. The
+// sword's part code picks the clip by the Charge Gauge (render/weapon-state.js cbPhialTriggers). Only the Charge Blade's:
+// the Switch Axe's and the Hammer's channel-30 layers are drawn as before (the board).
+const CB_PHIAL = /_gaxe\d+_/;
+function isReflectOverlay(rom, name){
+  if (!(rom && rom.feat && rom.feat.reflect === 'SphereMap' && rom.sphere && rom.cbm)) return false;
+  if (rom.ch === 2) return true;
+  const d = rom.cbm.diffuse;
+  return rom.ch === 30 && CB_PHIAL.test(name || '') && !!d && !(d[0] || d[1] || d[2]);
 }
 const OVERLAY_VS = `
 #include <common>
@@ -518,7 +527,7 @@ export function createMaterial(spec){
   const rom = spec.rom || null;
   const st = rom && rom.state, ft = rom && rom.feat, cb = rom && rom.cbm, gl = rom && rom.glob;
   const side = (st && st.cull in SIDE) ? SIDE[st.cull] : THREE.DoubleSide;   // FrontSide is 0: no || here
-  if (st && st.blend === 'add' && isReflectOverlay(rom)) return createReflectOverlay(spec, rom, st, side);
+  if (st && st.blend === 'add' && isReflectOverlay(rom, spec.srcName)) return createReflectOverlay(spec, rom, st, side);
   if (st && st.blend === 'add'){
     // Additive materials are the glow parts, drawn unlit and added over what is behind:
     // the Charge Blade's phial box (part 24, XfB_0__m30_gaxe064_add_) is a 12-vertex box

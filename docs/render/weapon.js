@@ -26,9 +26,10 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 const APPLY_ROOT_TRACK = false;
 import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, notesFor, chargesFor, shellFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
-import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
+import { modeOf } from './weapon-fx.js';
+import { CB_COATS, COAT_KEEP } from './weapon-fx-w14.js';   // the Charge Blade's shield coats   // the Switch Axe's mode per stance: the action starts' own word
 import { bowMotion } from './weapon-fx-w10.js';   // the Bow's pitch variants: a variant's flags are its main motion's
-import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags, dbFlags, dbPulse, DB_BLUE, DB_RED } from './weapon-state.js';
+import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags, dbFlags, dbPulse, DB_BLUE, DB_RED, cbPhialTriggers } from './weapon-state.js';
 
 export const PART_KINDS = ['main', 'second', 'saya', 'kinsect', 'arrow'];
 
@@ -176,6 +177,8 @@ export class WeaponRig {
     this.demonMode = false;
     this.valorState = false;
     this.shieldCoat = false;         // the Lance's Healing Shield: pl_lance_up over the shield (applyShieldCoat)
+    this.cbCoat = null;              // the Charge Blade's coat: { kind, both } (applyCbCoat)
+    this.cbGauge = 0;                // the Charge Blade's gauge level 0..3: its phials (cbPhialTriggers)
     this._ps = null;                 // the part state's memory: the last frame's triggers, the colours written, the pulse
     this._appliedKey = null;
     this.motGroup = 0;
@@ -280,6 +283,7 @@ export class WeaponRig {
     this.applyKinsectColours();
     await this.rebindMotion();
     this.applyShieldCoat();
+    this.applyCbCoat();
     this.step();
   }
 
@@ -411,6 +415,7 @@ export class WeaponRig {
   setOil(n){ n = +n; this.oil = (n >= 1 && n <= 4) ? n : 0; this.clearPartState(); this._appliedTrg = null; this.step(); }
   setDemonMode(on){ this.demonMode = !!on; this._appliedTrg = null; this.step(); }
   setValorState(on){ this.valorState = !!on; this._appliedTrg = null; this.step(); }
+  setCbGauge(n){ n = +n; this.cbGauge = n >= 0 && n <= 3 ? n : 0; this.step(); }
   // THE LANCE'S HEALING SHIELD (render/weapon-state.js LANCE_UP): the user's control, as the Arts' states are. While it
   // stands the shield's materials outside colour channel 10 take pl_lance_up's constants and its looping clip, the green
   // pulse (material.js stepMaterialAnim runs it every frame) -- drawn or sheathed: nothing in the request (0x1179d88) or
@@ -424,6 +429,22 @@ export class WeaponRig {
       if (!m || !m.userData || !m.userData.rom || m.userData.rom.ch === 10) return;
       if (o || m.userData.override) setMaterialOverride(m, o);
     });
+  }
+  // THE CHARGE BLADE'S COAT (render/weapon-fx-w14.js CB_COATS): Shield Charge's red or Valor State's blue, as the class's
+  // update posts it every frame (0x11d0df4: part-state 4 / 6, mask 0x40000400 -- channels 10 and 30 keep their own) on the
+  // shield and, in axe mode, the blade. `c` is { kind, both } or null; ChargeBladeEffects decides it from the player's facts.
+  setCbCoat(c){ this.cbCoat = c || null; this.applyCbCoat(); }
+  applyCbCoat(){
+    const c = this.cls === 'w14' ? this.cbCoat : null, o = c ? CB_COATS[c.kind] : null;
+    for (const [part, on] of [[this.parts.second, !!o], [this.parts.main, !!(o && c.both)]]){
+      if (!part) continue;
+      part.traverse(x => {
+        const m = x.material;
+        if (!m || !m.userData || !m.userData.rom || COAT_KEEP.has(m.userData.rom.ch)) return;
+        if (on) setMaterialOverride(m, o);
+        else if (m.userData.override) setMaterialOverride(m, null);
+      });
+    }
   }
   // the arrow placement: a key of shared.arrow.records ('520' ...) or null for none
   setArrow(key){ this.arrowKey = (key === null || key === undefined || key === '') ? null : String(key); this.step(); }
@@ -1001,8 +1022,9 @@ export class WeaponRig {
     if (!this.cj) return;
     if (!ids){ const r = this.mounts(); ids = r.ids; mounts = r.mounts; }
     if (ps === undefined) ps = this.partState();
-    // a class whose part code this app runs (render/weapon-state.js) fires 0 / 1 by that code's own answer
-    const own = ps && this.form === null;
+    // a class whose part code this app runs (render/weapon-state.js) fires 0 / 1 by that code's own answer; the Charge
+    // Blade's adds its phial triggers to the forms' own (ps.cb)
+    const own = ps && this.form === null && !ps.cb;
     const trg = own ? (ps.t1 && !ps.t0 ? 1 : 0) : this.currentTrigger(ids, mounts);
     const key = ps ? ps.key : null;
     if (trg === this._appliedTrg && key === this._appliedKey) return;
@@ -1019,6 +1041,8 @@ export class WeaponRig {
       if (!own && trg !== 0){ const r = g.find(r => r.trg === trg); if (r) recs.push(r); }
       // the Long Sword's Spirit trigger (20..23) fires after them, and its record wins
       if (own && ps.trg != null){ const r = g.find(r => r.trg === ps.trg); if (r) recs.push(r); }
+      // the Charge Blade's channel-30 triggers come after the forms' (0x315e04)
+      if (ps && ps.cb) for (const t of ps.trgs){ const r = g.find(x => x.trg === t); if (r) recs.push(r); }
     }
     for (const kind of ['main', 'second']){
       const part = this.parts[kind];
@@ -1046,6 +1070,11 @@ export class WeaponRig {
   // The motion is the stance's while the weapon is drawn; sheathed, the hunter plays a Hunter Pose, no weapon motion.
   partState(){
     const cls = this.cls;
+    if (cls === 'w14' && this.cj){
+      const mo = motionAt(this.drawn ? this.stance : null, this.poseTime());
+      const trgs = cbPhialTriggers({ drawn: this.drawn, motion: mo.id, frame: mo.frame, onBack: this.onBack(), level: this.cbGauge });
+      return { cls, cb: true, trgs, oil: 0, key: 'cb:' + trgs.join(',') };
+    }
     if ((cls !== 'w07' && cls !== 'w01' && cls !== 'w03' && cls !== 'w11') || !this.cj) return null;
     const mo = motionAt(this.drawn ? this.stance : null, this.poseTime());
     const o = { drawn: drawnFlag(this.drawn, mo), motion: mo.id, frame: mo.frame, onBack: this.onBack(), disp: this.gmkGroup | 0 };
@@ -1085,13 +1114,14 @@ export class WeaponRig {
       this.clearPartState();
       e = this._ps = { cls: ps.cls, root: main, trgs: new Set(), oil: 0, blue: false, timer: 0, last: now };
     }
-    const now1 = [ps.t1 ? 1 : null, ps.t0 ? 0 : null, ps.trg].filter(t => t !== null);   // 0x310300's / 0x30aafc's order
+    const now1 = ps.cb ? ps.trgs : [ps.t1 ? 1 : null, ps.t0 ? 0 : null, ps.trg].filter(t => t !== null);   // 0x310300's / 0x30aafc's order
     const g = this.gmk() && this.gmk()[String(this.gmkGroup)];
     for (const t of now1){
       if (e.trgs.has(t)) continue;
       const r = g && g.find(r => r.trg === t);
       // the channel the trigger is fired with: the Long Sword's Spirit triggers pass 2, every other here 8
-      if (r && r.anime !== undefined && r.anime !== null) for (const m of chan(ps.cls === 'w07' && t >= 20 && t <= 23 ? 2 : 8)) setMaterialClip(m, r.anime, now);
+      if (r && r.anime !== undefined && r.anime !== null)
+        for (const m of chan(ps.cb ? 30 : ps.cls === 'w07' && t >= 20 && t <= 23 ? 2 : 8)) setMaterialClip(m, r.anime, now);
     }
     e.trgs = new Set(now1);
     if (ps.cls === 'w11'){
