@@ -59,6 +59,18 @@ export function phialsFor(cj, modelId){
   return [...new Set((cj.weapons || [])
     .filter(r => r.named && r.phial && modelIdOf(r.model) === modelId).map(r => r.phial))];
 }
+// THE COLOUR A WEAPON CARRIES: an index into table/equipBaseColorData (docs/pigments.json), or null for none -- a property
+// of the WEAPON, so one model shows each of its weapons in its own colour (Raven, 2026-10-06: "Secta weapons, they use the
+// same model ... but change color slighty"). The data is docs/weapons/<cls>.json `col`, the byte after the element of
+// table/weaponNNBaseData (C:/MHGU-Extract/add-weapon-colours.py); the player's part-colour setter 0x28726c writes it over
+// the channel-3 materials' fAlbedoColor (render/material.js setChannelColor).
+export function colourFor(cj, modelId, name){
+  if (!cj || !modelId) return null;
+  const rows = (cj.weapons || []).filter(r => r.named && modelIdOf(r.model) === modelId);
+  if (!rows.length) return null;
+  const hit = (name && rows.find(r => r.name === name)) || rows[0];
+  return hit.col || null;
+}
 // THE ELEMENT A WEAPON CARRIES ('Fire' | 'Water' | 'Thunder' | 'Dragon' | 'Ice' | 'Poison' | 'Paralysis' | 'Sleep' |
 // 'Blast'), or null for none -- a property of the WEAPON like the phial, so the name decides where the model cannot.
 // The data is docs/weapons/<cls>.json `element`, from table/weaponNNBaseData byte +17 (0 none, 1 Fire, 2 Water,

@@ -2678,6 +2678,8 @@ const WEAPON_EVENTS = await loadJson('poses/weapons/events.json');
 const OT_EVENTS = await loadJson('poses/otomo-events.json').catch(() => null);
 const weapon = new WeaponRig({ scene: world, pose, roots: playerRoots, ctx: pieceCtx,
                                events: WEAPON_EVENTS.clips || {} });
+// the palette a weapon's own colour indexes (equipBaseColorData, as the armour pigments do): render/weapon.js colour()
+weapon.setPalette(PIGMENTS);
 
 // THE WEAPON'S EFFECTS (render/weapon-fx.js, Raven 2026-09-27: "Implement effects"): the game's own
 // particle effects on the ROM-translated runtime, fired by the weapon class's .psl on the clip and the

@@ -24,10 +24,10 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // see placePart. Raven, 2026-09-03: the sheathed Sword & Shield's shield "is moved away
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
-import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, notesFor, chargesFor, shellFor } from './weapons-index.js';
+import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, colourFor, notesFor, chargesFor, shellFor } from './weapons-index.js';
 import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
-import { modeOf } from './weapon-fx.js';
-import { CB_COATS, COAT_KEEP } from './weapon-fx-w14.js';   // the Charge Blade's shield coats   // the Switch Axe's mode per stance: the action starts' own word
+import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
+import { CB_COATS, COAT_KEEP } from './weapon-fx-w14.js';   // the Charge Blade's shield coats
 import { bowMotion } from './weapon-fx-w10.js';   // the Bow's pitch variants: a variant's flags are its main motion's
 import { motionAt, drawnFlag, spiritFlags, spiritPulse, SPIRIT_BLUE, snsFlags, oilPart, OIL_RGB, LANCE_UP, lanceFlags, dbFlags, dbPulse, DB_BLUE, DB_RED, cbPhialTriggers } from './weapon-state.js';
 
@@ -179,6 +179,7 @@ export class WeaponRig {
     this.shieldCoat = false;         // the Lance's Healing Shield: pl_lance_up over the shield (applyShieldCoat)
     this.cbCoat = null;              // the Charge Blade's coat: { kind, both } (applyCbCoat)
     this.cbGauge = 0;                // the Charge Blade's gauge level 0..3: its phials (cbPhialTriggers)
+    this.palette = null;             // docs/pigments.json, for the weapon's own colour (setPalette)
     this._ps = null;                 // the part state's memory: the last frame's triggers, the colours written, the pulse
     this._appliedKey = null;
     this.motGroup = 0;
@@ -202,6 +203,10 @@ export class WeaponRig {
   phialAmbiguous(){ return phialsFor(this.cj, this.modelId).length > 1; }
   // THE ELEMENT this weapon carries, by name, or null (weapons-index.js elementFor): the game's player parameter 17
   element(){ return elementFor(this.cj, this.modelId, this.weaponName); }
+  // the weapon's own colour: an index into the palette (equipBaseColorData) or null (weapons-index.js colourFor)
+  colour(){ return colourFor(this.cj, this.modelId, this.weaponName); }
+  // the palette, docs/pigments.json as the page loaded it ([{ i, hex, rgb }])
+  setPalette(list){ this.palette = Array.isArray(list) ? list : null; this.applyKinsectColours(); }
   // THE HUNTING HORN'S NOTES this weapon carries ([n1, n2, n3], note numbers 1..8), by name, or null (weapons-index.js
   // notesFor): the game's player parameters 27..29 (render/weapon-fx-w12.js)
   notes(){ return notesFor(this.cj, this.modelId, this.weaponName); }
@@ -458,12 +463,18 @@ export class WeaponRig {
   // channel 5 the same and its channel 6 the element colour. With no Kinsect the game colours
   // nothing, so every channel material keeps its own constants -- as it does on every other
   // weapon, whose channels (3, 8, 30 ...) are fed by other code this app does not model yet.
+  // THE WEAPON'S OWN COLOUR goes the same way (0x28726c, the weapon units, parts 7 / 8): the equipped weapon's colour --
+  // its row's palette index, weapons-index.js colourFor -- over fAlbedoColor of every channel-3 material, the `_sym`
+  // region. A weapon without one (index 0) keeps its own (68 of the 69 channel-3 materials are white already).
   applyKinsectColours(){
     const cols = (this.cls === 'w13' && this.kinsectId) ? kinsectColours(modelIdOf(this.kinsectId), this.kinsectElement) : null;
+    const ci = this.colour(), pe = ci && this.palette ? this.palette.find(p => p.i === ci) : null;
+    const wrgb = pe ? pe.rgb : null;
     for (const kind of Object.keys(this.parts)){
       const mats = (this.parts[kind] && this.parts[kind].userData.chanMats) || [];
       for (const mat of mats){
         const ch = mat.userData.rom.ch;
+        if (ch === 3 && (kind === 'main' || kind === 'second')){ setChannelColor(mat, wrgb); continue; }
         const own = kind === 'kinsect' ? (ch === 5 || ch === 6) : (kind === 'main' && ch === 5);
         setChannelColor(mat, (cols && own) ? cols[ch] : null);
       }
