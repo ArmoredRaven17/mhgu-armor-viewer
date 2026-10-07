@@ -33,6 +33,9 @@
 //     parameters' float 89 (60) + 60 frames, once; the state runner (+0x4e8 = 0x11da568) counts it down and at 0 fires row
 //     19 = 640 (w14_007.efl) on the SHIELD (+0x23a4) at root joint 0 when drawn, and raises +0x3340 bit 6: the part
 //     material index 6 = gaxe_sld_power_up_blue.mrl, as above. Leaving the state clears the bit.
+//     IN THE PAGE the select's Valor (blue) is the state standing already: blue at once, nothing fired (Raven, 2026-10-04:
+//     "We will need that for animations, but when manually selected bypass it"); the countdown and 640 stay for a stance
+//     that begins Valor State, at the animation review.
 //   * THE CHARGED SLASH (acts 10 / 52 / 53 / 56, 0x11d4928, sword mode): at its start slot 1 ROW 4 = 500 on the player's
 //     block (cm001_500.efl, the player's joint 2); the hold is Motion[106] (acts 52 / 53 lead in with [112] / [113] and
 //     enter it at frame 28, act 56 at frame 10); once a motion's end flag has risen (phase 2) slot 2 ROW 5 = 501
@@ -188,8 +191,13 @@ export class ChargeBladeEffects {
   setGauge(n, quiet){ n = +n; this.gauge = n >= 0 && n <= 3 ? n : 0; if (quiet) this.prevLevel = this.gauge; }
   // ONE SELECT, as the Long Sword's Spirit Gauge (Raven, 2026-10-03: "Sheild Charge colors can be a single drop down", "Like
   // LS"): 1 yellow, 2 red, 3 Valor (blue) -- the Valor style's state, which holds +0x3344 at 3 and brings the blue in
-  setShieldCharge(n){ n = n === true ? 2 : +n; this.shieldCharge = n === 1 || n === 2 ? n : 0; this.setValor(n === 3); }
-  setValor(on){ on = !!on; if (on !== this.valor){ this.valor = on; this.valorTimer = 0; this.valorBlue = false; } }
+  // Valor picked BY HAND is blue at once (Raven, 2026-10-04: "We will need that for animations, but when manually selected
+  // bypass it"): the ROM's 120-frame countdown and its 640 belong to Valor State BEGINNING, which a stance will drive once
+  // the animation review wires the entry (setValor(true) without `now` runs them)
+  setShieldCharge(n){ n = n === true ? 2 : +n; this.shieldCharge = n === 1 || n === 2 ? n : 0; this.setValor(n === 3, true); }
+  // `now`: the state stands already (picked by hand), so the bit is up and nothing fires; without it Valor State begins and
+  // the runner's countdown leads to 640 and the blue, as the ROM does
+  setValor(on, now){ on = !!on; if (on !== this.valor){ this.valor = on; this.valorTimer = 0; this.valorBlue = on && !!now; } }
   get live(){ return this.blade.live; }
   sync(cls, main, second, parent){
     return Promise.all([this.blade.sync(cls, main, parent), this.shield.sync(cls, second, parent)]);
