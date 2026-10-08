@@ -1263,10 +1263,33 @@ import { GunlanceEffects, PLAYER_REQUESTS as GL_PLAYER_REQUESTS } from './render
 import { GreatSwordEffects, PLAYER_REQUESTS as GS_PLAYER_REQUESTS } from './render/weapon-fx-w00.js';
 import { InsectGlaiveEffects, PLAYER_REQUESTS as IG_PLAYER_REQUESTS } from './render/weapon-fx-w13.js';
 import { ChargeBladeEffects, PLAYER_REQUESTS as CB_PLAYER_REQUESTS } from './render/weapon-fx-w14.js';
+import { ROM_SPHERE, setRomSphere, ROM_PIGMENT, setRomPigment } from './render/material.js';
+import { enableRomSpecular, setRomSpecularAmount, anchorMisses, setGlobalEnvCube, setGlobalReflection,
+         globalReflectionOn } from './render/rom/specular.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');
 addEventListener('error', e => errEl.textContent = 'ERROR: ' + e.message);
+
+// THE ROM'S SPECULAR SCOPE AND GLOBAL REFLECTION (render/rom/specular.js, the Monster Viewer's, verbatim; 2026-10-07, Raven:
+// "review each armor to ensure we are accurately rendering them"). On before any material is built, as the Monster Viewer
+// runs it: FReflectGlobalCubeMap on the engine's own default cube (system/texture/DefaultCube_CM, the faces in
+// env/DefaultCube_CM; every area that names a scene cube names this one), and the Fresnel and the RGB specular map over the
+// whole specular term. FBRDF's Blinn-Phong lobe stays off, as there. To compare: __globalRefl(false) drops the reflection,
+// __romSpecular(0) the scope (1 back).
+enableRomSpecular(true);
+{
+  const cube = new THREE.CubeTextureLoader().setPath('env/DefaultCube_CM/')
+    .load(['px.png', 'nx.png', 'py.png', 'ny.png', 'pz.png', 'nz.png']);
+  cube.colorSpace = THREE.SRGBColorSpace;
+  setGlobalEnvCube(cube);
+  window.__globalRefl = (on) => on === undefined ? globalReflectionOn() : setGlobalReflection(on);
+  window.__romSpecular = (a) => { setRomSpecularAmount(a); return { anchorMisses: anchorMisses() }; };
+  // the sphere map as the ROM combines it (render/material.js ROM_SPHERE): off is the signed-off screen blend
+  window.__romSphere = (on) => on === undefined ? !!ROM_SPHERE.value : setRomSphere(on);
+  // the pigment as the game applies it (render/material.js ROM_PIGMENT): off is the old luminance recolour
+  window.__romPigment = (on) => on === undefined ? !!ROM_PIGMENT.value : setRomPigment(on);
+}
 
 const CLEAN = new URLSearchParams(location.search).has('clean');
 // `?scene=<name>` renders one of dev/scenes.json's fixed scenes for before/after comparison

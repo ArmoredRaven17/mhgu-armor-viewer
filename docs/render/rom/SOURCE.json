@@ -48,7 +48,8 @@
   "effects/prim-shaders.json": "3da5c6dc6047f9c6c62285861ae2c5ed107883a95d7bb13f19608d9931fbc508",
   "effects/model-shaders.json": "2d33aeb23340eb9915dc76d4943b38e870da24cd6691b733ab6f714979e17696",
   "effects/gpu-shaders.json": "84e49b6644b0bf505fd73b98d6b70260c7785bd6463c95b1d8b1b462e314b129",
-  "effects/rom-pages.bin": "77cb0bb4313bbd08f77f128323d4d7e5413565db5f70e4d297016a84f6a77c3f"
+  "effects/rom-pages.bin": "77cb0bb4313bbd08f77f128323d4d7e5413565db5f70e4d297016a84f6a77c3f",
+  "rom/specular.js": "d986e1fbbc296a4b430310db38084eafb1f5865b99aecd703beec16d015592bd"
  },
  "leads": {
   "_about": "Files edited HERE since the fork, ahead of the Monster Viewer (2026-09-28): the fix belongs in both trees, this one has it first.",
@@ -61,5 +62,8 @@
   "rom/effect/construct.js": "genType 20, cParticleGeneratorSizeBillboard, read and half wired (2026-10-01): the factory's type-20 arm 0x9bb150 (alloc 0xa7e274, ctor 0xa7e2b0 = 0xa55db4 + the vtable *(GOT 0x183c8b4) + 8 = 0x178918c; getDTI 0xa81ef4 -> MtDTI 0x211c6ac); its JS-called slots (+0x18 0xa7e300, +0x20 0xa7e348, +0x3c 0xa7e3ac) registered to their lifted routines (vectors/w10_u545..548, the Bow's shots; lift-w08.sh roots). NOT BUILT: GENERATOR_TYPES[20] stays commented out, because its draw 0xa7e41c allocates its own buffer from the renderer's frame heap (0x87f6ac -> 0xbbf498) and calls 0xa806f4 / 0xa80b64, none of which the viewer has -- built, every shot with such a row refused. The rows stay skipped, as upstream. Sent to the Monster Viewer session.",
   "rom/effect/primshader.js": "2026-10-01, cParticleNodeInfinite's draw (TInfParticle): INF_PARTICLE; a semantic the layout repeats binds its k-th element to the input's k-th member (IAInfParticle's two Attribute elements -> a_Attribute, a_Attribute1; layouts without a repeat keep their names); an int constant-buffer member is its stored word (CBInfParticleTexture's pattern counts). Every existing program links the same (384 primitive programs identical; the GPU particle program's attributes identical, its text gaining only the unused InfParticle struct declarations). Sent to the Monster Viewer session as one set with live.js and gpu-shaders.json.",
   "../effects/gpu-shaders.json": "2026-10-01: `efx/shader/glsl.py --gpu-inf` (VS / PS_InfParticle, IAInfParticle; the variants of vectors/w10_u500..502's draws) merged in by efx/shader/merge_gpu.py: +19 functions, +2 structs, +2 constant buffers, +IAInfParticle, +7 variant interfaces; every existing key byte-identical."
+ },
+ "notes": {
+  "rom/specular.js": "Taken verbatim 2026-10-07 from the Monster Viewer (its b4cbfeb / 87455d6 lineage): FReflectGlobalCubeMap, the Fresnel's scope and the RGB specular map, installed on every lit material by render/material.js createMaterial; switched on in index.html (Raven: 'review each armor to ensure we are accurately rendering them')."
  }
 }

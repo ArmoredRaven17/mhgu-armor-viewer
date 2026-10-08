@@ -32,8 +32,10 @@
 //   pigment      flag 0x20 marks the dyeable region (the `_sym_` materials, 99% of them);
 //                flag 0x40 without 0x20 is the colour-override class (skin, fur, face)
 // Approximations kept from before: the studio lights, roughness .85 (lowered only where
-// fShininess exceeds 16), the screen-blended matcap at envAmount.
+// fShininess exceeds 16), and GGX for the lights' highlight where the ROM's FBRDF is Blinn-Phong. The sphere map is the
+// ROM's combine since 2026-10-07 (ROM_SPHERE); the screen-blended matcap at envAmount is its switch-off.
 import * as THREE from 'three';
+import { installRomSpecular, trackRomSpecular } from './rom/specular.js';
 
 // ---- pigment state -----------------------------------------------------------------------
 // Owned here so every armour material reads one truth. The picker, the per-slot rows and the
@@ -60,6 +62,23 @@ export const allMats = [];
 export const armorMats = [];
 // the dye-mask view's state (setDebug)
 let dyeMaskOn = 0;
+// THE SPHERE MAP AS THE ROM COMBINES IT -- ON (2026-10-07; Raven: "review each armor to ensure we are accurately rendering
+// them"). FSpecularMap / FFinalCombiner add FReflectSphereMap INSIDE the specular:
+//     MC.specular = ( lights * fSpecularColor + sample( tSphereMap, view normal ) * fReflectiveColor ) * specMap
+//     out.rgb    += MC.specular * MC.fresnel
+// where this path SCREENS the map over the finished colour, weighted by gloss squared and envAmount (an approximation tuned
+// by eye so bright armour does not clip). On, the term is added beside the lights' specular, ahead of render/rom/specular.js's
+// Fresnel and RGB map, and the screen is skipped; __romSphere(false) brings the old screen back to compare. The arithmetic
+// runs on the renderer's linear values, as its lighting does, where the ROM's runs on the texels as stored.
+export const ROM_SPHERE = { value: 1 };
+// THE PIGMENT AS THE GAME APPLIES IT -- ON (2026-10-07; Raven: "Pigment however is in the game"). The armour pigment is
+// colour channel 3 (0x0053a0e4 -> the material's vfunc +0x2c): it REPLACES fAlbedoColor of the dye-region material, a plain
+// multiply of its texels. This path used to RECOLOUR by luminance instead (uTint x (0.30 + luma x 1.35)), chosen by eye
+// because a multiply only darkens; setRomPigment(false) / __romPigment(false) brings that back to compare.
+export const ROM_PIGMENT = { value: 1 };
+export function setRomPigment(on){ ROM_PIGMENT.value = on ? 1 : 0; for (const m of armorMats) applyTint(m); return !!ROM_PIGMENT.value; }
+export function setRomSphere(on){ ROM_SPHERE.value = on ? 1 : 0; return !!ROM_SPHERE.value; }
+function setReflRaw(m, rgb){ const u = m.userData.u; if (u && u.uReflRaw) u.uReflRaw.value.set(rgb[0], rgb[1] === undefined ? rgb[0] : rgb[1], rgb[2] === undefined ? rgb[0] : rgb[2]); }
 
 // ---- the ROM's render states ---------------------------------------------------------------
 // The rasterizer's cull mode. RSMesh culls BACK faces, so the front faces render: FrontSide.
@@ -274,6 +293,8 @@ export function applyTint(mat){
       // ROM's colour as it is -- the Lance's Healing Shield pulses the shield's reflection green. (17 CBMaterial records
       // and 654 clip tracks carry a non-grey reflective colour elsewhere and are still averaged: a separate matter.)
       uReflTint: { value: new THREE.Vector3(1, 1, 1) },
+      uReflRaw: { value: new THREE.Vector3(1, 1, 1) },   // fReflectiveColor as it is (ROM_SPHERE)
+      uRomSphere: ROM_SPHERE,
       uDbg: { value: dyeMaskOn },     // the dye-mask view: on for a material built while it is shown
       uKey: { value: new THREE.Color(1,1,1) },          // the armor's AUTHORED color
       uHasKey: { value: 0 },
@@ -335,7 +356,7 @@ export function applyTint(mat){
       sh.fragmentShader = sh.fragmentShader
         .replace('void main() {',
                  'uniform vec3 uTint; uniform float uAmt;' +
-                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform vec3 uReflTint; uniform float uDbg;' +
+                 ' uniform sampler2D uEnv; uniform float uEnvAmt; uniform vec3 uReflTint; uniform float uDbg; uniform vec3 uReflRaw; uniform float uRomSphere;' +
                  ' uniform vec2 uSat; uniform vec2 uVal;' +
                  ' uniform vec3 uKey; uniform float uHasKey; uniform float uKeyTol;' +
                  ' uniform float uSatBoost;' +
@@ -447,7 +468,7 @@ export function applyTint(mat){
         // same pixels on the canvas, and right in a linear render target too, where three's
         // own <colorspace_fragment> is the identity (Raven, 2026-09-04: post-processing).
         .replace('#include <colorspace_fragment>',
-          `if ( uEnvAmt > 0.0 ) {
+          `if ( uEnvAmt > 0.0 && uRomSphere < 0.5 ) {
              vec3 vn = normalize( normal );
              vec2 muv = vn.xy * 0.5 + 0.5;
              vec3 env = texture2D( uEnv, muv ).rgb;
@@ -477,10 +498,18 @@ export function applyTint(mat){
   const key = mat.userData.own;                 // authored color = the region key
   u.uHasKey.value = key ? 1 : 0;
   if (key) u.uKey.value.setRGB(key.rgb[0]/255, key.rgb[1]/255, key.rgb[2]/255);
-  if (use && !mat.userData.noTint){
+  const region = mat.userData.dyeRegion && !mat.userData.noTint;
+  if (ROM_PIGMENT.value){
+    // THE GAME'S PIGMENT: the colour goes over fAlbedoColor of the dye region (channel 3) and multiplies its texels
+    // (setChannelColor, the same write the weapons' and the Kinsect's colours take). No pigment: the texels as they are.
+    u.uAmt.value = 0;
+    if (region) setChannelColor(mat, use || null);
+  } else if (use && !mat.userData.noTint){
+    if (region && mat.userData.chanRgb) setChannelColor(mat, null);
     u.uTint.value.setRGB(use[0]/255, use[1]/255, use[2]/255);
     u.uAmt.value = 1;
   } else {
+    if (region && mat.userData.chanRgb) setChannelColor(mat, null);
     u.uAmt.value = 0;
   }
   u.uEnvAmt.value = envStrength(mat);
@@ -651,6 +680,30 @@ export function createMaterial(spec){
   // AFTER applyTint, which is what creates `u`: written above it this threw on the first lit
   // material and the app did not load at all (the Monster Viewer's lesson, 2026-09-07).
   if (gl && gl.specular) u.uSpecRGB.value.fromArray(gl.specular.slice(0, 3));
+  // THE ROM'S SPECULAR, as the Monster Viewer draws it (render/rom/specular.js, taken verbatim 2026-10-07; Raven: "review
+  // each armor to ensure we are accurately rendering them"): FReflectGlobalCubeMap -- the reflection 9,533 armour
+  // materials select, on the engine's default cube DefaultCube_CM, which this path drew as no term -- and FFinalCombiner's
+  // scope, the Fresnel over the whole specular and the specular map as full RGB. Installed only while enableRomSpecular
+  // is on (index.html), so the shared path is untouched otherwise.
+  if (cb) setReflRaw(mat, cb.reflective);
+  installRomSpecular(mat, rom, spec.ref || null); trackRomSpecular(mat);
+  if (mat.userData.romSpecular){
+    const prev = mat.onBeforeCompile;
+    mat.onBeforeCompile = (sh, r) => {
+      if (prev) prev(sh, r);
+      const A = '               vec3 romN = normalize( normal );';
+      if (sh.fragmentShader.indexOf(A) < 0) return;
+      sh.fragmentShader = sh.fragmentShader.replace(A,
+        '               if ( uRomSphere > 0.5 && uEnvAmt > 0.0 ) {\n' +
+        '                 vec3 rsN = normalize( normal );\n' +
+        '                 reflectedLight.indirectSpecular += texture2D( uEnv, rsN.xy * 0.5 + 0.5 ).rgb * uReflRaw * specMask;\n' +
+        '               }\n' + A);
+    };
+    mat.userData.progTags = (mat.userData.progTags || '') + '|romSphere';
+    const tags = mat.userData.progTags;
+    mat.customProgramCacheKey = () => tags;
+    mat.needsUpdate = true;
+  }
   return mat;
 }
 
@@ -981,6 +1034,7 @@ function applyTrack(m, tr, f){
       if (u && u.uEnvAmt){
         const avg = (v[0] + (v[1] === undefined ? v[0] : v[1]) + (v[2] === undefined ? v[0] : v[2])) / 3;
         m.userData.reflective = avg;
+        setReflRaw(m, v);
         if (u.uEnv && u.uEnv.value) u.uEnvAmt.value = envStrength(m);
       }
       break;
@@ -1153,6 +1207,7 @@ function unbindOverrideEmission(m){
   m.needsUpdate = true;
 }
 function setReflective(m, rgb){
+  setReflRaw(m, rgb);
   const u = m.userData.u, avg = (rgb[0] + rgb[1] + rgb[2]) / 3;
   m.userData.reflective = avg;
   if (u.uReflTint){
@@ -1167,6 +1222,7 @@ function restoreOwn(m){
   if (!gl || !cb) return;
   if (u && m.color) m.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
   m.userData.reflective = (cb.reflective[0] + cb.reflective[1] + cb.reflective[2]) / 3;
+  setReflRaw(m, cb.reflective);
   if (u && u.uReflTint) u.uReflTint.value.set(1, 1, 1);
   if (u && u.uEnvAmt) u.uEnvAmt.value = envStrength(m);
   if (u && u.uSpecRGB && gl.specular) u.uSpecRGB.value.fromArray(gl.specular.slice(0, 3));
