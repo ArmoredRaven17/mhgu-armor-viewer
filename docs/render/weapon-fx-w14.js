@@ -51,9 +51,20 @@
 //     (cm123_141.efl) on the shield; the policy keeps them below frames 179 / 164 of that motion, then lets them end. The
 //     Art's level is no control of the page's: III.
 //   * ROW 0 = cm002_002 210 (cm002_007.efl): the base sharpening at Motion[255] frame 274.
-// NOT WIRED (first pass): the Ultra Element Discharge's burst (shell 0x43 = pl_w14_003, rows 540..567 by phial type,
-//   element and the phial count +0x3354; 0x11db61c from acts 45 / 46 / 59 / 60 / 62 / 63 / 128..131 and 81 / 82) and row
-//   7 = 570 at a placed point from the same acts; the Elem Up Roundslash's 630 / 635 on the shield (by phial type, when
+//   * ROW 7 = 570 (cm001_000) at Motion[125] frame 112, a point 230 units ahead of the player (the Amped Element
+//     Discharge's finisher with no charged phials to burst; 2026-10-08, Raven: "I didn't see some attack effects").
+//   * THE ULTRA ELEMENT DISCHARGE'S BURST (shell 0x43 = pl_w14_003, records 540..567): Motion[125] is the Ultra's motion
+//     (the guard's choice 0x11d703c gives acts 59 / 60 / 130 / 131 only with the shield charged, state 1 or 2, outside the
+//     Valor style); with charged phials (the page's Phials select, +0x2b82) the burst's spec 0 at frame 114, 270 units
+//     ahead, its row by the count's tier, the phial type and the element; with none, 570 above. 2026-10-08, Raven: "Yeah,
+//     the UAED would need that".
+//   * THE SCHEDULE WORD (player +0x254c; the walker's hook 0x40780 -> the getter 0x281e78 overwrites the copied schedule
+//     block's bit mask): every Arts motion takes the base hook's level word (0x2a15d0: III 0xf00f), the Energy Blade (Arts
+//     Motion[1], 7001) the class hook's (0x11d173c): the level's word plus a one-hot TIER bit by the phials' snapshot
+//     (III: 1..3 bit 24, 4..6 25, 7..9 26 = 1022, 10 27 = 1023; none: the level's word alone), and Ripper Shield (7151) its
+//     opening stage's (0x11d93xx: III 0x1f00f, bit 16 = 1120; the replays add bit 17 / 18 by sub, which a stance cannot
+//     tell). 2026-10-08, Raven: "Look into Energy Blade".
+// NOT WIRED (first pass): 570 from acts 81 / 82 (0x11d8748, Motion[164] / [165], on byte +0x252c); the Elem Up Roundslash's 630 / 635 on the shield (by phial type, when
 //   charged phials are spent); the hit-made bursts (shell 0x42 = pl_w14_002 from the hit block); shell 0x41 (pl_w14_001)
 //   every 20 frames while +0x3340 bit 2 stands (vtable +0x850 from +0x880); shell 0x44 row 1 (pl_w14_100, w14_800 811) in
 //   the guard function; the Striker / Adept rows 650;
@@ -75,6 +86,8 @@ export const ROWS = {
   art151a: { keys: [900, 901, 902], efl: 'cm123_140' },   // rows 20..22 (w14_800)
   art151b: { keys: [910, 911, 912], efl: 'cm123_141' },   // rows 23..25 (w14_800)
   sharpen: { key: 210, efl: 'cm002_007' },    // row 0 (cm002_002)
+  dust: { key: 570, efl: 'cm001_000' },       // row 7: the Amped Element Discharge's finisher, at a placed point
+  burst: { base: 540, efl: 'w14_000' },       // shell 0x43 (pl_w14_003) rows 0..27 = records 540..567
 };
 export const PLAYER_REQUESTS = {
   'draw:255': [{ at: 274, key: ROWS.sharpen.key, efl: ROWS.sharpen.efl }],   // the sharpening (weapon type 14)
@@ -82,7 +95,7 @@ export const PLAYER_REQUESTS = {
 };
 // the gauge's levels (0x11dc73c): the values of +0x2780 a level stands above
 export const GAUGE = [29, 45, 71];
-const ART_LEVEL = 2;                          // III
+const ART_LEVEL = 2;                          // III: an Art's level when the page names none (artLevel)
 // the mode each motion's actions declare (vtable +0x84c; efx/player/w14/data/modes.json), and the base's idle picks
 const SWORD = new Set([53, 104, 105, 106, 107, 109, 110, 111, 112, 113, 115, 116, 118, 120, 121, 122, 126, 127, 149, 150, 151,
   152, 153, 155, 156, 157, 158, 166, 187, 232, 233, 235, 296, 1]);
@@ -94,6 +107,33 @@ const FULL_KEEP = new Set(['draw:106', 'draw:112', 'draw:113', 'draw:111']);   /
 const HOLD = 'draw:106', FULL_FRAME = 40;
 const SHARPEN = 'draw:255', SHARPEN_FROM = 20, SHARPEN_TO = 324;
 const VALOR_DELAY = 120;                      // the common parameters' float 89 (60) + 60
+// 570's motion, frame and point (0x11d7a00 / 0x11db83c): Motion[125] crossing 112, 230 units ahead of the player's position
+const AED_FINISH = 'draw:125', AED_DUST_FRAME = 112, AED_DUST_AHEAD = 230;
+// THE ULTRA BURST (0x11db61c at Motion[125] frame 108 -> shell 0x43 uShellPlw14_003, vtable 0x175beec): the shell sits at the
+// player's position + its row's vector (0, 0, 270) turned by the player's angles (init 0x487fa0), counts its float 0 (6
+// frames) and then requests SPEC 0 of its row at its own position, once (update 0x488178: 0x4a10c8 / 0x4a11e4) -- every
+// row's _sh param is (6, 6, 200) and (0, 0, 270)
+const ULTRA_FRAME = 108, ULTRA_DELAY = 6, ULTRA_AHEAD = 270;
+// the row: the snapshot count's tier (+0x3354 = the charged phials at the discharge's start: 1..3, 4..6, 7..9, 10) and the
+// phial type (param 0x1b, weapon14BaseData +18): Impact rows 3 / 2 / 1 / 0; Element rows (band + 1 - tier), the band by
+// the weapon's element (param 0x11 = the row's byte +17: 1 Fire, 2 Water, 3 Thunder, 4 Dragon, 5 Ice -> 0xb / 0xf / 0x13 /
+// 0x1b / 0x17 through the switch at 0x11db6e4), 7 for none or a status. (A status 0x300 with 0x285d94(0xb9), not the
+// page's, turns every element but Dragon to band 7 and lets 570 fire as well.)
+const ELEMENT_BAND = { Fire: 0xb, Water: 0xf, Thunder: 0x13, Dragon: 0x1b, Ice: 0x17 };
+export const PHIALS_MAX = 10;                 // the cap +0x2b84: 5, Limit Breaker 7 / 9 / 10
+// the schedule words by Art level (0x2a15d0), the Energy Blade's tier bits (0x11d173c) and Ripper Shield's opening (0x11d93b8)
+const ARTS_WORD = [0xff, 0x0f0f, 0xf00f];
+const ENERGY_BLADE_TIER = [[0x10000, 0x20000, 0x40000, 0x80000], [0x100000, 0x200000, 0x400000, 0x800000],
+                           [0x1000000, 0x2000000, 0x4000000, 0x8000000]];
+const RIPPER_OPEN = [0x100ff, 0x10f0f, 0x1f00f];
+export function phialTier(n){ return n <= 0 ? 0 : n >= 10 ? 4 : n > 6 ? 3 : n > 3 ? 2 : 1; }
+export function ultraRow(n, phial, element){
+  const tier = phialTier(n);
+  if (!tier) return null;
+  if (phial === 'Impact') return 4 - tier;
+  return (ELEMENT_BAND[element] || 7) + 1 - tier;
+}
+const MT_TO_VIEW = 0.01;
 // the coats (part-state materials 4 / 6): pl_lance_up's constants (byte for byte the same) and each file's own clip
 const coat = (name, emis, refl) => ({
   diffuse: [0.8, 0.8, 0.8], reflective: [0, 0, 0], specular: [0.4, 0.4, 0.4], emission: [0, 0, 0],
@@ -173,6 +213,9 @@ export class ChargeBladeEffects {
     this.prevLevel = 0;           // +0x3338, the level the hook last saw
     this.asked = false;           // the holder's byte +0x16a0
     this.shieldCharge = 0;        // the select: +0x3344 = 0 none, 1 yellow, 2 red
+    this.phials = 0;              // the select: the charged phials +0x2b82 (0..10)
+    this.weaponInfo = null;       // () => { phial: 'Impact' | 'Element', element } of the weapon in the hand (index.html)
+    this.artLevel = () => ART_LEVEL;   // (Arts motion id) => that Art's level 0..2: the page's per-Art select (render/arts-levels.js)
     this.wall = null;             // the wall clock's last reading (the state runner's timers)
     this.valor = false;           // the shared Valor State switch
     this.valorTimer = 0;          // +0x335c
@@ -194,6 +237,19 @@ export class ChargeBladeEffects {
   // Valor picked BY HAND is blue at once (Raven, 2026-10-04: "We will need that for animations, but when manually selected
   // bypass it"): the ROM's 120-frame countdown and its 640 belong to Valor State BEGINNING, which a stance will drive once
   // the animation review wires the entry (setValor(true) without `now` runs them)
+  // the motion's schedule word (weapon-fx.js clipMask): the Arts only; this class's draw motions with a word have no bits
+  clipMask(id){
+    const m = /^sa:(\d+)$/.exec(id || '');
+    if (!m) return null;
+    const n = +m[1], lv = this.artLevel(id);
+    if (n === 1){
+      const tier = phialTier(this.phials);
+      return tier ? (ARTS_WORD[lv] | ENERGY_BLADE_TIER[lv][tier - 1]) >>> 0 : ARTS_WORD[lv];
+    }
+    if (n === 151) return RIPPER_OPEN[lv];
+    return ARTS_WORD[lv];
+  }
+  setPhials(n){ n = Math.round(+n); this.phials = n >= 0 && n <= PHIALS_MAX ? n : 0; }
   setShieldCharge(n){ n = n === true ? 2 : +n; this.shieldCharge = n === 1 || n === 2 ? n : 0; this.setValor(n === 3, true); }
   // `now`: the state stands already (picked by hand), so the bit is up and nothing fires; without it Valor State begins and
   // the runner's countdown leads to 640 and the blue, as the ROM does
@@ -284,11 +340,20 @@ export class ChargeBladeEffects {
     if (key === HOLD && this.phase2 && crossed(FULL_FRAME)) this.ask(2, ROWS.full.key, ROWS.full.efl, true, this.hunter);
     if (this.held.has(1) && !CHARGED.has(key)) this.release(1, 3);
     if (this.held.has(2) && !FULL_KEEP.has(key)) this.release(2, 3);
+    // THE AMPED ELEMENT DISCHARGE'S FINISHER (0x11d7a00, subs 2 / 3 / 8 / 9 = acts 59 / 60 / 130 / 131, all Motion[125]):
+    // crossing frame 112, when the action's byte +7 stands -- set by subs 3 / 8 at their start, and by subs 2 / 9 when the
+    // Ultra burst at 108 (0x11db61c) makes nothing, which it does with no charged phials (+0x3354 = 0; the page has none) --
+    // row 7 = 570 at the player's position plus (0, 0, 230) turned by its pitch and yaw (0x11db83c: block +0x1c | 3, the
+    // point at +0xc0, the player's handle at +0xd0)
+    // WITH CHARGED PHIALS (acts 59 / 131: the start sets byte +6 when vtable +0x1cc answers) 0x11db61c creates the burst
+    // shell at frame 108 and answers 1, so byte +7 stays clear and 570 is not asked; its effect comes 6 frames on
+    if (key === AED_FINISH && this.phials > 0 && crossed(ULTRA_FRAME + ULTRA_DELAY)) this.ultraBurst();
+    if (key === AED_FINISH && this.phials === 0 && crossed(AED_DUST_FRAME)) this.dischargeDust();
     // THE ARTS on the shield
     if (key === 'sa:51' && crossed(170)) this.fire(this.shield, ROWS.art51.key, ROWS.art51.efl, { rootJoint: 0xffff });
     if (key === 'sa:151'){
-      if (crossed(50)) this.ask(3, ROWS.art151a.keys[ART_LEVEL], ROWS.art151a.efl, false, this.shield);
-      if (crossed(94)) this.ask(4, ROWS.art151b.keys[ART_LEVEL], ROWS.art151b.efl, false, this.shield);
+      if (crossed(50)) this.ask(3, ROWS.art151a.keys[this.artLevel('sa:151')], ROWS.art151a.efl, false, this.shield);
+      if (crossed(94)) this.ask(4, ROWS.art151b.keys[this.artLevel('sa:151')], ROWS.art151b.efl, false, this.shield);
     }
     if (this.held.has(3) && !(key === 'sa:151' && f < 179)) this.release(3, 2);
     if (this.held.has(4) && !(key === 'sa:151' && f < 164)) this.release(4, 2);
@@ -306,6 +371,27 @@ export class ChargeBladeEffects {
     const kind = this.valor ? (this.valorBlue ? 'blue' : null) : ([null, 'yellow', 'red'][this.shieldCharge]);
     this.setCoat(kind && drawn ? { kind, both: !sword } : null);
   }
+  // the burst shell's spec 0 at its place: the player's position + (0, 0, 270) by its angles, as the Gunlance's shells
+  ultraBurst(){
+    const h = this.hunter, info = this.weaponInfo ? this.weaponInfo() : null;
+    const row = ultraRow(this.phials, info && info.phial, info && info.element);
+    if (row == null || !h || !h.live || !h.live.unitMatrix) return null;
+    const p = this.ahead(h, ULTRA_AHEAD);
+    return this.fire(h, ROWS.burst.base + row, ROWS.burst.efl, { position: p, scale: [1, 1, 1], type8: 3 });
+  }
+  // a point `dist` game units ahead of the player's position (the soles), in game units
+  ahead(h, dist){
+    const m = new THREE.Matrix4(), p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
+    h.live.unitMatrix(m).decompose(p, q, s);
+    p.add(new THREE.Vector3(0, 0, dist * MT_TO_VIEW).applyQuaternion(q));
+    return [p.x / MT_TO_VIEW, p.y / MT_TO_VIEW, p.z / MT_TO_VIEW];
+  }
+  // 0x11db83c: 570 on the player at a point -- the soles (the unit the hunter host stands on the floor), 230 units ahead
+  dischargeDust(){
+    const h = this.hunter;
+    if (!h || !h.live || !h.live.unitMatrix) return null;
+    return this.fire(h, ROWS.dust.key, ROWS.dust.efl, { position: this.ahead(h, AED_DUST_AHEAD), positionOnly: true });
+  }
   setCoat(c){
     const a = this.coat, same = (!a && !c) || (a && c && a.kind === c.kind && a.both === c.both);
     if (same) return;
@@ -319,7 +405,7 @@ export class ChargeBladeEffects {
     return { blade: this.blade.live ? this.blade.live.stats : null, shield: this.shield.live ? this.shield.live.stats : null,
              failed: !!((this.blade.live && this.blade.live.failed) || (this.shield.live && this.shield.live.failed)),
              refused: [...this.blade.refused, ...this.shield.refused], mode: this.mode, gauge: this.gauge, asked: this.asked,
-             valorTimer: Math.round(this.valorTimer), valorBlue: this.valorBlue, coat: this.coat, phase2: this.phase2,
+             phials: this.phials, valorTimer: Math.round(this.valorTimer), valorBlue: this.valorBlue, coat: this.coat, phase2: this.phase2,
              fired: this.fired.slice(), held, stance: this.stance && this.stance.key };
   }
 }

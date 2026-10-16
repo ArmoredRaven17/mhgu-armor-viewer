@@ -51,8 +51,46 @@ export async function getTexture(file, opt){
 // one parse per cache key; callers skeletonClone() the scene they get back
 export async function loadGlb(url, cacheKey){
   let gltf = glbCache.get(cacheKey);
-  if (!gltf) { gltf = await loader.loadAsync(bust(url)); glbCache.set(cacheKey, gltf); }
+  if (!gltf) { gltf = await loader.loadAsync(bust(url)); repairZeroNormals(gltf.scene); glbCache.set(cacheKey, gltf); }
   return gltf;
+}
+
+// ZERO-LENGTH NORMALS (2026-10-08; Raven: "Yukumo Bow has the issue I saw earlier with the hunting horn"). Some of the game's
+// own meshes carry vertices whose normal is (0, 0, 0) -- 1,105 vertices in the drawn groups of 221 shipped models, among
+// them the Yukumo Bow (weapons/w10/135, 4) and Avenir's Music Box (w12/022, 4). Lighting normalizes the normal, and a zero
+// vector normalizes to NaN: the triangles round those vertices wrote NaN pixels, specks on the plain canvas that any blur
+// (the Effects panel's bloom, depth of field) spreads into black squares. A viewer repair, not the game's data: each such
+// vertex takes the area-weighted normal of the triangles it belongs to (or its neighbours' normals when those are
+// degenerate), once per parse -- every mount shares the geometry.
+const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _n = new THREE.Vector3();
+export function repairZeroNormals(root){
+  root.traverse(o => {
+    const g = o.isMesh ? o.geometry : null, n = g && g.attributes.normal, p = g && g.attributes.position;
+    if (!n || !p || g.userData.zeroNormalsRepaired) return;
+    g.userData.zeroNormalsRepaired = true;
+    const face = new Map(), near = new Map();
+    for (let i = 0; i < n.count; i++)
+      if (n.getX(i) === 0 && n.getY(i) === 0 && n.getZ(i) === 0){ face.set(i, new THREE.Vector3()); near.set(i, new THREE.Vector3()); }
+    if (!face.size) return;
+    const idx = g.index, tris = Math.floor((idx ? idx.count : p.count) / 3);
+    for (let t = 0; t < tris; t++){
+      const v = [0, 1, 2].map(k => idx ? idx.getX(3 * t + k) : 3 * t + k);
+      if (!v.some(i => face.has(i))) continue;
+      _a.fromBufferAttribute(p, v[0]); _b.fromBufferAttribute(p, v[1]); _c.fromBufferAttribute(p, v[2]);
+      _b.sub(_a); _c.sub(_a); _b.cross(_c);                         // the face normal, weighted by its area
+      for (const i of v){
+        if (!face.has(i)) continue;
+        face.get(i).add(_b);
+        for (const j of v) if (j !== i && !face.has(j)) near.get(i).add(_n.fromBufferAttribute(n, j));
+      }
+    }
+    for (const [i, f] of face){
+      const use = f.lengthSq() > 0 ? f : near.get(i).lengthSq() > 0 ? near.get(i) : f.set(0, 1, 0);
+      use.normalize();
+      n.setXYZ(i, use.x, use.y, use.z);                            // a normalized (int8) attribute takes floats in -1..1
+    }
+    n.needsUpdate = true;
+  });
 }
 
 // cache-bust: the dev server sends no no-cache headers and a stale manifest

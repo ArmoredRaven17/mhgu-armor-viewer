@@ -272,6 +272,7 @@ header #bar .btn.tiny{margin-right:0}
 .row{display:flex;align-items:center}
 .row.gap{gap:8px}
 .field{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--text-dim)}
+.art-levels{display:contents}   /* the Arts' level selects sit in the panel's own flow */
 .field .row.gap > select{flex:1;min-width:0}
 .hexbtn{flex:1;min-width:0;background:transparent;border:1px solid transparent;
   color:var(--text-hint);font-family:inherit;font-size:12px;letter-spacing:.02em;
@@ -442,11 +443,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
       <div id="paneHunter">
       <section class="panel" id="huntersPanel" data-open="false">
-        <button class="panel-head">Hunters <span class="chev">&#9662;</span></button>
+        <button class="panel-head">Hunter Slots <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <ol id="hunterList" class="chain hunters"></ol>
           <div class="row">
-            <button id="hunterNew" class="btn tiny" title="A new hunter, starting as a copy of this one">New</button>
+            <button id="hunterNew" class="btn tiny" title="A new hunter in the Chakra armour, every Hunter option on its default">New</button>
+            <button id="hunterCopy" class="btn tiny" title="A new hunter, a copy of this one">Copy</button>
             <button id="hunterRename" class="btn tiny" title="Rename this hunter">Rename</button>
             <button id="hunterDelete" class="btn tiny" title="Delete this hunter">Delete</button>
           </div>
@@ -454,7 +456,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </section>
 
       <section class="panel" data-open="true">
-        <button class="panel-head">Equipment <span class="chev">&#9662;</span></button>
+        <button class="panel-head">Armor Pieces <span class="chev">&#9662;</span></button>
         <div class="panel-body">
           <div class="field"><label for="htype">Type</label><select id="htype">
             <option value="all">Both</option>
@@ -468,86 +470,6 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="field"><label for="s_leg">Legs</label><select id="s_leg" data-slot="leg"></select></div>
         </div>
       </section>
-
-      <section class="panel" data-open="false">
-        <button class="panel-head">Hunter <span class="chev">&#9662;</span></button>
-        <div class="panel-body">
-          <div class="field"><label for="genderSel">Gender</label><select id="genderSel">
-            <option value="f">Female</option>
-            <option value="m">Male</option></select></div>
-          <label class="chk"><input type="checkbox" id="face" checked>Face</label>
-          <div class="field"><select id="faceStyle"></select></div>
-          <div class="field"><label for="facePaint">Face Paint</label><select id="facePaint" title="The face paints the game paints on this face: fourteen per gender, the same set on every face of that gender. In game they are Type 1 to Type 14"></select></div>
-          <div class="field"><label for="paintColor">Face Paint Color</label><div class="row gap"><select id="paintColor" title="The face paint's own colour. The game gives it one, as it does hair and skin; Default leaves the paint as it was drawn"></select><input type="color" id="paintColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
-          <div class="field"><label for="eyeColor">Eye Color</label><div class="row gap"><select id="eyeColor"></select><input type="color" id="eyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
-          <label class="chk"><input type="checkbox" id="hair" checked>Hair</label>
-          <div class="field"><select id="hairStyle"></select></div>
-          <div class="field"><label for="hairColor">Hair Color</label><div class="row gap"><select id="hairColor"></select><input type="color" id="hairColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
-          <label class="chk"><input type="checkbox" id="body" checked>Body</label>
-          <div class="field"><label for="skinColor">Skin Tone</label><div class="row gap"><select id="skinColor"></select><input type="color" id="skinColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
-          <div class="field"><label for="clothing">Clothing</label><select id="clothing"></select></div>
-          <div id="clothPig"></div>
-          <div class="field"><label for="pose">Pose</label>
-            <select id="pose"></select>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel" id="platePanel" data-open="false">
-        <button class="panel-head">Guild Info <span class="chev">&#9662;</span></button>
-        <div class="panel-body">
-          <label class="chk"><input type="checkbox" id="plateOn">Show the name plate</label>
-          <div class="field"><label for="plateName">Name</label><input id="plateName" type="text" maxlength="24" placeholder="this slot's name" title="The name on the plate. Empty uses the slot's name from the Hunters list, so several slots can share one hunter"></div>
-          <div class="field"><label for="plateHr">Hunter Rank</label><select id="plateHr" title="The rank band sets the plate's colour, as the game does"></select></div>
-          <div class="field"><label for="plateShow">Shows</label><select id="plateShow" title="What the plate reads: the name, the guild card title alone (only the icon until words are chosen), or the name with the title under it in brackets"><option value="name">Name</option><option value="title">Guild card title</option><option value="both">Name and title</option></select></div>
-          <div class="field"><label for="plateT1">Title #1</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
-          <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
-          <div class="field"><label for="plateT3">Title #2</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
-          <button id="plateUnlocks" class="btn block" title="Every title word in the Guild Card's order, with what unlocks it">Unlock Requirements</button>
-        </div>
-      </section>
-
-      <section class="panel" id="weaponPanel" data-open="false">
-        <button class="panel-head">Weapon <span class="chev">&#9662;</span></button>
-        <div class="panel-body">
-          <div class="field"><label for="weaponClass">Class</label><select id="weaponClass"></select></div>
-          <div class="field"><label for="weaponModel">Weapon</label><select id="weaponModel"></select></div>
-          <div class="field"><label for="weaponDrawn">Carry</label><select id="weaponDrawn"><option value="1">Drawn</option><option value="0">Sheathed</option></select></div>
-          <div class="field"><label for="weaponPose">Stance</label><select id="weaponPose"></select></div>
-          <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
-          <label class="chk" id="chargeField" style="display:none"><input type="checkbox" id="chargeChk">Demon Riot active (Hunter Art)</label>
-          <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active (Hunter Art)</label>
-          <div class="field" id="chaosOilField" style="display:none"><label for="chaosOil">Chaos Oil</label><select id="chaosOil"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
-          <div class="field" id="weaponOilField" style="display:none"><label for="weaponOil">Oil</label><select id="weaponOil"><option value="0">None</option><option value="1">Affinity Oil</option><option value="2">Destroyer Oil</option><option value="3">Stamina Oil</option><option value="4">Mind's Eye Oil</option></select></div>
-          <div class="field" id="enragedGuardField" style="display:none"><label for="enragedGuard">Enraged Guard</label><select id="enragedGuard"><option value="0">Off</option><option value="1">Power I</option><option value="2">Power II</option><option value="3">Power III</option></select></div>
-          <label class="chk" id="healShieldField" style="display:none"><input type="checkbox" id="healShieldChk">Healing Shield active (Hunter Art)</label>
-          <div class="field" id="devouringDemonField" style="display:none"><label for="devouringDemon">Devouring Demon</label><select id="devouringDemon"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
-          <div class="field" id="hornSongField" style="display:none"><label for="hornSong">Song</label><select id="hornSong"></select><span id="hornSongNotes" aria-hidden="true"></span></div>
-          <label class="chk" id="invigorationField" style="display:none"><input type="checkbox" id="invigorationChk">Invigoration active (Hunter Art)</label>
-          <label class="chk" id="chargeShotField" style="display:none"><input type="checkbox" id="chargeShotChk">Charge Shot active (Hunter Art)</label>
-          <div class="field" id="chargeLevelField" style="display:none"><label for="chargeLevel">Charge level</label><select id="chargeLevel"><option value="0">Off</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
-          <label class="chk" id="gunsBlazingField" style="display:none"><input type="checkbox" id="gunsBlazingChk">Guns Blazing active (Hunter Art)</label>
-          <label class="chk" id="gunpowderField" style="display:none"><input type="checkbox" id="gunpowderChk">Gunpowder Infusion active (Hunter Art)</label>
-          <label class="chk" id="hasteRainField" style="display:none"><input type="checkbox" id="hasteRainChk">Haste Rain active (Hunter Art)</label>
-          <label class="chk" id="loadUpField" style="display:none"><input type="checkbox" id="loadUpChk">Load Up (skill)</label>
-          <label class="chk" id="demonModeField" style="display:none"><input type="checkbox" id="demonModeChk">Demon Mode</label>
-          <label class="chk" id="archdemonField" style="display:none"><input type="checkbox" id="archdemonChk">Archdemon Mode</label>
-          <label class="chk" id="valorStateField" style="display:none"><input type="checkbox" id="valorStateChk">Valor State (Valor style)</label>
-          <label class="chk" id="wolfsMawField" style="display:none"><input type="checkbox" id="wolfsMawChk">Wolf's Maw active (Hunter Art)</label>
-          <label class="chk" id="impactPressField" style="display:none"><input type="checkbox" id="impactPressChk">Impact Press active (Hunter Art)</label>
-          <label class="chk" id="overheatField" style="display:none"><input type="checkbox" id="overheatChk">Overheated</label>
-          <label class="chk" id="dragonBreathField" style="display:none"><input type="checkbox" id="dragonBreathChk">Dragon Breath active (Hunter Art)</label>
-          <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
-          <div class="field" id="cbGaugeField" style="display:none"><label for="cbGauge">Charge Gauge</label><select id="cbGauge" title="The Charge Blade's gauge (+0x2780), filled by hits: its level is above 29, 45 or 71 (0x11dc73c)"><option value="0">Empty</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option></select></div>
-          <div class="field" id="shieldChargeField" style="display:none"><label for="shieldCharge">Shield Charge</label><select id="shieldCharge" title="The shield's charge (+0x3344): yellow or red, or Valor State's blue"><option value="0">Off</option><option value="1">Yellow</option><option value="2">Red</option><option value="3">Valor (blue)</option></select></div>
-          <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
-          <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
-          <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
-          <div class="field" id="kinsectMotField" style="display:none"><label for="kinsectMot">Kinsect motion</label><select id="kinsectMot" title="Perched on the arm, or one of the Kinsect's own motions in free flight"></select></div>
-
-        </div>
-      </section>
-
 
       <span id="pigmentPanel">
       <section class="panel" data-open="false">
@@ -583,6 +505,91 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       </section>
       </span>
 
+      <section class="panel" id="weaponPanel" data-open="false">
+        <button class="panel-head">Weapon <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div class="field"><label for="weaponClass">Class</label><select id="weaponClass"></select></div>
+          <div class="field"><label for="weaponModel">Weapon</label><select id="weaponModel"></select></div>
+          <div class="field"><label for="weaponDrawn">Carry</label><select id="weaponDrawn"><option value="1">Drawn</option><option value="0">Sheathed</option></select></div>
+          <div class="field"><label for="weaponPose">Stance</label><select id="weaponPose"></select></div>
+          <div class="field" id="weaponFormField" style="display:none"><label for="weaponForm">Form</label><select id="weaponForm"></select></div>
+          <label class="chk" id="chargeField" style="display:none"><input type="checkbox" id="chargeChk">Demon Riot active</label>
+          <label class="chk" id="tempestField" style="display:none"><input type="checkbox" id="tempestChk">Tempest Axe active</label>
+          <div class="field" id="chaosOilField" style="display:none"><label for="chaosOil">Chaos Oil</label><select id="chaosOil"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
+          <div class="field" id="weaponOilField" style="display:none"><label for="weaponOil">Oil</label><select id="weaponOil"><option value="0">None</option><option value="1">Affinity Oil</option><option value="2">Destroyer Oil</option><option value="3">Stamina Oil</option><option value="4">Mind's Eye Oil</option></select></div>
+          <div class="field" id="enragedGuardField" style="display:none"><label for="enragedGuard">Enraged Guard</label><select id="enragedGuard"><option value="0">Off</option><option value="1">Power I</option><option value="2">Power II</option><option value="3">Power III</option></select></div>
+          <label class="chk" id="healShieldField" style="display:none"><input type="checkbox" id="healShieldChk">Healing Shield active</label>
+          <div class="field" id="devouringDemonField" style="display:none"><label for="devouringDemon">Devouring Demon</label><select id="devouringDemon"><option value="0">Off</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select></div>
+          <div class="field" id="hornSongField" style="display:none"><label for="hornSong">Song</label><select id="hornSong"></select><span id="hornSongNotes" aria-hidden="true"></span></div>
+          <label class="chk" id="invigorationField" style="display:none"><input type="checkbox" id="invigorationChk">Invigoration active</label>
+          <label class="chk" id="chargeShotField" style="display:none"><input type="checkbox" id="chargeShotChk">Charge Shot active</label>
+          <div class="field" id="chargeLevelField" style="display:none"><label for="chargeLevel">Charge level</label><select id="chargeLevel"><option value="0">Off</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+          <label class="chk" id="gunsBlazingField" style="display:none"><input type="checkbox" id="gunsBlazingChk">Guns Blazing active</label>
+          <label class="chk" id="gunpowderField" style="display:none"><input type="checkbox" id="gunpowderChk">Gunpowder Infusion active</label>
+          <label class="chk" id="hasteRainField" style="display:none"><input type="checkbox" id="hasteRainChk">Haste Rain active</label>
+          <label class="chk" id="loadUpField" style="display:none"><input type="checkbox" id="loadUpChk">Load Up (skill)</label>
+          <label class="chk" id="demonModeField" style="display:none"><input type="checkbox" id="demonModeChk">Demon Mode</label>
+          <label class="chk" id="archdemonField" style="display:none"><input type="checkbox" id="archdemonChk">Archdemon Mode</label>
+          <label class="chk" id="valorStateField" style="display:none"><input type="checkbox" id="valorStateChk">Valor State (Valor style)</label>
+          <label class="chk" id="wolfsMawField" style="display:none"><input type="checkbox" id="wolfsMawChk">Wolf's Maw active</label>
+          <label class="chk" id="impactPressField" style="display:none"><input type="checkbox" id="impactPressChk">Impact Press active</label>
+          <label class="chk" id="overheatField" style="display:none"><input type="checkbox" id="overheatChk">Overheated</label>
+          <label class="chk" id="dragonBreathField" style="display:none"><input type="checkbox" id="dragonBreathChk">Dragon Breath active</label>
+          <div class="field" id="spiritField" style="display:none"><label for="spiritGauge">Spirit Gauge</label><select id="spiritGauge"><option value="0">Empty</option><option value="1">Level 1 (white)</option><option value="2">Level 2 (yellow)</option><option value="3">Level 3 (red)</option><option value="4">Valor (blue)</option></select></div>
+          <div class="field" id="cbGaugeField" style="display:none"><label for="cbGauge">Charge Gauge</label><select id="cbGauge" title="The Charge Blade's gauge (+0x2780), filled by hits: its level is above 29, 45 or 71 (0x11dc73c)"><option value="0">Empty</option><option value="1">Level 1</option><option value="2">Level 2</option><option value="3">Level 3</option></select></div>
+          <div class="field" id="shieldChargeField" style="display:none"><label for="shieldCharge">Shield Charge</label><select id="shieldCharge" title="The shield's charge (+0x3344): yellow or red, or Valor State's blue"><option value="0">Off</option><option value="1">Yellow</option><option value="2">Red</option><option value="3">Valor (blue)</option></select></div>
+          <div id="artLevels" class="art-levels"></div>
+          <div class="field" id="cbPhialsField" style="display:none"><label for="cbPhials">Phials</label><select id="cbPhials" title="The charged phials (+0x2b82): up to 5, or 7 / 9 / 10 under the Limit Breaker Art (the cap +0x2b84). The Ultra Element Discharge's burst (Stance 51, with the shield charged) and the Energy Blade read it"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6 (Limit Breaker)</option><option value="7">7 (Limit Breaker)</option><option value="8">8 (Limit Breaker)</option><option value="9">9 (Limit Breaker)</option><option value="10">10 (Limit Breaker)</option></select></div>
+          <div class="field" id="arrowField" style="display:none"><label for="arrow">Arrow</label><select id="arrow"></select></div>
+          <div class="field" id="kinsectField" style="display:none"><label for="kinsect">Kinsect</label><select id="kinsect"></select></div>
+          <div class="field" id="kinsectElField" style="display:none"><label for="kinsectEl">Element</label><select id="kinsectEl" title="The Kinsect's strongest element, which colours it"></select></div>
+          <div class="field" id="kinsectMotField" style="display:none"><label for="kinsectMot">Kinsect motion</label><select id="kinsectMot" title="Perched on the arm, or one of the Kinsect's own motions in free flight"></select></div>
+          <p class="hint">Effects pause with animations. This ensures most effects stay in sync.</p>
+
+        </div>
+      </section>
+
+      <section class="panel" data-open="false">
+        <button class="panel-head">Hunter <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div class="field"><label for="genderSel">Gender</label><select id="genderSel">
+            <option value="f">Female</option>
+            <option value="m">Male</option></select></div>
+          <label class="chk"><input type="checkbox" id="face" checked>Face</label>
+          <div class="field"><select id="faceStyle"></select></div>
+          <div class="field"><label for="facePaint">Face Paint</label><select id="facePaint" title="The face paints the game paints on this face: fourteen per gender, the same set on every face of that gender. In game they are Type 1 to Type 14"></select></div>
+          <div class="field"><label for="paintColor">Face Paint Color</label><div class="row gap"><select id="paintColor" title="The face paint's own colour. The game gives it one, as it does hair and skin; Default leaves the paint as it was drawn"></select><input type="color" id="paintColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="eyeColor">Eye Color</label><div class="row gap"><select id="eyeColor"></select><input type="color" id="eyeColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <label class="chk"><input type="checkbox" id="hair" checked>Hair</label>
+          <div class="field"><select id="hairStyle"></select></div>
+          <div class="field"><label for="hairColor">Hair Color</label><div class="row gap"><select id="hairColor"></select><input type="color" id="hairColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <label class="chk"><input type="checkbox" id="body" checked>Body</label>
+          <div class="field"><label for="skinColor">Skin Tone</label><div class="row gap"><select id="skinColor"></select><input type="color" id="skinColorRGB" class="rgb-input" title="Pick a color" hidden></div></div>
+          <div class="field"><label for="clothing">Clothing</label><select id="clothing"></select></div>
+          <div id="clothPig"></div>
+          <div class="field"><label for="pose">Pose</label>
+            <select id="pose"></select>
+          </div>
+          <label class="chk"><input type="checkbox" id="skillPeak">Peak Performance</label>
+          <label class="chk"><input type="checkbox" id="skillChallenger">Challenger</label>
+          <label class="chk"><input type="checkbox" id="skillLatent">Latent Power</label>
+          <label class="chk"><input type="checkbox" id="skillTrump">Trump Card</label>
+        </div>
+      </section>
+
+      <section class="panel" id="platePanel" data-open="false">
+        <button class="panel-head">Guild Info <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <label class="chk"><input type="checkbox" id="plateOn">Show the name plate</label>
+          <div class="field"><label for="plateName">Name</label><input id="plateName" type="text" maxlength="24" placeholder="this slot's name" title="The name on the plate. Empty uses the slot's name from the Hunters list, so several slots can share one hunter"></div>
+          <div class="field"><label for="plateHr">Hunter Rank</label><select id="plateHr" title="The rank band sets the plate's colour, as the game does"></select></div>
+          <div class="field"><label for="plateShow">Shows</label><select id="plateShow" title="What the plate reads: the name, the guild card title alone (only the icon until words are chosen), or the name with the title under it in brackets"><option value="name">Name</option><option value="title">Guild card title</option><option value="both">Name and title</option></select></div>
+          <div class="field"><label for="plateT1">Title #1</label><select id="plateT1" title="The first word of the guild card title"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT2">Joined by</label><select id="plateT2" title="The connector between the two words"><option>(None)</option></select></div>
+          <div class="field"><label for="plateT3">Title #2</label><select id="plateT3" title="The second word of the guild card title"><option>(None)</option></select></div>
+          <button id="plateUnlocks" class="btn block" title="Every title word in the Guild Card's order, with what unlocks it">Unlock Requirements</button>
+        </div>
+      </section>
 
       <section class="panel" id="animPanel" data-open="false">
         <button class="panel-head">Animation <span class="chev">&#9662;</span></button>
@@ -614,6 +621,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           </div>
         </div>
       </section>
+
       <section class="panel" id="lightPanel" data-open="false">
         <button class="panel-head">Lighting <span class="chev">&#9662;</span></button>
         <div class="panel-body">
@@ -637,6 +645,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           </div>
         </div>
       </section>
+
       <section class="panel" id="camPanel" data-open="false">
         <button class="panel-head">Camera <span class="chev">&#9662;</span></button>
         <div class="panel-body">
@@ -660,6 +669,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
           <div class="row"><button id="camReset" class="btn tiny" title="Camera settings back to their defaults: Orbit, Standard lens, 35 mm, turntable off, smooth orbit on, zoom at the centre, no face lock, floor grid on. The view itself stays where it is (Fit to View frames it)">Reset camera settings</button></div>
         </div>
       </section>
+
       <section class="panel" id="fxPanel" data-open="false">
         <button class="panel-head">Effects <span class="chev">&#9662;</span></button>
         <div class="panel-body">
@@ -1267,6 +1277,8 @@ import { GunlanceEffects, PLAYER_REQUESTS as GL_PLAYER_REQUESTS } from './render
 import { GreatSwordEffects, PLAYER_REQUESTS as GS_PLAYER_REQUESTS } from './render/weapon-fx-w00.js';
 import { InsectGlaiveEffects, PLAYER_REQUESTS as IG_PLAYER_REQUESTS } from './render/weapon-fx-w13.js';
 import { ChargeBladeEffects, PLAYER_REQUESTS as CB_PLAYER_REQUESTS } from './render/weapon-fx-w14.js';
+import { ARTS_LEVELS, ARTS_WORD, LEVEL_DEFAULT, artOf } from './render/arts-levels.js';
+import { SkillEffects, REQUEST_JOINTS as SKILL_REQUEST_JOINTS } from './render/skill-effects.js';
 import { ROM_SPHERE, setRomSphere, ROM_PIGMENT, setRomPigment } from './render/material.js';
 import { enableRomSpecular, setRomSpecularAmount, anchorMisses, setGlobalEnvCube, setGlobalReflection,
          globalReflectionOn } from './render/rom/specular.js';
@@ -2325,7 +2337,7 @@ function saveState(){
       chaosOil: document.getElementById('chaosOil').value,
       devouringDemon: document.getElementById('devouringDemon').value,
       hornSong: document.getElementById('hornSong').value, invigoration: document.getElementById('invigorationChk').checked,
-      chargeShot: document.getElementById('chargeShotChk').checked, chargeLevel: document.getElementById('chargeLevel').value,
+      chargeShot: document.getElementById('chargeShotChk').checked, chargeLevel: chargeShotChk.checked ? chargeLevelSel.value : String(chargeLevelKept),
       gunsBlazing: document.getElementById('gunsBlazingChk').checked, gunpowder: document.getElementById('gunpowderChk').checked,
       hasteRain: document.getElementById('hasteRainChk').checked,
       loadUp: document.getElementById('loadUpChk').checked,
@@ -2334,7 +2346,7 @@ function saveState(){
       impactPress: document.getElementById('impactPressChk').checked,
       overheat: document.getElementById('overheatChk').checked, dragonBreath: document.getElementById('dragonBreathChk').checked,
       weaponOil: document.getElementById('weaponOil').value, spirit: document.getElementById('spiritGauge').value,
-      cbGauge: cbGaugeSel.value, shieldCharge: shieldChargeSel.value,
+      cbGauge: cbGaugeSel.value, shieldCharge: shieldChargeSel.value, cbPhials: cbPhialsSel.value, artLevels: Object.assign({}, artLevelState),
       enragedGuard: document.getElementById('enragedGuard').value, healShield: document.getElementById('healShieldChk').checked,
       kinsectMot: kinsectMotSel.value, arrow: arrowSel.value,
       ...chainSaveState(),           // the chain and its Loop (Raven, 2026-09-03: "survive a page reload too")
@@ -2346,6 +2358,9 @@ function saveState(){
       slotDev: slotDevState(), devAnim: devAnimOverride,
       allPig: [document.getElementById('pgOn_all').checked,
                document.getElementById('pg_all').value],
+      skillFx: Object.assign({}, skillFx.want),
+      clothPig: [document.getElementById('pgOn_cloth').checked,
+                 document.getElementById('pg_cloth').value],
       pigDef: pigDefState()          // the rows on Default, which follow the armor
     }));
   } catch(e){ /* private window, blocked storage - not worth failing over */ }
@@ -2719,6 +2734,18 @@ const weaponFx = new WeaponEffects();
 // viewer's 507 poses land on one. Raven, 2026-09-27: "We are likely missing an entire class of
 // effects" -- this was it, and the ROM's own psl/player/mot/co says so.
 const hunterFx = new WeaponEffects();
+// THE SKILL EFFECTS (render/skill-effects.js; Raven, 2026-10-15: the switches in the "Hunter Tab"): the common holder's
+// flash and pulse for Peak Performance, Challenger, Latent Power and Trump Card, on the hunter host at joint 8 or 12
+const skillFx = new SkillEffects();
+skillFx.hunter = hunterFx;
+hunterFx.requestJoints = () => SKILL_REQUEST_JOINTS;
+const SKILL_CHKS = { peak: 'skillPeak', challenger: 'skillChallenger', latent: 'skillLatent', trump: 'skillTrump' };
+for (const [id, el] of Object.entries(SKILL_CHKS)){
+  const c = document.getElementById(el);
+  if (SAVED && SAVED.skillFx && typeof SAVED.skillFx[id] === 'boolean') c.checked = SAVED.skillFx[id];
+  skillFx.set(id, c.checked);
+  c.onchange = () => { skillFx.set(id, c.checked); saveState(); };
+}
 // THE SWITCH AXE'S SWORD AURA (render/weapon-fx.js WeaponUnitEffects, Raven 2026-09-28: "We're still missing
 // effects from Switch Axe"): the game hangs it from the WEAPON unit at its joint 0, so it has a host of its own,
 // rooted on the weapon's main part, and it fires when a sword-mode stance starts -- the ROM's own list of them.
@@ -2759,14 +2786,15 @@ weaponOilSel.onchange = () => { weapon.setOil(+weaponOilSel.value); saveState();
 spiritSel.onchange = () => { weapon.setSpirit(+spiritSel.value); saveState(); };
 // THE LANCE'S ART STATES (render/weapon-fx-w03.js), the user's controls: Enraged Guard's absorbed power -- the aura the
 // holder keeps on the hunter, by the tier of the hit the guard took (rows 900..902) -- and Healing Shield's coat on the
-// shield (render/weapon.js setShieldCoat). The Enraged Guard stance's own shell takes its row from the Art's level, which
-// the viewer has not got: it reads the same select (Power I..III -> level I..III, level I when off).
+// shield (render/weapon.js setShieldCoat). The shell 0x28 of Arts Motion[52] (Corkscrew Jab: its command file's acts 71..73
+// lead to act 74; 2026-10-08) takes its row from that Art's level: its own select (artLevelOf).
 const guardFx = new EnragedGuard();
 guardFx.host = weaponFx; guardFx.requests = playerReq;
 const enragedGuardSel = document.getElementById('enragedGuard'), healShieldChk = document.getElementById('healShieldChk');
 enragedGuardSel.onchange = () => { guardFx.setTier(+enragedGuardSel.value); saveState(); };
 healShieldChk.onchange = () => { weapon.setShieldCoat(healShieldChk.checked); saveState(); };
-playerReq.levelOf = cls => (cls === 'w03' && guardFx.tier) ? guardFx.tier - 1 : 0;
+// a stance's request by its Art's level (the Lance's Arts Motion[52] shell 0x28): the Art's own select (artLevelOf)
+playerReq.levelOf = (cls, key) => artLevelOf(cls, key);
 // THE LONG SWORD'S DEVOURING DEMON (render/weapon-fx-w07.js): the holder hangs the Art's aura from the sword unit while
 // the state lasts (rows 900..902 by the Art's level), drawn or sheathed -- nothing in the ROM tests either -- and the Art's
 // own stance asks 920 at its start and the level's aura at frame 190. The state is the user's control.
@@ -2827,8 +2855,19 @@ loadSongs().then(() => { hornNotesKey = null; syncHorn(); });
 const lbgFx = new LightBowgunEffects();
 lbgFx.hunter = weaponFx;
 const chargeShotChk = document.getElementById('chargeShotChk'), chargeLevelSel = document.getElementById('chargeLevel');
-chargeShotChk.onchange = () => { lbgFx.setChargeShot(chargeShotChk.checked); saveState(); };
+// THE CHARGE LEVEL BELONGS TO CHARGE SHOT (Raven, 2026-10-12: "LBG Charge Level should be off when Charge Shot active is
+// off"): the select shows Off and is greyed out while the Art is off; the level picked before comes back when it is on
+let chargeLevelKept = 0;
+function syncChargeLevel(){
+  const off = !chargeShotChk.checked;
+  if (off){ if (!chargeLevelSel.disabled) chargeLevelKept = +chargeLevelSel.value; chargeLevelSel.value = '0'; }
+  else if (chargeLevelSel.disabled) chargeLevelSel.value = String(chargeLevelKept);
+  chargeLevelSel.disabled = off;
+  lbgFx.setLevel(+chargeLevelSel.value);
+}
+chargeShotChk.onchange = () => { lbgFx.setChargeShot(chargeShotChk.checked); syncChargeLevel(); saveState(); };
 chargeLevelSel.onchange = () => { lbgFx.setLevel(+chargeLevelSel.value); saveState(); };
+syncChargeLevel();     // Charge Shot starts off, so the level does too (a boot that restores no weapon state stops here)
 // THE HEAVY BOWGUN (render/weapon-fx-w04.js): one effect holder on two hosts -- the gun (the shot's effect on
 // Motion[121], Arts Motion[1]'s row, Gunpowder Infusion's glow, Arts Motion[151]'s loading rows) and the player (Guns
 // Blazing's aura, Gunpowder Infusion's activation; the sharpening is PlayerRequests'). Guns Blazing and Gunpowder
@@ -2880,7 +2919,7 @@ impactPressChk.onchange = () => { hammerFx.setImpact(impactPressChk.checked); sa
 const gsFx = new GreatSwordEffects();
 gsFx.hunter = weaponFx;
 // THE INSECT GLAIVE (render/weapon-fx-w13.js, a first pass): the hunter-side rows -- the Extract Charge's glow on the
-// glaive, the glaive's flashes, Extract Hunter's; the kinsect itself is not in the viewer.
+// glaive, the glaive's flashes, Bug Majeure's; the kinsect itself is not in the viewer.
 const igFx = new InsectGlaiveEffects();
 igFx.hunter = weaponFx;
 // THE CHARGE BLADE (render/weapon-fx-w14.js, a first pass): hosts on the blade and the shield, the charged slash on the
@@ -2891,13 +2930,56 @@ cbFx.onCoat = c => weapon.setCbCoat(c);
 const cbGaugeSel = document.getElementById('cbGauge'), shieldChargeSel = document.getElementById('shieldCharge');
 cbGaugeSel.onchange = () => { cbFx.setGauge(+cbGaugeSel.value); weapon.setCbGauge(+cbGaugeSel.value); saveState(); };
 shieldChargeSel.onchange = () => { cbFx.setShieldCharge(+shieldChargeSel.value); saveState(); };
+// THE CHARGED PHIALS (Raven, 2026-10-08: "add a Phial count, this impacts things like Energy Blade animations as well"): the
+// user's, as the gauge is; the burst's row also reads the weapon's phial type and element (docs/weapons/w14.json)
+const cbPhialsSel = document.getElementById('cbPhials');
+cbPhialsSel.onchange = () => { cbFx.setPhials(+cbPhialsSel.value); saveState(); };
+cbFx.weaponInfo = () => ({ phial: weapon.phial(), element: weapon.element() });
+// THE HUNTER ARTS' LEVELS (render/arts-levels.js; Raven, 2026-10-08: "A select per Art"): an Art whose effects change with its
+// level has a select while its class is in the hand, III by default; the rest play at III. artLevelState: 'cls:art' -> 0..2.
+const artLevelState = {};
+function artLevelOf(cls, id){
+  const a = artOf(cls, id);
+  // an Art the page already has a control for keeps it (Chaos Oil: Off / I..III; off leaves the default)
+  if (a && a.from === 'chaosOil'){ const n = +chaosOilSel.value; return n >= 1 && n <= 3 ? n - 1 : LEVEL_DEFAULT; }
+  const v = a ? artLevelState[cls + ':' + a.key] : undefined;
+  return v === 0 || v === 1 || v === 2 ? v : LEVEL_DEFAULT;
+}
+function applyArtLevels(){ hammerFx.artLevel = artLevelOf('w02', 'sa:101'); }
+cbFx.artLevel = id => artLevelOf('w14', id);
+function buildArtLevels(){
+  const box = document.getElementById('artLevels'), cls = weaponClassSel.value;
+  box.textContent = '';
+  for (const a of ARTS_LEVELS[cls] || []){
+    if (a.from) continue;
+    const f = document.createElement('div'); f.className = 'field';
+    const id = 'artLevel-' + cls + '-' + a.key;
+    const lab = document.createElement('label'); lab.htmlFor = id; lab.textContent = a.name;
+    const sel = document.createElement('select'); sel.id = id; sel.title = 'Art level: ' + a.why;
+    ['I', 'II', 'III'].forEach((t, i) => { const o = document.createElement('option'); o.value = String(i); o.textContent = t; sel.appendChild(o); });
+    sel.value = String(artLevelOf(cls, a.motions[0]));
+    sel.onchange = () => { artLevelState[cls + ':' + a.key] = +sel.value; applyArtLevels(); saveState(); };
+    f.append(lab, sel); box.appendChild(f);
+  }
+}
+// THE MOTION'S SCHEDULE WORD (render/weapon-fx.js clipMask): every Arts motion's by its Art's level (the base hook 0x2a15d0),
+// or its class hook's. Not yet: the Bow (its words take a per-bow index, 0x13f404, not read) and the Great Sword's 7103 (by
+// the Art's own charge, kind 10, which the Great Sword module does not model) -- those clips play every bit, as before.
+weaponFx.clipMask = id => {
+  const cls = weapon.cls;
+  if (!cls || cls !== weaponClassSel.value || !/^sa:\d+$/.test(id || '')) return null;
+  if (cls === 'w14') return cbFx.clipMask(id);
+  if (cls === 'w10' || (cls === 'w00' && id === 'sa:103')) return null;
+  if (cls === 'w02' && (id === 'sa:102' || id === 'sa:104')) return hammerFx.uppercutWord();
+  return ARTS_WORD[artLevelOf(cls, id)];
+};
 const glFx = new GunlanceEffects();
 glFx.hunter = weaponFx;
 const overheatChk = document.getElementById('overheatChk'), dragonBreathChk = document.getElementById('dragonBreathChk');
 overheatChk.onchange = () => { glFx.setOverheat(overheatChk.checked); saveState(); };
 dragonBreathChk.onchange = () => { glFx.setBreath(dragonBreathChk.checked); saveState(); };
 function syncWeaponFx(){
-  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); igFx.detach(); cbFx.detach(); return Promise.resolve(null); }
+  if (figure !== 'hunter') { weaponFx.detach(); hunterFx.detach(); skillFx.detach(); swordFx.detach(); chaosFx.detach(); ddFx.detach(); invFx.detach(); lbgFx.detach(); hbgFx.detach(); bowFx.detach(); dbFx.detach(); hammerFx.detach(); impactFx.detach(); glFx.detach(); gsFx.detach(); igFx.detach(); cbFx.detach(); return Promise.resolve(null); }
   syncHorn();
   const inHand = weapon.cls === weaponClassSel.value ? weaponClassSel.value : null;
   const mainPart = weapon.parts && weapon.parts.main ? [weapon.parts.main] : [];
@@ -2947,6 +3029,8 @@ function stepWeaponFx(){
   const gp = (!weapon.stance && curGamePose) ? curGamePose : null;
   const gm = gp && /Motion\[(\d+)\]/.exec(gp.clip || '');
   hunterFx.stepClip(gm ? gp.src + ':' + gm[1] : null, t, clock);
+  skillFx.cls = weapon.cls && weapon.cls === weaponClassSel.value ? weapon.cls : null;
+  skillFx.step(clock);
   // THE SWITCH AXE'S SWORD AURA: requested when a sword-mode stance starts, from the weapon-unit host (render/weapon-fx.js
   // WeaponUnitEffects), the way uPlayerQuest08's action code requests it -- the 27 main-list motions, the morph's Motion[3]
   // and the Arts' Motion[91], with the phial's stage colour. The bursts (510..523) fire at the two motion frames the
@@ -3482,6 +3566,9 @@ for (const slot of SLOTS) {
   const sel = document.querySelector('select[data-slot="' + slot + '"]');
   sel.onchange = () => setSlot(slot, sel.value).then(() => {
     if (pigOnDef.has(slot)) followDefaultPig(slot);   // reads the select, so a superseded load is harmless
+    // the effects hang from the hunter's bones, and the piece's are new: rebind them (render/weapon-fx.js sync), as a set's
+    // load does (apply)
+    if (weaponFxOn) syncWeaponFx();
     saveState();
   });
 }
@@ -3729,12 +3816,26 @@ hunterList.onclick = e => {
   if (!li || hunterRenaming) return;
   switchHunter(+li.dataset.k);
 };
-document.getElementById('hunterNew').onclick = () => {
+// Copy: a copy of the hunter on screen (Raven, 2026-10-12: "The current New changed to Copy", "Since that is what it does
+// basically, copies the current hunter")
+document.getElementById('hunterCopy').onclick = () => {
   if (hunterBusy) return;
   bankHunter();
-  HUNTERS.push({ name: freeHunterName(), set: currentSet() });   // a copy of the hunter on screen
+  HUNTERS.push({ name: freeHunterName(), set: currentSet() });
   hunterIndex = HUNTERS.length - 1;
   paintHunters(); saveState();
+};
+// New: a hunter of this gender in the Chakra armour with every Hunter option on its default (Raven, 2026-10-12: "Type 1
+// Face, None, Default, Default, Enabled, Type 1 Hair, Default, Enabled, Default, Type 1 Clothing, #c0c0c0, Pose 1" --
+// the Clothing Color undyed, as its row reads at rest). The view's own settings -- the weapon in hand, the lighting, the
+// effects and the camera -- stay as they are; the name plate is the hunter's own, so the new one has none.
+document.getElementById('hunterNew').onclick = async () => {
+  if (hunterBusy) return;
+  bankHunter();
+  const set = Object.assign({}, RESET_HUNTER, { gender, pigment: Object.assign({}, RESET_HUNTER.pigment, { cloth: null }) });
+  delete set.lighting; delete set.effects; delete set.camera; delete set.weapon;
+  HUNTERS.push({ name: freeHunterName(), set, inheritWeapon: true });
+  await switchHunter(HUNTERS.length - 1, { noBank: true });
 };
 document.getElementById('hunterRename').onclick = () => {
   const li = hunterList.querySelector('li.on'); if (!li || hunterRenaming) return;
@@ -4232,6 +4333,8 @@ async function buildWeaponLists(){
   document.getElementById('spiritField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('cbGaugeField').style.display = weaponClassSel.value === 'w14' ? '' : 'none';
   document.getElementById('shieldChargeField').style.display = weaponClassSel.value === 'w14' ? '' : 'none';
+  document.getElementById('cbPhialsField').style.display = weaponClassSel.value === 'w14' ? '' : 'none';
+  buildArtLevels();
   document.getElementById('devouringDemonField').style.display = weaponClassSel.value === 'w07' ? '' : 'none';
   document.getElementById('hornSongField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
   document.getElementById('invigorationField').style.display = weaponClassSel.value === 'w12' ? '' : 'none';
@@ -4752,8 +4855,10 @@ function readSlotPigments(){
     const on = document.getElementById('pgOn_'+sl).checked;
     const hex = document.getElementById('pg_'+sl).value;
     if (!on) { slotPigment[sl] = null; continue; }
-    const c = new THREE.Color(hex);
-    slotPigment[sl] = [c.r*255, c.g*255, c.b*255];
+    // THE GAME'S BYTES, as the ROM's own colours reach a channel (render/material.js setChannelColor decodes them like a
+    // texel: Option A, 2026-10-15). `new THREE.Color(hex)` decoded them here already, so a picked colour and the same colour
+    // on Default (the piece's own mSymbolCol, raw) used to differ.
+    slotPigment[sl] = rgb255(hex);
   }
   armorMats.forEach(applyTint);
   paintHexLabels();
@@ -5114,7 +5219,6 @@ for (const el of [devA,devB]){
 }
 // stepped from the render loop; mixes A->B by the chosen animation and drives the
 // existing pigment path, so it lands on exactly the _sym_ region like any other colour
-const _dcA=new THREE.Color(), _dcB=new THREE.Color(), _dcM=new THREE.Color();
 // Per slot, because a Deviant pigment is assigned per armour piece. Overwrites that slot's
 // entry in slotPigment each frame; readSlotPigments sets the resting colour, this animates
 // it. A slot whose row is unticked is skipped, so unticking stops the animation too.
@@ -5148,9 +5252,9 @@ function stepDeviant(t){
     if (!d) continue;
     const cb = document.getElementById('pgOn_' + sl);
     if (cb && !cb.checked) continue;
-    _dcA.set(d.a); _dcB.set(d.b);
-    _dcM.copy(_dcA).lerp(_dcB, deviantMix(t, d.anim));
-    slotPigment[sl] = [_dcM.r*255, _dcM.g*255, _dcM.b*255];
+    // the blend in the game's bytes, as the slot pigments are held (setChannelColor decodes them)
+    const pa = rgb255(d.a) || [0, 0, 0], pb = rgb255(d.b) || [0, 0, 0], k = deviantMix(t, d.anim);
+    slotPigment[sl] = [pa[0] + (pb[0] - pa[0]) * k, pa[1] + (pb[1] - pa[1]) * k, pa[2] + (pb[2] - pa[2]) * k];
     any = true;
   }
   if (any) armorMats.forEach(applyTint);
@@ -5167,6 +5271,10 @@ if (SAVED && Array.isArray(SAVED.slotPig)) {
   });
 }
 if (SAVED) applyPigDef(SAVED.pigDef);
+if (SAVED && Array.isArray(SAVED.clothPig)) {
+  document.getElementById('pgOn_cloth').checked = !!SAVED.clothPig[0];
+  if (typeof SAVED.clothPig[1] === 'string') document.getElementById('pg_cloth').value = SAVED.clothPig[1];
+}
 if (SAVED && Array.isArray(SAVED.allPig)) {
   document.getElementById('pgOn_all').checked = !!SAVED.allPig[0];
   if (typeof SAVED.allPig[1] === 'string') document.getElementById('pg_all').value = SAVED.allPig[1];
@@ -5868,7 +5976,8 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && /^\d+$/.test(String(SAVED.hornSong))){ hornSongSel.dataset.want = String(SAVED.hornSong); hornNotesKey = null; syncHorn(); }
   if (SAVED && SAVED.invigoration !== undefined){ invigorationChk.checked = !!SAVED.invigoration; invFx.setActive(!!SAVED.invigoration); }
   if (SAVED && SAVED.chargeShot !== undefined){ chargeShotChk.checked = !!SAVED.chargeShot; lbgFx.setChargeShot(!!SAVED.chargeShot); }
-  if (SAVED && /^[0-4]$/.test(String(SAVED.chargeLevel))){ chargeLevelSel.value = String(SAVED.chargeLevel); lbgFx.setLevel(+SAVED.chargeLevel); }
+  if (SAVED && /^[0-4]$/.test(String(SAVED.chargeLevel))){ chargeLevelKept = +SAVED.chargeLevel; chargeLevelSel.value = String(SAVED.chargeLevel); lbgFx.setLevel(+SAVED.chargeLevel); }
+  syncChargeLevel();
   if (SAVED && SAVED.gunsBlazing !== undefined){ gunsBlazingChk.checked = !!SAVED.gunsBlazing; hbgFx.setBlazing(!!SAVED.gunsBlazing); }
   if (SAVED && SAVED.gunpowder !== undefined){ gunpowderChk.checked = !!SAVED.gunpowder; hbgFx.setInfusion(!!SAVED.gunpowder); }
   if (SAVED && SAVED.hasteRain !== undefined){ hasteRainChk.checked = !!SAVED.hasteRain; bowFx.setHaste(!!SAVED.hasteRain); }
@@ -5887,6 +5996,11 @@ if (weaponClassSel.value !== 'none'){
   if (SAVED && SAVED.shieldCharge !== undefined){
     const n = SAVED.shieldCharge === true ? 2 : /^[0-3]$/.test(String(SAVED.shieldCharge)) ? +SAVED.shieldCharge : 0;
     shieldChargeSel.value = String(n); cbFx.setShieldCharge(n);
+  }
+  if (SAVED && /^([0-9]|10)$/.test(String(SAVED.cbPhials))){ cbPhialsSel.value = String(SAVED.cbPhials); cbFx.setPhials(+SAVED.cbPhials); }
+  if (SAVED && SAVED.artLevels && typeof SAVED.artLevels === 'object'){
+    for (const [k, v] of Object.entries(SAVED.artLevels)) if (v === 0 || v === 1 || v === 2) artLevelState[k] = v;
+    applyArtLevels(); buildArtLevels();
   }
   if (SAVED && /^[0-3]$/.test(String(SAVED.enragedGuard))){ enragedGuardSel.value = String(SAVED.enragedGuard); guardFx.setTier(+SAVED.enragedGuard); }
   if (SAVED && SAVED.healShield !== undefined){ healShieldChk.checked = !!SAVED.healShield; weapon.setShieldCoat(!!SAVED.healShield); }
@@ -5968,6 +6082,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
     sync: () => syncWeaponFx(),
     stats: () => weaponFx.stats(),
     // the hunter's OWN effects, the common-motion layer (co_0..co_6), a second host beside the weapon's
+    skills: { stats: () => skillFx.stats(), set: (id, on) => { const c = document.getElementById(SKILL_CHKS[id]); c.checked = !!on; c.onchange(); return skillFx.stats(); } },
     hunter: { stats: () => hunterFx.stats(), def: () => hunterFx.live && hunterFx.live.def,
               sync: () => syncWeaponFx(), set: on => hunterFx.setEnabled(on) },
     bounds: () => weaponFx.bounds(),
@@ -6003,8 +6118,8 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           requests: () => playerReq.tables.w12, obj: () => ({ hornSong, invFx }), raw: () => invFx.live, bounds: () => invFx.bounds() },
     // the Light Bowgun (render/weapon-fx-w06.js): Charge Shot, the charge level, the gun's host
     lbg: { stats: () => lbgFx.stats(), raw: () => lbgFx.live, obj: () => lbgFx, bounds: () => lbgFx.bounds(),
-           chargeShot: on => { chargeShotChk.checked = !!on; lbgFx.setChargeShot(!!on); return lbgFx.stats(); },
-           level: n => { chargeLevelSel.value = String(n | 0); lbgFx.setLevel(n | 0); return lbgFx.stats(); } },
+           chargeShot: on => { chargeShotChk.checked = !!on; lbgFx.setChargeShot(!!on); syncChargeLevel(); return lbgFx.stats(); },
+           level: n => { if (!chargeLevelSel.disabled){ chargeLevelSel.value = String(n | 0); lbgFx.setLevel(n | 0); } return lbgFx.stats(); } },
     // the Heavy Bowgun (render/weapon-fx-w04.js): Guns Blazing, Gunpowder Infusion, the gun's host
     hbg: { stats: () => hbgFx.stats(), raw: () => hbgFx.live, obj: () => hbgFx, bounds: () => hbgFx.bounds(),
            blazing: on => { gunsBlazingChk.checked = !!on; hbgFx.setBlazing(!!on); return hbgFx.stats(); },
@@ -6243,7 +6358,7 @@ function currentSet(){
   // Only the five per-slot pigments are written -- "All" is a write-through control, so
   // the slots already carry its effect and storing it too could contradict them.
   const pigment = {}, deviant = {};
-  for (const slot of SLOTS){
+  for (const slot of SLOTS.concat(['cloth'])){
     pigment[slot] = document.getElementById('pgOn_' + slot).checked
       ? document.getElementById('pg_' + slot).value : null;
   }
@@ -6648,6 +6763,12 @@ async function applySet(d, opt){
     const allCbEl = document.getElementById('pgOn_all');
     allCbEl.checked = uniform;
     if (uniform) document.getElementById('pg_all').value = vals[0];
+    // the Clothing Color is the hunter's too (a set without it: undyed)
+    {
+      const hex = d.pigment.cloth, on = typeof hex === 'string' && /^#[0-9a-f]{6}$/i.test(hex);
+      document.getElementById('pgOn_cloth').checked = on;
+      document.getElementById('pg_cloth').value = on ? hex : PIG_NONE;
+    }
     for (const sl of SLOTS) pigOnDef.delete(sl);
     if (Array.isArray(d.pigDefault)) for (const sl of d.pigDefault) if (SLOTS.includes(sl)) pigOnDef.add(sl);
     readSlotPigments();

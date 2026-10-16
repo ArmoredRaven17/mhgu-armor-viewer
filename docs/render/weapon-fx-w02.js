@@ -220,6 +220,10 @@ export class HammerEffects {
     // IMPACT PRESS: the status stands with the switch, or from its stance's frame 250
     this.impactNow = this.impact || (key === IMPACT && f >= IMPACT_FRAME);
   }
+  // THE UPPERCUT'S SCHEDULE WORD (the class hook 0x1172dd8 for 7102 / 7104): in Typhoon Trigger's acts 51..58 one stage bit
+  // over bit 0 -- 0x10000001 / 0x20000001 / 0x40000001 for the stage 0x16a57e0[level][count] (830 / 831 / 832) -- and
+  // stage 0's otherwise; entered on its own the count is 0, which is stage 0 at every level
+  uppercutWord(){ return (1 | (0x10000000 << STAGES[this.artLevel][Math.min(this.count, 3)])) >>> 0; }
   stats(){
     const held = {};
     for (const [k, x] of this.held) held[k] = { key: x.key, running: running(x),

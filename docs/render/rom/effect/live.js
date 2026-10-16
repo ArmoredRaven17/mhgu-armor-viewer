@@ -311,6 +311,18 @@ export class LiveEffects {
     return this;
   }
 
+  // THE BONES MOVED UNDER A RUNNING HOST (the Armor Viewer, 2026-10-08; Raven: "When updating helms with Wolf's Maw active,
+  // the eye effect becomes stationary"): a piece of the figure was remounted, so the joints bound at attach point at bones
+  // no longer in the scene and the effects hanging from them stand still. `root`'s gid table (userData.gidBones) is the new
+  // one; every joint, the origin bone and the shells' bones are looked up again. The effects keep running.
+  rebindBones(root){
+    const bones = gidBonesOf(root);
+    for (const x of this.joints || []) x.bone = (bones.find(b => b.gid === x.j) || {}).node || null;
+    const originGid = this.def.originJoint == null ? 0 : this.def.originJoint;
+    this.originBone = (bones.find(b => b.gid === originGid) || {}).node || null;
+    if (this.shellBones) this.shellBones = bones.filter(b => b.gid != null && b.node);
+  }
+
   // THE GROUND, OFF BY DEFAULT -- a debug/terrain-test stand-in, not a ROM value. The game draws its effects
   // against its terrain (their DSZTest hides what lies under it), which the viewer has none of. It was added
   // when the aura hung from the clip's reference node, below the feet, and half its fire drew under the body;
@@ -343,6 +355,17 @@ export class LiveEffects {
       this.unitMatrix(m).decompose(p, q, s);
       this.host.setParentPose(this.parent, { position: [p.x / MT_TO_VIEW, p.y / MT_TO_VIEW, p.z / MT_TO_VIEW],
                                              quaternion: [q.x, q.y, q.z, q.w], scale: s.x });
+      // THE GROUND UNDER A UNIT THAT STANDS ON ONE (the Armor Viewer, 2026-10-08; Raven: "I saw effects meant to be
+      // rendered by the feet mid air"). A record whose payload +0x52 is set (ctx +0x92: every class's evade and landing
+      // dust, cm001_001 203 / 204 / 213, and the common lists' 203..205) has its Y replaced by the core's ground
+      // resolve 0x42744 (0x31f400 / 0x31f8dc), which reads the PARENT's +0x1074 / +0x10f0 (proof.js) -- fields the
+      // stage floor query fills in the game with the terrain under the unit. The stand-in has no stage, so they stayed
+      // 0 and the dust drew at world y 0, a metre above the soles. The floor the owner stands the unit on IS that
+      // terrain: both fields take it, in game units.
+      if (this.unitFloor){
+        const g = Math.fround(p.y / MT_TO_VIEW), P = this.parent.object, hm = this.host.m;
+        hm.wf32(P + 0x1074, g); hm.wf32(P + 0x10f0, g);
+      }
       if (this.ground){ const g = this.groundY(p); this.ground.position.set(p.x, g, p.z); this.groundDepth.position.set(p.x, g, p.z); }
       for (const { j, bone } of this.joints){
         if (!bone) continue;

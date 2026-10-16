@@ -78,7 +78,21 @@ export const ROM_SPHERE = { value: 1 };
 export const ROM_PIGMENT = { value: 1 };
 export function setRomPigment(on){ ROM_PIGMENT.value = on ? 1 : 0; for (const m of armorMats) applyTint(m); return !!ROM_PIGMENT.value; }
 export function setRomSphere(on){ ROM_SPHERE.value = on ? 1 : 0; return !!ROM_SPHERE.value; }
-function setReflRaw(m, rgb){ const u = m.userData.u; if (u && u.uReflRaw) u.uReflRaw.value.set(rgb[0], rgb[1] === undefined ? rgb[0] : rgb[1], rgb[2] === undefined ? rgb[0] : rgb[2]); }
+// A ROM COLOUR CONSTANT IN THE SPACE THIS RENDERER SHADES IN (Option A, 2026-10-15; Raven: "A, I noticed some colors were
+// off with things like pigment and I want things to be more accurate to in game"). The game's model pass works in GAMMA
+// space: texels as stored, every colour constant raw, nothing encoded (sRender.mSRGBEnable = 0, 0xbb9dfc; FAlbedoMap =
+// tex.rgb * fAlbedoColor -- the Monster Viewer's dev/model-pass-colour-space.md). This renderer DECODES each texel to linear
+// and ENCODES the output, so the game's product t x k comes out only if the constant is decoded the same way:
+// encode(decode(t) x decode(k)) = t x k. Written raw, a 0.2 tint showed as ~0.48. 0 and 1 are unchanged. The curve is
+// three.js's own SRGBToLinear, so it equals setRGB(..., SRGBColorSpace). NOT decoded, on purpose: the sphere-map screen's
+// weights (uReflTint, uEnvAmt) and the reflection overlay's uRefl, whose shaders already work in display values.
+export function romLinear(c){
+  if (!THREE.ColorManagement.enabled) return c;
+  return c < 0.04045 ? c * 0.0773993808 : Math.pow(c * 0.9478672986 + 0.0521327014, 2.4);
+}
+function romLinear3(v){ const g = v[1] === undefined ? v[0] : v[1], b = v[2] === undefined ? v[0] : v[2]; return [romLinear(v[0]), romLinear(g), romLinear(b)]; }
+// the reflective colour ADDED into the linear specular (the ROM sphere path): decoded
+function setReflRaw(m, rgb){ const u = m.userData.u; if (u && u.uReflRaw) u.uReflRaw.value.fromArray(romLinear3(rgb)); }
 
 // ---- the ROM's render states ---------------------------------------------------------------
 // The rasterizer's cull mode. RSMesh culls BACK faces, so the front faces render: FrontSide.
@@ -145,7 +159,7 @@ function romOverlayShade(mat, rom){
   const ft = rom && rom.feat, cb = rom && rom.cbm, gl = rom && rom.glob;
   if (gl){
     const k = (ft && ft.albedo === 'MapConstant' && gl.constant) ? gl.constant : [1, 1, 1, 1];
-    mat.color.setRGB(gl.albedo[0] * k[0], gl.albedo[1] * k[1], gl.albedo[2] * k[2]);
+    mat.color.setRGB(gl.albedo[0] * k[0], gl.albedo[1] * k[1], gl.albedo[2] * k[2], THREE.SRGBColorSpace);   // decoded (romLinear)
   }
   let a = 1;
   if (cb && ft && ft.transp === 'Alpha') a *= cb.transparency;
@@ -506,7 +520,7 @@ export function applyTint(mat){
     if (region) setChannelColor(mat, use || null);
   } else if (use && !mat.userData.noTint){
     if (region && mat.userData.chanRgb) setChannelColor(mat, null);
-    u.uTint.value.setRGB(use[0]/255, use[1]/255, use[2]/255);
+    u.uTint.value.setRGB(use[0]/255, use[1]/255, use[2]/255, THREE.SRGBColorSpace);   // game bytes, as setChannelColor takes
     u.uAmt.value = 1;
   } else {
     if (region && mat.userData.chanRgb) setChannelColor(mat, null);
@@ -623,7 +637,7 @@ export function createMaterial(spec){
       const k = (ft && ft.albedo === 'MapConstant' && gl.constant) ? gl.constant : [1, 1, 1, 1];
       mat.color.setRGB(gl.albedo[0] * cb.diffuse[0] * k[0],
                        gl.albedo[1] * cb.diffuse[1] * k[1],
-                       gl.albedo[2] * cb.diffuse[2] * k[2]);
+                       gl.albedo[2] * cb.diffuse[2] * k[2], THREE.SRGBColorSpace);   // decoded (romLinear)
     }
     applyRomBias(mat, st);
     mat.userData.rom = rom; mat.userData.unlit = true; mat.userData.noTint = true;
@@ -647,9 +661,10 @@ export function createMaterial(spec){
   }
   applyRomBias(mat, st);
   // albedo tint, emission, shininess
-  if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
+  // the colour constants decoded like a texel (romLinear): the game multiplies the raw texel by the raw constant
+  if (gl && cb) mat.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2], THREE.SRGBColorSpace);
   if (gl && (gl.emission[0] + gl.emission[1] + gl.emission[2]) > 0){
-    mat.emissive.setRGB(gl.emission[0], gl.emission[1], gl.emission[2]);
+    mat.emissive.setRGB(gl.emission[0], gl.emission[1], gl.emission[2], THREE.SRGBColorSpace);
     mat.userData.emissiveFromMap = true;
   }
   if (gl && gl.shininess > 16) mat.roughness = Math.min(0.85, Math.max(0.4, 0.85 - Math.log2(gl.shininess / 16) * 0.15));
@@ -679,7 +694,10 @@ export function createMaterial(spec){
   u.uF0.value.fromArray(mat.userData.f0);
   // AFTER applyTint, which is what creates `u`: written above it this threw on the first lit
   // material and the app did not load at all (the Monster Viewer's lesson, 2026-09-07).
-  if (gl && gl.specular) u.uSpecRGB.value.fromArray(gl.specular.slice(0, 3));
+  if (gl && gl.specular) u.uSpecRGB.value.fromArray(romLinear3(gl.specular));   // decoded: it scales linear accumulators
+  // fReflectiveColor as FReflectGlobalCubeMap's multiplier (uReflRGB): rom/specular.js (shared, verbatim) builds it RAW
+  // from cbm.reflective only when the holder is missing, so it is put here first, decoded, and specular.js keeps it
+  if (cb && cb.reflective && !u.uReflRGB) u.uReflRGB = { value: new THREE.Vector3().fromArray(romLinear3(cb.reflective)) };
   // THE ROM'S SPECULAR, as the Monster Viewer draws it (render/rom/specular.js, taken verbatim 2026-10-07; Raven: "review
   // each armor to ensure we are accurately rendering them"): FReflectGlobalCubeMap -- the reflection 9,533 armour
   // materials select, on the engine's default cube DefaultCube_CM, which this path drew as no term -- and FFinalCombiner's
@@ -782,8 +800,9 @@ export function setChannelColor(mat, rgb){
   if (!u || !u.uChan) return;                  // the unlit paths take no channel colour
   const rom = mat.userData.rom, gl = rom && rom.glob, cb = rom && rom.cbm;
   const alb = (rgb || !gl) ? [1, 1, 1] : gl.albedo, dif = cb ? cb.diffuse : [1, 1, 1];
-  if (gl && cb) mat.color.setRGB(alb[0] * dif[0], alb[1] * dif[1], alb[2] * dif[2]);
-  if (rgb) u.uChan.value.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255);
+  if (gl && cb) mat.color.setRGB(alb[0] * dif[0], alb[1] * dif[1], alb[2] * dif[2], THREE.SRGBColorSpace);
+  // the GAME's bytes (a pigment, a weapon's or the Kinsect's colour, the face paint), decoded like a texel (romLinear)
+  if (rgb) u.uChan.value.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace);
   else u.uChan.value.setRGB(1, 1, 1);
   mat.userData.chanRgb = rgb || null;
 }
@@ -1008,11 +1027,11 @@ function applyTrack(m, tr, f){
       break;
     }
     case 'fConstantColor':                       // rgb + alpha, written not scaled
-      if (m.color) m.color.setRGB(b.albedo[0] * v[0], b.albedo[1] * v[1], b.albedo[2] * v[2]);
+      if (m.color) m.color.setRGB(b.albedo[0] * v[0], b.albedo[1] * v[1], b.albedo[2] * v[2], THREE.SRGBColorSpace);   // decoded (romLinear)
       if (cols > 3) setAlpha(m, b, v[3]);
       break;
     case 'fAlbedoColor': case 'fDiffuseColor':
-      if (m.color) m.color.setRGB(b.albedo[0] * v[0], b.albedo[1] * v[1], b.albedo[2] * v[2]);
+      if (m.color) m.color.setRGB(b.albedo[0] * v[0], b.albedo[1] * v[1], b.albedo[2] * v[2], THREE.SRGBColorSpace);   // decoded (romLinear)
       break;
     // READ AS sRGB, the space this pipeline's maps are decoded in: the ROM's colour constants sit
     // in the same space as its textures and this term is ADDED, so writing it into the working
@@ -1022,7 +1041,7 @@ function applyTrack(m, tr, f){
     case 'fEmissionColor': {
       const g = v[1] === undefined ? v[0] : v[1], bl = v[2] === undefined ? v[0] : v[2];
       if (m.emissive){ m.emissive.setRGB(v[0], g, bl, THREE.SRGBColorSpace); break; }
-      if (m.color) m.color.setRGB(b.albedo[0] + v[0], b.albedo[1] + g, b.albedo[2] + bl);
+      if (m.color) m.color.setRGB(b.albedo[0] + v[0], b.albedo[1] + g, b.albedo[2] + bl, THREE.SRGBColorSpace);   // the factor on the texel: decoded as one
       break;
     }
     case 'fTransparency':
@@ -1054,7 +1073,7 @@ function applyTrack(m, tr, f){
       const u = m.userData.u;
       if (u && u.uSpecRGB){
         const g = v[1] === undefined ? v[0] : v[1], bl = v[2] === undefined ? v[0] : v[2];
-        u.uSpecRGB.value.set(v[0], g, bl);
+        u.uSpecRGB.value.fromArray(romLinear3([v[0], g, bl]));   // decoded, as the static value
       }
       break;
     }
@@ -1220,13 +1239,13 @@ function restoreOwn(m){
   const rom = m.userData.rom, gl = rom && rom.glob, cb = rom && rom.cbm, u = m.userData.u;
   if (m.userData.ov){ if (cb) setCbWrite(m, m.userData.cbWrite); return; }
   if (!gl || !cb) return;
-  if (u && m.color) m.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2]);
+  if (u && m.color) m.color.setRGB(gl.albedo[0] * cb.diffuse[0], gl.albedo[1] * cb.diffuse[1], gl.albedo[2] * cb.diffuse[2], THREE.SRGBColorSpace);
   m.userData.reflective = (cb.reflective[0] + cb.reflective[1] + cb.reflective[2]) / 3;
   setReflRaw(m, cb.reflective);
   if (u && u.uReflTint) u.uReflTint.value.set(1, 1, 1);
   if (u && u.uEnvAmt) u.uEnvAmt.value = envStrength(m);
-  if (u && u.uSpecRGB && gl.specular) u.uSpecRGB.value.fromArray(gl.specular.slice(0, 3));
-  if (m.emissive) m.emissive.setRGB(gl.emission[0], gl.emission[1], gl.emission[2]);
+  if (u && u.uSpecRGB && gl.specular) u.uSpecRGB.value.fromArray(romLinear3(gl.specular));
+  if (m.emissive) m.emissive.setRGB(gl.emission[0], gl.emission[1], gl.emission[2], THREE.SRGBColorSpace);
 }
 function writeOverride(m, o, tSec){
   const refl = sampleOverride(o, 'fReflectiveColor', tSec) || o.reflective;
@@ -1235,10 +1254,10 @@ function writeOverride(m, o, tSec){
   const rom = m.userData.rom, gl = rom && rom.glob, u = m.userData.u;
   if (!u) return;                                // an unlit layer: nothing here takes these constants
   const alb = gl ? gl.albedo : [1, 1, 1];
-  if (o.diffuse && m.color) m.color.setRGB(alb[0] * o.diffuse[0], alb[1] * o.diffuse[1], alb[2] * o.diffuse[2]);
+  if (o.diffuse && m.color) m.color.setRGB(alb[0] * o.diffuse[0], alb[1] * o.diffuse[1], alb[2] * o.diffuse[2], THREE.SRGBColorSpace);
   if (refl) setReflective(m, refl);
   const spec = m.userData.overrideSpec || o.specular;
-  if (spec && u.uSpecRGB) u.uSpecRGB.value.fromArray(spec);
+  if (spec && u.uSpecRGB) u.uSpecRGB.value.fromArray(romLinear3(spec));
   // read as sRGB, as applyTrack reads a clip's fEmissionColor (the Monster Viewer's lesson: linear is several times too bright)
   if (emis && m.emissive) m.emissive.setRGB(emis[0], emis[1], emis[2], THREE.SRGBColorSpace);
 }

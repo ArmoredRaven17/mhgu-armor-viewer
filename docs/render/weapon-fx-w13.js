@@ -17,7 +17,8 @@
 //   * row 5 = 30 (w13_006, k 0) and row 6 = 31 (w13_007, k 1) at the start of Motion[104] (acts 41 / 106) and Motion[105]
 //     (acts 43 / 107), with the kinsect's shell uShellPlw13_001 (0x11cf5a0, fire and forget); row 7 = 35 (w13_007, k 1) at
 //     the start of Motion[112] (acts 11 / 98) and Motion[141] (acts 48 / 99).
-//   * EXTRACT HUNTER (acts 114..116, Arts Motion[151], 0x11ced78): at its start slot 1 ROW 17 = w13_800 1103
+//   * BUG MAJEURE (acts 114..116, Arts Motion[151], 0x11ced78; named EXTRACT HUNTER until 2026-10-08 -- the Art's command
+//     files name the acts: Extract Hunter is acts 75..77, Arts Motion[1] / [2]): at its start slot 1 ROW 17 = w13_800 1103
 //     (cm123_134) on the glaive (no offset); the catch (act 137, Arts Motion[152], 0x11cefc0) at motion frame 90 asks slot 1
 //     ROW 18 = 1104 on the HUNTER; the policy keeps them through acts 114..116 and 137 and lets them end elsewhere.
 //   * row 0 = cm002_002 209 (cm002_007): the base sharpening (weapon type 13) at Motion[255] frame 274.
@@ -175,7 +176,7 @@ export class InsectGlaiveEffects extends WeaponEffects {
     this.state = st;
     // the rows on the glaive at their motion's start
     if (key && crossed(0) && f0 === 0) for (const [row, k] of FIRES[key] || []) this.fire(row, k);
-    // EXTRACT HUNTER: 1103 on the glaive at its start, 1104 on the hunter at the catch's frame 90; ended elsewhere
+    // BUG MAJEURE: 1103 on the glaive at its start, 1104 on the hunter at the catch's frame 90; ended elsewhere
     if (key === HUNT && crossed(0) && !UNRECORDED.has(ROWS.hunt.key)) this.ask(1, ROWS.hunt, true, null);
     if (key === CATCH && crossed(CATCH_FRAME)) this.ask(1, ROWS.catch, true, null, this.hunter);
     const h = this.held.get(1);

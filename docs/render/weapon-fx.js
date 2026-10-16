@@ -84,22 +84,33 @@ export class WeaponEffects {
     this.refused = new Set();    // records whose code took a branch no recording covers: left out of the rebuilt host
     this.floor = null;            // () => the height the hunter stands on, in viewer units (the player's position y)
     this.lastSync = null;        // what sync was last given, for the rebuild
+    this.attaching = null;       // the build sync started and has not landed yet: { cls, bone, parent, gen, promise }
+    // THE MOTION'S SCHEDULE WORD (player +0x254c): (id) => the word, or null for none. The player's walker hook 0x40780 hands
+    // the copied schedule block to the unit's vtable +0xf0 (0x281e78), which writes the word over the block's first word --
+    // the bits the frame walker 0x31cd70 lets fire -- when +0x2549 is set. The word is set per motion by the base hook
+    // 0x2a15d0 (every Arts motion 7000..7999: by the Art level, I 0xff / II 0x0f0f / III 0xf00f) and a class's own hook
+    // (the Charge Blade's 0x11d1420: the Energy Blade by the phials); the caller answers it (render/weapon-fx-w14.js clipMask).
+    this.clipMask = null;
+    this.maskedClips = new Map();
     this.suppressed = false;     // held without being taken down (setSuppressed): the page is showing the Palico
   }
 
   // The union of every mounted root's gid table, as one host object the runtime can treat as the unit.
   // Rebuilt on every attach: the roots change with every armour piece.
   makeHost(roots){
+    const host = new THREE.Group();
+    host.name = 'weapon-fx-host';
+    host.userData.gidBones = this.gidUnion(roots);
+    host.userData.joints = [];
+    return host;
+  }
+  gidUnion(roots){
     const seen = new Map();
-    for (const root of roots){
+    for (const root of roots || []){
       if (!root) continue;
       for (const b of gidBonesOf(root)) if (!seen.has(b.gid)) seen.set(b.gid, b);
     }
-    const host = new THREE.Group();
-    host.name = 'weapon-fx-host';
-    host.userData.gidBones = [...seen.values()].sort((a, b) => a.d - b.d);
-    host.userData.joints = [];
-    return host;
+    return [...seen.values()].sort((a, b) => a.d - b.d);
   }
 
   // Show `cls`'s effects, hanging from `roots`, in `parent`. Called on every weapon change and whenever
@@ -140,9 +151,11 @@ export class WeaponEffects {
     // Shield's rows 1 / 3 / 4 hang from the player's joint 1 (render/weapon-fx-w01.js). `requestJoints(cls)` answers
     // { record key: joint } for the class (PlayerRequests.rootJoints); those joints join their records' lists.
     const extra = this.requestJoints ? this.requestJoints(def.weapon) : null;
+    // a joint or a list of them: the skill effects' records hang from joint 8 or 12 by the weapon (render/skill-effects.js)
     const add = e => {
       const j = extra && e.when === 'state' && e.record ? extra[e.record.key] : undefined;
-      return j != null && !(e.joints || []).includes(j) ? Object.assign({}, e, { joints: [...(e.joints || []), j] }) : e;
+      const want = (j == null ? [] : [].concat(j)).filter(x => !(e.joints || []).includes(x));
+      return want.length ? Object.assign({}, e, { joints: [...(e.joints || []), ...want] }) : e;
     };
     return Object.assign({}, def, { effects: (def.effects || []).filter(keep).map(add) });
   }
@@ -154,9 +167,33 @@ export class WeaponEffects {
   async sync(cls, roots, parent){
     const first = (() => { for (const r of roots || []) { const b = gidBonesOf(r)[0]; if (b) return b.node; } return null; })();
     this.lastSync = { cls, roots, parent };
+    const sig = (roots || []).map(r => (r && r.uuid) || '').join('|');
+    if (this.cls === cls && this.live && this.host && this.live.rebindBones && this.parent === parent){
+      // AN ARMOUR PIECE CHANGED (2026-10-08; Raven: "When updating helms with Wolf's Maw active, the eye effect becomes
+      // stationary"): the host stays and its joints are bound to the new pieces' bones (live.js rebindBones), so a running
+      // effect keeps following the hunter -- the gid-0 test alone kept the old helm's head bone, and a rebuild (~5 s) took
+      // every effect down for a new body
+      if (sig !== this.rootsSig){
+        this.host.userData.gidBones = this.makeHost(roots).userData.gidBones;   // the class's own table (a part host's)
+        this.live.rebindBones(this.host);
+        this.boneSample = first;
+      }
+      this.rootsSig = sig;
+      return this.live;
+    }
     if (this.cls === cls && this.live && this.boneSample === first) return this.live;
+    this.rootsSig = sig;
+    // A BUILD ALREADY UNDER WAY FOR THE SAME CLASS, BONES AND PARENT is the one this sync wants: let it land. Every stance
+    // change syncs, and a new attach cancels the one in flight (detach bumps the generation), so after a refusal took the
+    // host down (stepClip) a hunter clicking through stances faster than the ~5 s rebuild never got the class's effects
+    // back -- the Charge Blade's, after Motion[120] (Raven, 2026-10-08: "I didn't see some attack effects").
+    const a = this.attaching;
+    if (a && a.cls === cls && a.bone === first && a.parent === parent && a.gen === this.pending) return a.promise;
     this.boneSample = first;
-    return this.attach(cls, roots, parent);
+    const promise = this.attach(cls, roots, parent);
+    const job = this.attaching = { cls, bone: first, parent, gen: this.pending, promise };
+    promise.finally(() => { if (this.attaching === job) this.attaching = null; }).catch(() => {});   // the caller sees any failure
+    return promise;
   }
 
   detach(){
@@ -196,11 +233,25 @@ export class WeaponEffects {
     live.advance = advance;
     const def = live.def;
     const key = id === null ? null : (this.cls + '|' + id);
-    const motion = id === null ? null : def.clips[id];
+    let motion = id === null ? null : def.clips[id];
+    const word = motion && this.clipMask ? this.clipMask(id) : null;
+    if (motion && word != null) motion = this.maskedClip(id, motion, word);
     // A clip with no schedule still has to be NAMED: handing the walker a null key while a clip plays
     // would read as "no motion", and the next real clip would look like a continuation of it.
     live.schedule.setClip(key, key ? (time || 0) * 60 : 0, motion || null, 0);
+    // THE WORD APPLIES ON EVERY WALK: the ROM's hook copies the block and asks the word each time (0x31cc88), so a word that
+    // changed while the clip plays (the phials picked mid-stance) is the walker's at once, not at the next clip
+    const W = live.schedule.walker;
+    if (motion && W && W.motion === key && W.data && W.data !== motion) W.data = motion;
     this.lastKey = key;
+  }
+
+  // the clip with only the bits its word lets fire -- one object per (clip, word), so the walker sees a stable schedule
+  maskedClip(id, motion, word){
+    const k = id + '|' + (word >>> 0);
+    let m = this.maskedClips.get(k);
+    if (!m){ m = Object.assign({}, motion, { bits: (motion.bits || []).filter(b => ((word >>> b.bit) & 1) === 1) }); this.maskedClips.set(k, m); }
+    return m;
   }
 
   // ---- the STATE layer ------------------------------------------------------------------------
@@ -596,7 +647,7 @@ export class PlayerRequests {
     this.fired = 0;
     this.done = new Set();       // the `once` requests fired since the action started
     // A REQUEST'S ROW BY A LEVEL the stance alone cannot say (the Lance's stance shell, by the Art's level): `keys` in
-    // place of `key`, indexed by levelOf(cls), 0-based
+    // place of `key`, indexed by levelOf(cls, stance key), 0-based
     this.levelOf = null;
   }
   // every frame: `cls` is the class whose code runs (null when no weapon stance plays: sheathed, a Hunter Pose, another
@@ -629,7 +680,7 @@ export class PlayerRequests {
     for (const r of due) if (r.slot != null) last.set(r.slot, r);   // caught up at once: the last per slot is what stands
     for (const r of due){
       if (r.slot != null && last.get(r.slot) !== r) continue;
-      const rk = r.keys ? r.keys[Math.max(0, Math.min(r.keys.length - 1, (this.levelOf && this.levelOf(cls)) | 0))] : r.key;
+      const rk = r.keys ? r.keys[Math.max(0, Math.min(r.keys.length - 1, (this.levelOf && this.levelOf(cls, key)) | 0))] : r.key;
       if (h.refused.has(rk)) continue;
       if (r.once) this.done.add(r);
       if (r.slot != null){ const x = this.slots.get(r.slot); if (x) this.release(r.slot, 3); }   // 0x44c210: at once
