@@ -2,7 +2,7 @@
 // the Smithy-ordered name list, and the class's shared stances, motion sets and gimmick
 // tables) and docs/weapons/bug.json (the kinsects). Loaded lazily, once per class, so the
 // manifest only carries a stub per class.
-import { loadJson } from './assets.js';
+import { loadJson } from '../base/render/assets.js';
 
 const cache = new Map();
 

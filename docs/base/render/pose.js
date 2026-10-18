@@ -10,6 +10,8 @@
 import * as THREE from 'three';
 import { loader, loadGlb, poseCache, bust } from './assets.js';
 import { bonesByGid, gidBonesOf, skeletonClone } from './skeleton.js';
+// a gid -> value Map that keeps the FIRST entry of a gid (a Map built from the list would keep the last)
+function firstByGid(list, pick){ const m = new Map(); for (const e of list) if (!m.has(e.gid)) m.set(e.gid, pick(e)); return m; }
 
 export const POSES = {
   't-pose': {},
@@ -78,7 +80,7 @@ export class PoseDriver {
     // the static pose freshly loaded pieces land in, and repose() returns them to
     this.staticPose = 'relaxed';
     this.figure = 'hunter';
-    this.mixer = null; this.proxyBones = null; this.action = null; this.anchor = null;
+    this.mixer = null; this.proxyBones = null; this.proxyLeaves = null; this.action = null; this.anchor = null;
     this.loopTimer = null;
     this.loopMode = null;     // (entry) => 'once' | 'repeat' | null: the caller's rule, else the per-file default
     this.onFinished = null;   // called when a one-shot action reaches its end (the stance chain)
@@ -115,9 +117,14 @@ export class PoseDriver {
       if (!proxy) {
         const g = await loadGlb(entry.model, entry.model);
         proxy = { scene: skeletonClone(g.scene), userData: { bind: [] } };
+        // SCALE IS PART OF THE REST POSE. It used to be left out of this snapshot, and the proxy
+        // is cached per model and reused for every clip of every list -- so one clip that scaled
+        // a bone left that scale on the proxy for ever, and every later clip inherited it. It was
+        // invisible only because step() then threw the scale away again; the moment scale is
+        // carried, the leak is real.
         proxy.scene.traverse(o => {
           if (o.isBone || o.isObject3D)
-            proxy.userData.bind.push([o, o.position.clone(), o.quaternion.clone()]);
+            proxy.userData.bind.push([o, o.position.clone(), o.quaternion.clone(), o.scale.clone()]);
         });
         poseCache.set('proxy:' + entry.model, proxy);
       }
@@ -134,11 +141,14 @@ export class PoseDriver {
       gltf.userData.bind = [];
       gltf.scene.traverse(o => {
         if (o.isBone || o.isObject3D)
-          gltf.userData.bind.push([o, o.position.clone(), o.quaternion.clone()]);
+          gltf.userData.bind.push([o, o.position.clone(), o.quaternion.clone(), o.scale.clone()]);
       });
       poseCache.set(entry.file, gltf);
     }
-    for (const [node, pos, quat] of gltf.userData.bind){ node.position.copy(pos); node.quaternion.copy(quat); }
+    for (const [node, pos, quat, scl] of gltf.userData.bind){
+      node.position.copy(pos); node.quaternion.copy(quat);
+      if (scl) node.scale.copy(scl);
+    }
     // `entry.clip3` lets a caller hand over the clip it wants played rather than have it
     // looked up here -- the monster viewer builds a retargeted copy when a monster borrows
     // another's motion list. Nothing in this app passes it, so the lookup below is unchanged.
@@ -146,7 +156,11 @@ export class PoseDriver {
     if (!clip) { this.onError('pose clip missing: ' + entry.clip); return; }
     // the proxy is never added to the scene; it exists only to be sampled
     gltf.scene.updateMatrixWorld(true);
-    this.proxyBones = new Map(bonesByGid(gltf.scene, poseJoints).map(e => [e.gid, e.node]));
+    // one node per gid, the FIRST, as before bonesByGid listed every node of a gid (skeleton.js)
+    const proxyList = bonesByGid(gltf.scene, poseJoints);
+    this.proxyBones = firstByGid(proxyList, e => e.node);
+    // the proxy's LEAF per gid, kept beside the drivable node purely to carry joint scale
+    this.proxyLeaves = firstByGid(proxyList.filter(e => e.leaf), e => e.leaf);
     this.referenceNode = this.holdReference ? (gltf.scene.getObjectByName('reference') || null) : null;
     this.mixer = new THREE.AnimationMixer(gltf.scene);
     // Where the pelvis sits at REST. Many of these motions carry root translation -- they
@@ -279,14 +293,28 @@ export class PoseDriver {
     // the "flying off, arms in wrong places" symptom.
     if (this.frame) this.frame.updateWorldMatrix(true, false);
     for (const root of roots){
-      for (const { gid, node } of gidBonesOf(root)){
+      for (const { gid, node, leaf } of gidBonesOf(root)){
         const src = this.proxyBones.get(gid);
         if (!src || !node.parent) continue;
         node.parent.updateWorldMatrix(true, false);
         _m.copy(node.parent.matrixWorld).invert();
         if (this.frame) _m.multiply(this.frame.matrixWorld);
         _m.multiply(src.matrixWorld);
+        // SCALE IS KEPT. It used to go into a scratch vector and be dropped, which silently threw
+        // away every joint scale the game authors -- and MT hides geometry by scaling a joint to
+        // ZERO and grows it by scaling up, so this was not a rounding detail: it is the mechanism
+        // behind Tetsucabra's tail swelling over its spikes, and behind the 1,112 scale tracks in
+        // Fatalis's motion (values 0.0 .. 14.72, negatives included). The decompose is taken
+        // against the DISPLAYED parent, whose own scale this same line has already applied, so the
+        // factor that comes out is this joint's own and does not double up down the chain.
         _m.decompose(node.position, node.quaternion, _s3);
+        node.scale.copy(_s3);
+        // ...and the leaf the vertices actually bind to. MT authors a joint's scale on the "_s"
+        // twin, which nothing drives -- the pose drives its PARENT -- so a scale written there
+        // never reached the mesh at all. Copied as a LOCAL transform, not resolved through the
+        // world matrix, because the leaf has no motion of its own to compose with.
+        const sl = leaf && this.proxyLeaves.get(gid);
+        if (sl) leaf.scale.copy(sl.scale);
       }
     }
   }

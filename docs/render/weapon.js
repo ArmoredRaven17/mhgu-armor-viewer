@@ -13,10 +13,10 @@
 // is a reading: pl_wNN.plweplist (build/frag/weaponlist.json), shipped as models[id].g. Per-weapon models come from docs/weapons/wNN.json; textures come from the
 // game's own material files through render/materials-db.js.
 import * as THREE from 'three';
-import { loader, loadGlb, getTexture, weaponMotCache, bust } from './assets.js';
-import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from './skeleton.js';
+import { loader, loadGlb, getTexture, weaponMotCache, bust } from '../base/render/assets.js';
+import { skeletonClone, meshGroupId, playerBone, gidBonesOf } from '../base/render/skeleton.js';
 import { createMaterial, setEnvTexture, setSpecTexture, setChannelColor, applyRomUv, allMats,
-         setOverlayAlbedo, setMaterialClip, clearMaterialClip, setCbWrite, setMaterialOverride, MAT_FPS } from './material.js';
+         setOverlayAlbedo, setMaterialClip, clearMaterialClip, setCbWrite, setMaterialOverride, MAT_FPS } from '../base/render/material.js';
 import { kinsectColours, ELEMENTS } from './kinsect.js';
 import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHEATHED_IDS, DRAWN_IDS } from './mount.js';
 
@@ -25,7 +25,7 @@ import { ROM, MT_ORDER, classInfo, mountFor, localMatrix, idsAt, triggerFor, SHE
 // from the hunter arm; it may have a transformation applied that is not needed".
 const APPLY_ROOT_TRACK = false;
 import { loadClass, loadKinsects, defaultModel, modelIdOf, phialFor, phialsFor, elementFor, colourFor, notesFor, chargesFor, shellFor } from './weapons-index.js';
-import { texturesFor, specFor, refForGlb, entryFor } from './materials-db.js';
+import { texturesFor, specFor, refForGlb, entryFor } from '../base/render/materials-db.js';
 import { modeOf } from './weapon-fx.js';   // the Switch Axe's mode per stance: the action starts' own word
 import { CB_COATS, COAT_KEEP } from './weapon-fx-w14.js';   // the Charge Blade's shield coats
 import { bowMotion } from './weapon-fx-w10.js';   // the Bow's pitch variants: a variant's flags are its main motion's

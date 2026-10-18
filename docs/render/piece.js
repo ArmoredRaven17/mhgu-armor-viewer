@@ -2,11 +2,11 @@
 // Palico's parts, and the face and hair. Nothing here reads the DOM -- what the UI decides
 // (which hair groups a helm hides, the wireframe toggle, the body toggle, the fur pattern,
 // the static pose) arrives through `opt` and `ctx`.
-import { loadGlb, getTexture } from './assets.js';
-import { skeletonClone, meshGroupId } from './skeleton.js';
-import { createMaterial, setEnvTexture, setSpecTexture, setIrisMask, applyRomUv, allMats, armorMats } from './material.js';
-import { specFor, refForPiece } from './materials-db.js';
-import { poseObject } from './pose.js';
+import { loadGlb, getTexture } from '../base/render/assets.js';
+import { skeletonClone, meshGroupId } from '../base/render/skeleton.js';
+import { createMaterial, setEnvTexture, setSpecTexture, setIrisMask, applyRomUv, allMats, armorMats } from '../base/render/material.js';
+import { specFor, refForPiece } from '../base/render/materials-db.js';
+import { poseObject } from '../base/render/pose.js';
 
 // The iris mask for each hunter eye atlas (dev/build-iris-masks.py), keyed by the albedo it
 // belongs to. Every one of the 36 hunter faces uses one of these two textures, female then

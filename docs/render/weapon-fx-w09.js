@@ -47,7 +47,7 @@
 
 import * as THREE from 'three';
 import { WeaponEffects } from './weapon-fx.js';
-import { gidBonesOf } from './skeleton.js';
+import { gidBonesOf } from '../base/render/skeleton.js';
 
 export const ROWS = {
   charged: { key: 510, efl: 'w09_510' },          // row 0

@@ -1247,23 +1247,23 @@ if (document.fonts) document.fonts.load('1em MHFU').then(() => {
 
 <script type="module">
 import * as THREE from 'three';
-import { createStage } from './render/stage.js';
-import { initAssets, loadJson, getTexture } from './render/assets.js';
-import { playerBone } from './render/skeleton.js';
+import { createStage } from './base/render/stage.js';
+import { initAssets, loadJson, getTexture } from './base/render/assets.js';
+import { playerBone } from './base/render/skeleton.js';
 import { tint, applyTint, allMats, armorMats, setCharColor, setChannelColor, setWire, setDebug, setMaskWindow,
          setAlphaOverride, setBiasUnitsPerStep, setRegionDark, stepMaterialAnim, SLOT_CLIP }
-  from './render/material.js';
+  from './base/render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
-import { PoseDriver, POSES } from './render/pose.js';
+import { PoseDriver, POSES } from './base/render/pose.js';
 import { ROM as MOUNT_ROM, prowlerMountFor, localMatrix as mountLocalMatrix, idsAt } from './render/mount.js';
 import { WeaponRig } from './render/weapon.js';
 import { ELEMENTS as KINSECT_ELEMENTS } from './render/kinsect.js';
 import { classes as weaponClasses, loadClass as loadWeaponClass, loadKinsects, modelIdOf, rowFor } from './render/weapons-index.js';
-import { loadMaterialsDb } from './render/materials-db.js';
-import { createFx } from './render/fx.js';
-import { renderCameraFor, LENS_DEFAULT, LENS_TYPES, SQUEEZES, fovSrcOf } from './render/lens.js';
+import { loadMaterialsDb } from './base/render/materials-db.js';
+import { createFx } from './base/render/fx.js';
+import { renderCameraFor, LENS_DEFAULT, LENS_TYPES, SQUEEZES, fovSrcOf } from './base/render/lens.js';
 import { createPlate, HR_BANDS, hrColor } from './render/plate.js';
-import { createFloorGrid } from './render/grid.js';
+import { createFloorGrid } from './base/render/grid.js';
 import { WeaponEffects, WeaponUnitEffects, PlayerRequests, PLAYER_TIMED_REQUESTS } from './render/weapon-fx.js';
 import { ChaosOilEffects, PLAYER_REQUESTS as SNS_PLAYER_REQUESTS } from './render/weapon-fx-w01.js';
 import { DevouringDemonEffects, PLAYER_REQUESTS as LS_PLAYER_REQUESTS } from './render/weapon-fx-w07.js';
@@ -1279,9 +1279,9 @@ import { InsectGlaiveEffects, PLAYER_REQUESTS as IG_PLAYER_REQUESTS } from './re
 import { ChargeBladeEffects, PLAYER_REQUESTS as CB_PLAYER_REQUESTS } from './render/weapon-fx-w14.js';
 import { ARTS_LEVELS, ARTS_WORD, LEVEL_DEFAULT, artOf } from './render/arts-levels.js';
 import { SkillEffects, REQUEST_JOINTS as SKILL_REQUEST_JOINTS } from './render/skill-effects.js';
-import { ROM_SPHERE, setRomSphere, ROM_PIGMENT, setRomPigment } from './render/material.js';
+import { ROM_SPHERE, setRomSphere, ROM_PIGMENT, setRomPigment } from './base/render/material.js';
 import { enableRomSpecular, setRomSpecularAmount, anchorMisses, setGlobalEnvCube, setGlobalReflection,
-         globalReflectionOn } from './render/rom/specular.js';
+         globalReflectionOn } from './base/render/rom/specular.js';
 import { EnragedGuard, PLAYER_REQUESTS as LANCE_PLAYER_REQUESTS } from './render/weapon-fx-w03.js';
 
 const hud = document.getElementById('hud'), errEl = document.getElementById('err');

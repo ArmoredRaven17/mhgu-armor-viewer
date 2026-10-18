@@ -72,7 +72,7 @@
 
 import * as THREE from 'three';
 import { WeaponEffects } from './weapon-fx.js';
-import { gidBonesOf } from './skeleton.js';
+import { gidBonesOf } from '../base/render/skeleton.js';
 
 export const ROWS = {
   rise1: { key: 620, efl: 'w14_006' },        // row 1

@@ -244,13 +244,12 @@ void main() {
   vOvAlpha = color.a;       // COLOR_0's alpha where the mesh has one (the Long Sword's fade at the blade's ends), else 1
   vOvUv = uv;
 }`;
-const OVERLAY_FS = `
+const OVERLAY_FS_SRGB = `
 uniform sampler2D uSphere; uniform float uSphereOn;
 uniform sampler2D uAlb; uniform float uAlbOn; uniform float uAlbView;
 uniform vec3 uRefl; uniform float uTransp;
 varying vec3 vOvNormal; varying float vOvAlpha; varying vec2 vOvUv;
-vec3 ovOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }
-vec3 ovEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }
+//OV_PAIR
 void main() {
   vec3 n = normalize( vOvNormal );
   #ifdef DOUBLE_SIDED
@@ -264,6 +263,14 @@ void main() {
   gl_FragColor = vec4( ovEotf( raw * uRefl ), clamp( a, 0.0, 1.0 ) );
   #include <colorspace_fragment>
 }`;
+// the overlay's encode / decode pair: the identity with colour management off (?space=game), as the main shader's
+function overlayFs(){
+  const pair = THREE.ColorManagement.enabled
+    ? 'vec3 ovOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }\n' +
+      'vec3 ovEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }'
+    : 'vec3 ovOetf( vec3 c ){ return max( c, vec3( 0.0 ) ); }\nvec3 ovEotf( vec3 c ){ return max( c, vec3( 0.0 ) ); }';
+  return OVERLAY_FS_SRGB.replace('//OV_PAIR', pair);
+}
 function createReflectOverlay(spec, rom, st, side){
   const ft = rom.feat, cb = rom.cbm;
   const ov = {
@@ -275,7 +282,7 @@ function createReflectOverlay(spec, rom, st, side){
   // BSAddAlpha on the colour: dst + src x srcAlpha. The DESTINATION ALPHA is left as it is: the game never shows its
   // framebuffer's alpha, and this canvas is composited over the page by it -- three's AdditiveBlending adds srcAlpha^2
   // there too, so the sphere map's black rim, which adds no colour, laid a dark veil over the floor grid behind the blade.
-  const mat = new THREE.ShaderMaterial({ name: spec.srcName, uniforms: ov, vertexShader: OVERLAY_VS, fragmentShader: OVERLAY_FS,
+  const mat = new THREE.ShaderMaterial({ name: spec.srcName, uniforms: ov, vertexShader: OVERLAY_VS, fragmentShader: overlayFs(),
                                          side, transparent: true, blending: THREE.CustomBlending,
                                          blendEquation: THREE.AddEquation, blendSrc: THREE.SrcAlphaFactor, blendDst: THREE.OneFactor,
                                          blendEquationAlpha: THREE.AddEquation, blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor,
@@ -381,8 +388,13 @@ export function applyTint(mat){
                  ' uniform sampler2D uIris; uniform float uIrisOn;' +
                  ' uniform float uDark; uniform vec3 uChan;' +
                  ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 );' +
-                 ' vec3 mhguSrgbOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }' +
-                 ' vec3 mhguSrgbEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }' +
+                 // With colour management OFF (the Monster Viewer's opt-in ?space=game, render/colour-space.js: the game's gamma
+                 // space, no output encode) the fragment colour already IS the display value, so the pair is the identity there
+                 (THREE.ColorManagement.enabled
+                   ? ' vec3 viewSrgbOetf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( c, vec3( 1.0 / 2.4 ) ) * 1.055 - 0.055, c * 12.92, vec3( lessThanEqual( c, vec3( 0.0031308 ) ) ) ); }' +
+                     ' vec3 viewSrgbEotf( vec3 c ){ c = max( c, vec3( 0.0 ) ); return mix( pow( ( c + 0.055 ) / 1.055, vec3( 2.4 ) ), c / 12.92, vec3( lessThanEqual( c, vec3( 0.04045 ) ) ) ); }'
+                   : ' vec3 viewSrgbOetf( vec3 c ){ return max( c, vec3( 0.0 ) ); }' +
+                     ' vec3 viewSrgbEotf( vec3 c ){ return max( c, vec3( 0.0 ) ); }') +
                  ' void main() {')
         // THE SPECULAR MAP REACHED ONLY THE MATERIALS THAT ALSO BIND A SPHERE MAP, and
         // fSpecularColor reached nothing at all. gGloss is computed in map_fragment and was used
@@ -494,9 +506,9 @@ export function applyTint(mat){
              vec3 fres = uF0 + ( vec3( 1.0 ) - uF0 ) * pow( 1.0 - clamp( vn.z, 0.0, 1.0 ), 5.0 );
              // SCREEN blend, not additive -- a + b*(1-a) cannot exceed 1, so bright
              // armor keeps its detail instead of clipping to white.
-             vec3 enc = mhguSrgbOetf( gl_FragColor.rgb );
+             vec3 enc = viewSrgbOetf( gl_FragColor.rgb );
              enc += env * uReflTint * g * uEnvAmt * fres * ( 1.0 - enc );
-             gl_FragColor.rgb = mhguSrgbEotf( enc );
+             gl_FragColor.rgb = viewSrgbEotf( enc );
            }
            #include <colorspace_fragment>`);
     };
@@ -913,6 +925,13 @@ function baseOf(m){
         reflective: m.userData ? m.userData.reflective : undefined,
         envAmt: (m.userData.u && m.userData.u.uEnvAmt) ? m.userData.u.uEnvAmt.value : undefined,
         specRGB: (m.userData.u && m.userData.u.uSpecRGB) ? m.userData.u.uSpecRGB.value.clone() : null,
+        // the destinations only an app that installs them has (applyTrack): the shipped map for a kind-3 swap, the
+        // distortion, the second map's transform and tint
+        map: m.map || null,
+        distFac: (m.userData.u && m.userData.u.uDistFac) ? m.userData.u.uDistFac.value : undefined,
+        distBlend: (m.userData.u && m.userData.u.uDistBlend) ? m.userData.u.uDistBlend.value : undefined,
+        extXf: (m.userData.u && m.userData.u.uExtXf) ? m.userData.u.uExtXf.value.clone() : null,
+        extTint: (m.userData.u && m.userData.u.uExtTint) ? m.userData.u.uExtTint.value.clone() : null,
         uv: (drivesUv && m.map) ? { offset: m.map.offset.clone(), repeat: m.map.repeat.clone(), rotation: m.map.rotation } : null,
         // from the ROM's own constants, not the uniforms: a colour write may already stand when the first frame is stepped
         ov: m.userData.ov ? { refl: new THREE.Vector3().fromArray(rom.cbm.reflective),
@@ -934,6 +953,11 @@ function restoreBase(m, b){
     const u = m.userData.u;
     if (u && u.uEnvAmt && b.envAmt !== undefined) u.uEnvAmt.value = b.envAmt;
     if (u && u.uSpecRGB && b.specRGB) u.uSpecRGB.value.copy(b.specRGB);
+    if (u && u.uDistFac && b.distFac !== undefined) u.uDistFac.value = b.distFac;
+    if (u && u.uDistBlend && b.distBlend !== undefined) u.uDistBlend.value = b.distBlend;
+    if (u && u.uExtXf && b.extXf) u.uExtXf.value.copy(b.extXf);
+    if (u && u.uExtTint && b.extTint) u.uExtTint.value.copy(b.extTint);
+    if (m.userData.texSwap && b.map && m.map !== b.map){ m.map = b.map; m.needsUpdate = true; }
   }
   if (b.uv && m.map){
     m.map.offset.copy(b.uv.offset);
@@ -1077,7 +1101,36 @@ function applyTrack(m, tr, f){
       }
       break;
     }
-    // NO DESTINATION IN THIS APP YET, so these are dropped rather than misapplied:
+    // THE TWO-MAP ALBEDO, THE DISTORTION AND THE TEXTURE SWITCH (the Monster Viewer's cases, 2026-10-18 shared base): each
+    // writes a uniform or a map list only an app that installs it has (uExtXf / uExtTint for the TypeExtend second map,
+    // uDistFac / uDistBlend for the Refract distortion, userData.texSwap for a kind-3 track), so where the app has none the
+    // track is dropped, as before. fUVTransform2 / 3 drive the SECOND-UV map's transform (feat.uvxf routes slot 1 to
+    // fUVTransform2, slot 3 to fUVTransform3), never the primary map.
+    case 'fUVTransform2': case 'fUVTransform3': {
+      const u = m.userData.u;
+      if (u && u.uExtXf) u.uExtXf.value.set(v[2] === 0 ? 1 : v[2], v[3] === 0 ? 1 : v[3], v[0], v[1]);
+      break;
+    }
+    // fAlbedoBlendColor tints the second albedo map: rgb decoded like a texel (romLinear); .a stays raw -- on MapBlend it
+    // is a lerp FACTOR, not a colour
+    case 'fAlbedoBlendColor': {
+      const u = m.userData.u;
+      if (u && u.uExtTint){
+        const c = romLinear3(v);
+        u.uExtTint.value.set(c[0], c[1], c[2], cols > 3 ? v[3] : 1);
+      }
+      break;
+    }
+    case 'fDistortionFactor': { const u = m.userData.u; if (u && u.uDistFac) u.uDistFac.value = v[0]; break; }
+    case 'fDistortionBlend': { const u = m.userData.u; if (u && u.uDistBlend) u.uDistBlend.value = v[0]; break; }
+    // a kind-3 track switches the albedo map by index, through the material's own writer (vtable +0x60): 1 = the first
+    // entry of the app's userData.texSwap list
+    case 'tex': {
+      const idx = v[0] | 0, swap = m.userData && m.userData.texSwap;
+      if (swap && idx >= 1 && swap[idx - 1] && m.map !== swap[idx - 1]){ m.map = swap[idx - 1]; m.needsUpdate = true; }
+      break;
+    }
+    // STILL NO DESTINATION, so dropped rather than misapplied:
     //   fUVTransform2 / fUVTransform3 (378) -- the second and third UV sets, which belong to the
     //     two-map albedo path this app does not have. Writing them to the primary map would
     //     scroll the wrong texture.

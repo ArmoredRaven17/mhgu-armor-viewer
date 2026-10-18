@@ -32,7 +32,7 @@
 // left the eyes and the trail running on a frozen monster), and this app pauses and scrubs far more.
 import * as THREE from 'three';
 import { LiveEffects } from './rom/effect/live.js';
-import { gidBonesOf } from './skeleton.js';
+import { gidBonesOf } from '../base/render/skeleton.js';
 const hex = h => Uint8Array.from(h.match(/../g) || [], b => parseInt(b, 16));   // a record payload, as schedule.js reads it
 const MT_TO_VIEW = 0.01;   // the runtime's game units to this app's world (rom/effect/live.js)
 

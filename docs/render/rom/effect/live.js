@@ -35,8 +35,8 @@ import { linkMaterial } from './modelshader.js';
 import { EffectSchedule } from './schedule.js';
 import { SHELL_DATA } from '../../shells.js';
 import { rank as rankFilters, constants as filterConstants, FilterPass } from './filter.js';
-import { loadJson, getTexture, loadGlb } from '../../assets.js';
-import { gidBonesOf } from '../../skeleton.js';
+import { loadJson, getTexture, loadGlb } from '../../../base/render/assets.js';
+import { gidBonesOf } from '../../../base/render/skeleton.js';
 import { RAGE_PUFF } from '../../motion-states.js';
 import { getSHCoef } from '../ambient.js';
 
