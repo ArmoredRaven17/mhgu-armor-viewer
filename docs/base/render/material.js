@@ -370,7 +370,11 @@ export function applyTint(mat){
       uDark: { value: 0 },
       // The game's colour for this material's CHANNEL (setChannelColor), white when it has
       // none. It multiplies the texel, so it reaches the lit colour and the glow alike.
-      uChan: { value: new THREE.Color(1,1,1) }
+      uChan: { value: new THREE.Color(1,1,1) },
+      // A SEPARATE AMBIENT COLOUR (setAmbientColor; off unless an app supplies one -- MHFU's GE lights ambient and diffuse
+      // with different material colours): the ambient / hemisphere term is lit by it instead of the diffuse colour
+      uAmb: { value: new THREE.Color(1,1,1) },
+      uAmbOn: { value: 0 }
     };
     mat.onBeforeCompile = (sh) => {
       Object.assign(sh.uniforms, mat.userData.u);
@@ -386,7 +390,7 @@ export function applyTint(mat){
                  ' uniform sampler2D uSpec; uniform float uSpecOn; uniform float uViewUv; uniform vec3 uF0;' +
                  ' uniform vec3 uSpecRGB;' +
                  ' uniform sampler2D uIris; uniform float uIrisOn;' +
-                 ' uniform float uDark; uniform vec3 uChan;' +
+                 ' uniform float uDark; uniform vec3 uChan; uniform vec3 uAmb; uniform float uAmbOn;' +
                  ' float gGloss = 0.0; vec3 gBase = vec3( 1.0 );' +
                  // With colour management OFF (the Monster Viewer's opt-in ?space=game, render/colour-space.js: the game's gamma
                  // space, no output encode) the fragment colour already IS the display value, so the pair is the identity there
@@ -409,6 +413,9 @@ export function applyTint(mat){
              float specMask = ( uSpecOn > 0.5 || gGloss > 0.0 ) ? gGloss : 1.0;
              reflectedLight.directSpecular   *= uSpecRGB * specMask;
              reflectedLight.indirectSpecular *= uSpecRGB * specMask;
+             // a separate ambient colour A: the indirect (ambient / hemisphere) diffuse was lit by the material's diffuse
+             // colour (its colour x the channel colour, inside diffuseColor); swap that factor for A, per channel
+             if ( uAmbOn > 0.5 ) reflectedLight.indirectDiffuse *= uAmb / max( diffuse * uChan, vec3( 1e-4 ) );
            }`)
         .replace('#include <map_fragment>',
           `#ifdef USE_MAP
@@ -817,6 +824,20 @@ export function setChannelColor(mat, rgb){
   if (rgb) u.uChan.value.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace);
   else u.uChan.value.setRGB(1, 1, 1);
   mat.userData.chanRgb = rgb || null;
+}
+
+// A SEPARATE AMBIENT COLOUR for a material (2026-10-19, for the MHFU Armor Viewer: MHFU's GE lights each material with
+// texel x clamp(sum lightAmb x A + lightDiff x D x N.L), A and D separate colours -- the dye's ambient is its colour where
+// an undyed material's is 7F7F7F): rgb is [r, g, b] 0-255, the game's bytes decoded like a texel (as setChannelColor);
+// null turns it off and the ambient term is lit by the diffuse colour again, as every material is by default. Opt-in:
+// no GU / 3DS material calls it.
+export function setAmbientColor(mat, rgb){
+  const u = mat.userData.u;
+  if (!u || !u.uAmb) return;
+  // NOT CLAMPED, on purpose: MHFU passes A relative to an undyed 7F7F7F (bytes x 255 / 127, so above 255) and relies on
+  // the sRGB decode carrying values past 1 -- keep it that way
+  if (rgb) u.uAmb.value.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255, THREE.SRGBColorSpace);
+  u.uAmbOn.value = rgb ? 1 : 0;
 }
 
 // hair / eye / skin / fur colour: a '#rrggbb' string or a THREE.Color, or null for the

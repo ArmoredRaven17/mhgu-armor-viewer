@@ -16,29 +16,15 @@
 // rank colour, so its shading and dark outline survive the tint.
 import * as THREE from 'three';
 
-// The rank bands and colours of sUI's rank-to-colour method (.text 0x0055FA18): the compare
-// chain 3 / 8 / 12 / 99 / 998 picks an entry of the palette the sUI initialiser builds
-// (0x00560F40; palette words 0xFFE6E6E6, 0xFFFF8400, 0xFF00FF00, 0xFFFF0000, 0xFFF011EE,
-// 0xFF6FE8ED). Those words keep RED in the LOW byte, as every colour that initialiser writes
-// does: the RGB565 converter at 0x5daad4 puts red in bits 7-3 and blue in 23-19, and the
-// Deviant pigment pairs it builds only match the game read that way (index.html DEVIANTS).
-// The first read of this table took them as 0xAARRGGBB, which swapped red and blue (Raven,
-// 2026-09-05: "HR Rank Colors, two are incorrect"). `hr` is the band's first rank, the value
-// the Hunter Rank select stores.
-export const HR_BANDS = [
-  { hr: 1,   max: 3,   color: '#e6e6e6', label: 'HR 1–3' },
-  { hr: 4,   max: 8,   color: '#ff8400', label: 'HR 4–8' },
-  { hr: 9,   max: 12,  color: '#00ff00', label: 'HR 9–12' },
-  { hr: 13,  max: 99,  color: '#ff0000', label: 'HR 13–99' },
-  { hr: 100, max: 998, color: '#f011ee', label: 'HR 100–998' },
-  { hr: 999, max: 999, color: '#6fe8ed', label: 'HR 999' }
-];
-export function hrColor(hr){
+// The rank bands and their colours are the GAME's (game.guildInfo.hrBands: [{ hr, max, color, label }], each band's
+// first rank `hr`, its last `max`; GU's are read from the executable, see docs/game.js). hrColor picks a rank's band.
+export function hrColor(bands, hr){
   hr = Math.max(0, +hr || 0);
-  return (HR_BANDS.find(b => hr <= b.max) || HR_BANDS[HR_BANDS.length - 1]).color;
+  return (bands.find(b => hr <= b.max) || bands[bands.length - 1]).color;
 }
 
-export const ICON_CELL = 24;   // the strip's cell size; cell index = the weapon enum (w00 .. w14)
+// the icon sheet's cell size (opts.iconCell; GU's ui/plate-icons.png: 24); a cell's index is the game's weapon enum
+const ICON_CELL_DEFAULT = 24;
 
 const S = 3;          // canvas pixels per screen pixel: crisp text after the sprite is minified
 const NAME_PX = 20;   // the name's font size on screen
@@ -49,6 +35,7 @@ const PAD_PX = 8;
 export function createPlate(opts){
   opts = opts || {};
   const font = opts.font || "'MHFU', 'Segoe UI', system-ui, sans-serif";
+  const ICON_CELL = opts.iconCell || ICON_CELL_DEFAULT;
   const canvas = document.createElement('canvas');
   canvas.width = 4; canvas.height = 4;
   const ctx = canvas.getContext('2d');

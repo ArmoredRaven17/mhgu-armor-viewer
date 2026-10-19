@@ -83,6 +83,9 @@ export class PoseDriver {
     this.mixer = null; this.proxyBones = null; this.proxyLeaves = null; this.action = null; this.anchor = null;
     this.loopTimer = null;
     this.loopMode = null;     // (entry) => 'once' | 'repeat' | null: the caller's rule, else the per-file default
+    // (entry) => true | false | null: the GAME's own loop flag for the clip (the app's adapter; Raven, 2026-10-19: "play
+    // animations based on this flag if one exists across games"); null keeps the per-file default below
+    this.clipLoop = null;
     this.onFinished = null;   // called when a one-shot action reaches its end (the stance chain)
     this.ground = null;   // the Y the feet rest at, so a pose cannot sink or float
     this.bounds = null;   // the union of the WHOLE loop, so the camera is set once
@@ -191,7 +194,11 @@ export class PoseDriver {
     // every clip ships rather than only the _loop ones, the one-shots snapping back
     // mid-swing is worse. The lobby poses are authored as held loops and keep looping.
     const mode = this.loopMode ? this.loopMode(entry) : null;
-    const once = mode ? mode === 'once' : /poses\/weapons\//.test(entry.file || '');
+    // a weapon stance plays once: GU's live under poses/weapons/, another game's entry says so (stance: true)
+    const flag = this.clipLoop ? this.clipLoop(entry) : null;
+    const once = mode ? mode === 'once'
+      : flag !== null && flag !== undefined ? !flag
+      : (entry.stance === true || /poses\/weapons\//.test(entry.file || ''));
     if (once) {
       this.action.setLoop(THREE.LoopOnce);
       this.action.clampWhenFinished = true;
