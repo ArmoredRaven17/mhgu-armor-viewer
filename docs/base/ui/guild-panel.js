@@ -28,7 +28,10 @@ export function createGuildPanel(game, ctx){
   // alone); its title words still save and restore with the rest of the plate state
   const PLATED = RANKED || !!TAG;
   const pick = k => (TAG && TAG[k] !== undefined) ? TAG[k] : GI[k];
-  const plate = PLATED ? createPlate({ iconUrl: pick('icons'), iconCell: pick('iconCell'), font: pick('font') }) : null;
+  const plate = PLATED ? createPlate({ iconUrl: pick('icons'), iconCell: pick('iconCell'), font: pick('font'),
+                                      iconTint: pick('iconTint'), shadow: pick('shadow') }) : null;
+  // the joint the plate rides above: the game's head (game.aimJoints.head; GU's rig 4, MHFU's 20)
+  const HEAD_GID = (game.aimJoints && Number.isInteger(game.aimJoints.head)) ? game.aimJoints.head : 4;
   if (plate) ctx.scene.add(plate.sprite);
   const PLATE_UP = 0.32;             // metres above the head joint (the joint sits at the skull's base)
   const PLATE_NONE = '(None)';
@@ -61,7 +64,7 @@ export function createGuildPanel(game, ctx){
     plate.setVisible(on);
     if (!on) return;
     platePaint();                                   // repaints only when something changed
-    const b = ctx.playerBone(ctx.activeMounts(), 4);        // the head joint, live under the pose
+    const b = ctx.playerBone(ctx.activeMounts(), HEAD_GID);  // the head joint, live under the pose
     if (b){ b.getWorldPosition(_plateAnchor); _plateAnchor.y += PLATE_UP; }
     else { ctx.figureCenter(_plateAnchor); _plateAnchor.y += 1.0; }
     plate.sprite.position.copy(_plateAnchor);

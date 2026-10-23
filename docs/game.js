@@ -46,7 +46,7 @@ window.VIEWER_GAME = {
   themeIcon: function (name) { return 'assets/MonsterIcons/MHGU-' + name.replace(/ /g, '_') + '_Icon.webp'; },
   themeIconFallback: 'assets/MonsterIcons/MHGU-Question_Mark_Icon.webp',
   // the sidebar's pane tabs, [tab id, pane id], the first the default
-  paneTabs: [['tabHunter', 'paneHunter'], ['tabPalico', 'panePalico']],
+  paneTabs: [['tabHunter', 'paneHunter'], ['tabPalico', 'panePalico'], ['tabNpc', 'paneNpc']],
   // the joints the camera's aim takes (the depth of field's focus follow, the first-person face lock), by gid
   aimJoints: { head: 4, chest: 2 },
   // Save / Save As / Open: the default file name and the file type the picker shows
@@ -192,7 +192,7 @@ window.VIEWER_GAME = {
   // hair / features / clothing) to colour channel 2 on every path (0x2834f4..0x28360c -> 0x53a0e4), a plain multiply over
   // fAlbedoColor (Raven, 2026-10-19: the luminance tint drew the pale end too pale). The Palico's fur is channel 2 as well:
   // its materials (slots 'o...') are left out
-  colourChannel: [{ channel: 4, part: 'paint' }, { channel: 2, part: 'skin', exceptSlot: '^o' }],
+  colourChannel: [{ channel: 4, part: 'paint' }, { channel: 2, part: 'skin', exceptSlot: '^(o|npc)' }],
   // PIGMENT (docs/base/ui/pigment.js): the dyeable slots' labels, and the rows GU adds -- the Clothing Color row (Hunter
   // panel) and the Palico's two with their All (Palico tab)
   pigmentSlotLabels: { helm: 'Head', body: 'Chest', arm: 'Arms', wst: 'Waist', leg: 'Legs' },

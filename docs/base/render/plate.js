@@ -36,6 +36,9 @@ export function createPlate(opts){
   opts = opts || {};
   const font = opts.font || "'MHFU', 'Segoe UI', system-ui, sans-serif";
   const ICON_CELL = opts.iconCell || ICON_CELL_DEFAULT;
+  // opts.iconTint false: the glyph is drawn as it is, not multiplied by the plate's colour (MHFU's glyph sprite is white,
+  // 0x08835470); opts.shadow 'offset': the text's edge is a black copy one pixel down and right (MHFU), not an outline
+  const ICON_TINT = opts.iconTint !== false, OFFSET_EDGE = opts.shadow === 'offset';
   const canvas = document.createElement('canvas');
   canvas.width = 4; canvas.height = 4;
   const ctx = canvas.getContext('2d');
@@ -98,23 +101,31 @@ export function createPlate(opts){
       const o = off.getContext('2d');
       o.clearRect(0, 0, icon, icon);
       o.drawImage(icons, spec.icon * ICON_CELL, 0, ICON_CELL, ICON_CELL, 0, 0, icon, icon);
-      o.globalCompositeOperation = 'multiply';        // colour x the glyph's intensity: the shading and the dark outline stay
-      o.fillStyle = color; o.fillRect(0, 0, icon, icon);
-      o.globalCompositeOperation = 'destination-in';  // and the glyph's own alpha is the shape again
-      o.drawImage(icons, spec.icon * ICON_CELL, 0, ICON_CELL, ICON_CELL, 0, 0, icon, icon);
-      o.globalCompositeOperation = 'source-over';
+      if (ICON_TINT){
+        o.globalCompositeOperation = 'multiply';        // colour x the glyph's intensity: the shading and the dark outline stay
+        o.fillStyle = color; o.fillRect(0, 0, icon, icon);
+        o.globalCompositeOperation = 'destination-in';  // and the glyph's own alpha is the shape again
+        o.drawImage(icons, spec.icon * ICON_CELL, 0, ICON_CELL, ICON_CELL, 0, 0, icon, icon);
+        o.globalCompositeOperation = 'source-over';
+      }
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.9)'; ctx.shadowBlur = 2.5 * S;
       ctx.drawImage(off, x0, y1 - icon / 2);
       ctx.drawImage(off, x0, y1 - icon / 2);          // twice: a solid dark rim, like the outlined text
       ctx.restore();
     }
-    ctx.font = f1; ctx.lineWidth = 4 * S; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-    ctx.strokeText(line1, x0 + icon + gap, y1); ctx.fillStyle = color; ctx.fillText(line1, x0 + icon + gap, y1);
+    // the text's edge: an outline, or (opts.shadow 'offset') a black copy at (+1, +1) screen pixels under the text
+    const edged = (t, x, y, lw) => {
+      if (OFFSET_EDGE){ ctx.fillStyle = '#000000'; ctx.fillText(t, x + S, y + S); }
+      else { ctx.lineWidth = lw; ctx.strokeText(t, x, y); }
+      ctx.fillStyle = color; ctx.fillText(t, x, y);
+    };
+    ctx.font = f1; ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+    edged(line1, x0 + icon + gap, y1, 4 * S);
     if (line2){
       const y2 = pad + h1 + h2 / 2, x2 = (W - w2) / 2;
-      ctx.font = f2; ctx.lineWidth = 3.5 * S;
-      ctx.strokeText(line2, x2, y2); ctx.fillText(line2, x2, y2);
+      ctx.font = f2;
+      edged(line2, x2, y2, 3.5 * S);
     }
     if (resized) freshTexture(); else tex.needsUpdate = true;
   }

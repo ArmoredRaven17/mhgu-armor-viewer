@@ -159,3 +159,6 @@ longer shows other games' tabs; the file stays as the per-game source). `name: n
   colour A: the ambient / hemisphere diffuse is lit by A instead of the material's diffuse colour (colour x channel). Off by
   default (uAmbOn 0): nothing changes for a game that does not call it. Values above 255 are allowed and NOT clamped (MHFU passes
   A relative to 7F7F7F); keep the decode unclamped.
+- plate.js / guild-panel.js (2026-10-19, for MHFU): the plate rides above `game.aimJoints.head` (else 4, GU's head);
+  `guildInfo.iconTint: false` draws the weapon glyph untinted (the dark rim stays); `guildInfo.shadow: 'offset'` gives the
+  text a black copy at (+1, +1) px instead of an outline. Both keys may sit on guildInfo.tag too. Defaults: as before.

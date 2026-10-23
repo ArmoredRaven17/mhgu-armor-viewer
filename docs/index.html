@@ -29,6 +29,7 @@
       <div class="row gap tabbar">
         <button id="tabHunter" class="btn accent on" style="flex:1">Hunter</button>
         <button id="tabPalico" class="btn accent" style="flex:1">Palico</button>
+        <button id="tabNpc" class="btn accent" style="flex:1">NPC</button>
       </div>
 
       <div id="paneHunter">
@@ -206,6 +207,17 @@
         </div>
       </section>
 
+      </div>
+
+      <!-- THE NPC TAB (Raven, 2026-10-23): docs/npc-panel.js fills it from docs/npcs.json on the first visit -->
+      <div id="paneNpc" hidden>
+      <section class="panel" data-open="false">
+        <button class="panel-head">NPC <span class="chev">&#9662;</span></button>
+        <div class="panel-body">
+          <div class="field"><label for="npcSel">NPC</label><select id="npcSel"></select></div>
+          <div class="field"><label for="npcPose">Pose</label><select id="npcPose"></select></div>
+        </div>
+      </section>
       </div>
 
     </aside>
@@ -399,6 +411,7 @@ import { tint, applyTint, allMats, armorMats, setCharColor, setChannelColor, set
   from './base/render/material.js';
 import { loadEntry, loadCharPart, HIDE_DUP_HAND } from './render/piece.js';
 import { PoseDriver, POSES } from './base/render/pose.js';
+import { createNpcPanel } from './npc-panel.js';
 import { ROM as MOUNT_ROM, prowlerMountFor, localMatrix as mountLocalMatrix, idsAt } from './render/mount.js';
 import { WeaponRig } from './render/weapon.js';
 import { ELEMENTS as KINSECT_ELEMENTS } from './render/kinsect.js';
@@ -902,7 +915,12 @@ function otFurTex(){
   return f ? f.tex : null;
 }
 function activeMounts(){
-  return Object.values(figure === 'palico' ? otMounted : mounted);
+  return figure === 'npc' ? figureRoots('npc') : Object.values(figure === 'palico' ? otMounted : mounted);
+}
+// the roots a figure's pose drives: the hunter's pieces, the Palico's, or the NPC on screen (docs/npc-panel.js)
+let npcPanel = null;
+function figureRoots(f){
+  return f === 'palico' ? Object.values(otMounted) : f === 'npc' ? (npcPanel ? npcPanel.roots() : []) : hunterRoots();
 }
 
 // ---- posing -------------------------------------------------------------
@@ -930,7 +948,7 @@ async function playGamePose(idx){
 }
 // called every frame while a game pose is playing
 function stepGamePose(){
-  pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
+  pose.step(figureRoots(pose.figure));
 }
 function repose(){ pose.repose(hunterRoots()); }
 
@@ -2047,7 +2065,7 @@ document.getElementById('defpig').onchange = e => {
 // lock (render/pose.js) holds that joint at one height through a clip, so the soles stay put.
 const floorAt = { key: null, y: 0, centre: new THREE.Vector3(), reach: 1 };
 function figureFloor(){
-  const roots = figure === 'palico' ? Object.values(otMounted) : hunterRoots();
+  const roots = figureRoots(figure);
   const clip = pose.action ? pose.action.getClip() : null;
   const key = [figure, pose.ground, clip ? clip.uuid : pose.staticPose].concat(roots.map(r => r.uuid)).join('|');
   if (key === floorAt.key) return floorAt;
@@ -2967,12 +2985,13 @@ function setFigure(f){
   // banking it against the outgoing one would overwrite the other figure's saved view.
   if (!restoring) figCam[figure] = cameraState();
   figure = f;
-  const h = f === 'hunter';
+  const h = f === 'hunter', p = f === 'palico';
   for (const g of Object.values(mounted)) g.visible = h;
   for (const g of Object.values(charMounted)) g.visible = h;
   for (const g of Object.values(clothMounted)) g.visible = h;
   weapon.setVisible(h);
-  for (const g of Object.values(otMounted)) g.visible = !h;
+  for (const g of Object.values(otMounted)) g.visible = p;
+  if (npcPanel && f !== 'npc') npcPanel.leave();
   otApplyMasks();
   // THE HUNTER'S EFFECTS GO WITH THE HUNTER. Nothing held them here, so an aura or a footfall kept drawing round a
   // hunter nobody could see -- Tempest Axe's flame stood round the Palico (2026-09-29). They are HELD, not taken
@@ -2986,7 +3005,8 @@ function setFigure(f){
   let resumeAt = -1;
   if (!h){ animPanel.chainResume = animPanel.chainRunning ? animPanel.chainPos : -1; chainStop(); }   // park the hunter's chain
   else { resumeAt = animPanel.chainResume; animPanel.chainResume = -1; }                    // and pick it up again
-  const done = h ? (resumeAt >= 0 ? chainPlayFrom(resumeAt) : restoreHunterPose()) : otPlayPose();
+  const done = h ? (resumeAt >= 0 ? chainPlayFrom(resumeAt) : restoreHunterPose())
+             : f === 'npc' ? npcPanel.enter() : otPlayPose();
   Promise.resolve(done).then(() => {
     if (figCam[f]) applyCameraState(figCam[f]); else frameAll();
   });
@@ -3002,6 +3022,7 @@ async function restoreHunterPose(){
 // the tab buttons already own their onclick, so listen alongside it
 document.getElementById('tabHunter').addEventListener('click', () => setFigure('hunter'));
 document.getElementById('tabPalico').addEventListener('click', () => setFigure('palico'));
+document.getElementById('tabNpc').addEventListener('click', () => setFigure('npc'));
 
 function otCapture(){
   if (!OT || !document.getElementById('pgOn_ohelm')) return null;
@@ -3027,7 +3048,7 @@ if (SAVED && SAVED.cameras){
   // tab was open when it was written -- not automatically to the hunter.
   let t = null;
   try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
-  figCam[t === 'tabPalico' ? 'palico' : 'hunter'] = SAVED.camera;
+  figCam[t === 'tabPalico' ? 'palico' : t === 'tabNpc' ? 'npc' : 'hunter'] = SAVED.camera;
 }
 if (OT && SAVED && SAVED.otomo){
   const o = SAVED.otomo;
@@ -3117,6 +3138,12 @@ async function otPlayPose(){
   await pose.play(e, { figure: 'palico', joints: (OT && OT.poseJoints) || [], anchorXZ: !ride, groundLock: !ride, holdReference: ride });
 }
 otBuildPoses();
+// the NPC tab (docs/npc-panel.js): its own model and lists, the shared pose driver and piece pipeline
+npcPanel = createNpcPanel({
+  world, pose, pieceCtx, loadEntry, setLoading,
+  isActive: () => figure === 'npc',
+  onShown: () => { if (figure === 'npc') frameAll(); },
+});
 // A first visit gets Pose 1 rather than the bind pose: the Palico models ship in a
 // T-pose, arms straight out, which is not a thing anyone wants to look at.
 {
@@ -3207,6 +3234,7 @@ await otApply();
   let t = null;
   try { t = localStorage.getItem('mhgu-armor-viewer-tab'); } catch (_) {}
   if (t === 'tabPalico') setFigure('palico');
+  else if (t === 'tabNpc') setFigure('npc');
 }
 bankHunter();           // the hunter on screen into its slot, now that it is dressed
 paintHunters();
@@ -3359,7 +3387,7 @@ window.__view = { camera, controls, scene, renderer, frameAll, apply, setSlot, M
           act.time += 1 / 60;
           const d = clipDur(act);
           if (act.time > d) act.time = act.loop === THREE.LoopRepeat ? act.time - d : d;
-          pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
+          pose.step(figureRoots(pose.figure));
         }
         weapon.stepMotion(); weapon.step();
         // the materials' own clips on the wall clock, as the render loop runs them (the Spirit Gauge's, the oils' fade)
@@ -3926,7 +3954,7 @@ window.__view.shot = async function(run, nameArg, atArg){
     // a third argument picks the frame (seconds into the stance) instead
     act.time = (typeof atArg === 'number') ? Math.min(Math.max(0, atArg), Math.max(0, clip.duration - 1e-3))
              : (act.loop === THREE.LoopOnce ? Math.max(0, clip.duration - 1e-3) : 0);
-    pose.step(pose.figure === 'palico' ? Object.values(otMounted) : hunterRoots());
+    pose.step(figureRoots(pose.figure));
   }
   stepDeviant(0.5); weapon.stepMotion(); weapon.step();
   // a DEV SCENE freezes the material clock so its shots stay comparable frame for frame;
