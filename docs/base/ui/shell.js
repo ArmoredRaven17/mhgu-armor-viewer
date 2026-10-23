@@ -342,6 +342,18 @@ if (document.fonts) document.fonts.load('1em MHFU').then(() => {
     document.querySelectorAll('.panel').forEach(p => p.dataset.open = 'false');
     document.addEventListener('viewer-ready', () => document.body.classList.remove('booting'), { once: true });
   }
+  // THE PANE TABS LOCK WHILE ANYTHING LOADS (Raven, 2026-10-23: "Make the tabs unselect-able while the loading happens"):
+  // disabled from the first paint until 'viewer-ready' (with panelsUntilReady), and whenever the app reports a load --
+  // `document.dispatchEvent(new CustomEvent('viewer-loading', { detail: true | false }))`, which GU's setLoading sends
+  // with its overlay. A disabled button takes no click, so neither the pane switch here nor the app's own listener runs.
+  {
+    const tabBtns = (G.paneTabs || []).map(t => document.getElementById(t[0])).filter(Boolean);
+    let booting = LOCK, loadingNow = false;
+    const paintTabs = () => tabBtns.forEach(b => { b.disabled = booting || loadingNow; });
+    document.addEventListener('viewer-ready', () => { booting = false; paintTabs(); }, { once: true });
+    document.addEventListener('viewer-loading', e => { loadingNow = !!e.detail; paintTabs(); });
+    paintTabs();
+  }
   document.querySelectorAll('.panel-head').forEach(h => {
     h.onclick = () => {
       if (document.body.classList.contains('booting')) return;

@@ -2183,6 +2183,8 @@ function setLoading(on){
   loadHold = Math.max(0, loadHold + (on ? 1 : -1));
   const show = !booted || loadHold > 0;
   document.getElementById('loading').hidden = !show;
+  // the pane tabs lock with the overlay (base/ui/shell.js)
+  document.dispatchEvent(new CustomEvent('viewer-loading', { detail: show }));
   if (show && on) renderer.clear();
 }
 renderer.setAnimationLoop(() => {

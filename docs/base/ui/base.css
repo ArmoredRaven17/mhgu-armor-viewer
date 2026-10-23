@@ -250,6 +250,8 @@ header #bar .btn.tiny{margin-right:0}
 .panel-head:hover{background-color:#ffffff0d}
 /* the panels locked until the model is in (shell.js, game.panelsUntilReady): their heads dimmed, no hover */
 body.booting .panel-head{opacity:.5;cursor:progress}
+/* a pane tab while something loads (shell.js: disabled until 'viewer-ready' and during 'viewer-loading') */
+.tabbar .btn:disabled{opacity:.5;cursor:progress}
 body.booting .panel-head:hover{background-color:transparent}
 /* The panel chevrons are hidden -- the accordion only ever has one panel open, so the
    open one is obvious from the panel body and the arrows were just noise. The spans stay

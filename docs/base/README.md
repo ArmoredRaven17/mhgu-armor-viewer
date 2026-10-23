@@ -162,3 +162,5 @@ longer shows other games' tabs; the file stays as the per-game source). `name: n
 - plate.js / guild-panel.js (2026-10-19, for MHFU): the plate rides above `game.aimJoints.head` (else 4, GU's head);
   `guildInfo.iconTint: false` draws the weapon glyph untinted (the dark rim stays); `guildInfo.shadow: 'offset'` gives the
   text a black copy at (+1, +1) px instead of an outline. Both keys may sit on guildInfo.tag too. Defaults: as before.
+- shell.js (2026-10-23): the pane tabs (game.paneTabs) are disabled until 'viewer-ready' (with panelsUntilReady) and while
+  the app reports a load: `document.dispatchEvent(new CustomEvent('viewer-loading', { detail: true | false }))` (GU: setLoading).

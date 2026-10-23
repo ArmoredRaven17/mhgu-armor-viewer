@@ -60,7 +60,9 @@ export function createGuildPanel(game, ctx){
   const _plateAnchor = new THREE.Vector3(), _plateSize = new THREE.Vector2();
   function plateUpdate(cam){
     if (!plate) return;
-    const on = plateState.on && ctx.figure !== 'palico';
+    // the hunter's plate shows over the HUNTER only (Raven, 2026-10-23: "When outside of the Hunter Tab, ensure that the
+    // nameplate is not visible"): not over the Palico or an NPC; an app with no figures is always the hunter
+    const on = plateState.on && (ctx.figure || 'hunter') === 'hunter';
     plate.setVisible(on);
     if (!on) return;
     platePaint();                                   // repaints only when something changed
