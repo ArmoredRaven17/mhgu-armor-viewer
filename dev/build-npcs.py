@@ -6,7 +6,9 @@ motion lists, read from the ROM.
 THE TABLE: arc/npc/com.arc  npc\\tables\\baseData\\npcID  (f32 62.5, u32 count 188, then 47-byte records):
     +0  u32  the NPC number (npc_NNN, the talk scripts' table/npc/script/npc_NNN_*)
     +7  u16  the MODEL number (npc\\mod\\npcMMM\\npcMMM.mod; 0 = none -- Hunters for Hire, Palico Scout)
-    +9..+28  ten (motion, value) byte pairs: the NPC's OWN motions, motion numbers of its +29 list (0xff = empty slot);
+    +9..+28  ten (motion, blend) byte pairs: the NPC's OWN motions, motion numbers of its +29 list (0xff = empty slot);
+             the game's field names (cNpcBaseData_ID, rodata 0x15599a3): mMotNo_Footwork[0..2], mMotNo_Talk[0..2],
+             mMotNo_Walk, mMotNo_Run, mAccentFw[0..1], each followed by its mHokan (the blend into it, frames);
              515 of 545 named motions are in that list (the rest belong to placeholder records). Only these ship
              (Raven, 2026-10-23: "Restrict the poses, since some poses end up looking odd with some NPCs")
     +29 u16  its motion list, an index into arc/npc/mot.arc's lists in archive order (0 mtp_0 ... 28 multi_03)
@@ -24,9 +26,11 @@ OUTPUT (into DIR):
     poses/npcs/npcMMM_<list>.glb      a list built on that model, keeping only the motions its NPCs are given: nodes +
                                       animations only, keys reduced, one buffer view per accessor (the whole lists stay
                                       in the scratch cache, C:/MHGU-Extract/scratch-npc/lists)
-    npcs.json                         { npcs: [{ name, ids, model, lists, poses: [[list key, clip] ...] }],
+    npcs.json                         { npcs: [{ name, ids, model, lists, poses: [[list key, clip] ...], colours,
+                                                 parts?: [[0 hide | 2 show, group] ...], partsByMotion?: true | [motion] }],
                                         models: { npcMMM: { glb, arc, joints } },
-                                        lists: { "npcMMM_<list>": { file, list, clips: [{ clip, dur }] } } }
+                                        lists: { "npcMMM_<list>": { file, list,
+                                                 clips: [{ clip, dur, parts?: { at, groups, spans } }] } } }
     and C:/MHGU-Extract/build/frag/npcs.json: the models' .mrl / .glb for build-materials.py --npcs
 """
 import argparse, collections, importlib.util, json, os, re, shutil, struct, sys, time
@@ -84,6 +88,69 @@ def read_table():
     names = B.gmd_strings(os.path.join(B.ENG_TABLE, 'NpcName_eng.gmd'))
     mot = [n.split('\\')[-1] for n, t in arc_entries(os.path.join(B.ARC, 'npc', 'mot.arc')) if t == LMT]
     return recs, names, mot
+
+
+def palettes():
+    """npc number -> (its palette, its parts): arc/npc/sub.arc npc/tables/subData/sub_modNNN_p01 (NNN = the NPC NUMBER,
+    not the model; Raven, 2026-10-23: "Some NPCs are the same, but pallete swapped"): f32 7.3, u32 count, then 5-byte
+    entries (cNpcSubData: mCmd, then a byte and mCol[3]), applied in order by uLobbyNpc 0x6bf26c:
+      mCmd 1  a colour for the model's materials of that colour channel (3 = the _sym region, 1 and 2 as the player's).
+              Red Hell Hunter (129) ch3 = 153,65,49, Black Hell Hunter (130) ch3 = 80,75,27 -- the same model, npc129.
+      mCmd 0  HIDES mesh group <byte>: clears its bit of the model's parts-display set (uModel +0x110, the "PartsDisp"
+      mCmd 2  SHOWS it    property; the constructor 0x88baa0 starts with every group shown). Raven, 2026-10-23: "Argosy
+              Captain has a second sword model rendering" -- his (52) one record is (0, 1): the copy in his hand,
+              Group[1] (skinned to it), is hidden and the one on his back, Group[2], stays -- both are the sword in its
+              sheath. 17 NPCs carry such records."""
+    out = {}
+    sub = extracted(os.path.join('npc', 'sub.arc'))
+    for dp, dn, fn in os.walk(sub):
+        for f in fn:
+            m = re.match(r'sub_mod(\d+)_p(\d+)', f)
+            if not m or m.group(2) != '01': continue
+            d = open(os.path.join(dp, f), 'rb').read()
+            n = struct.unpack_from('<I', d, 4)[0]
+            cols, parts = [], []
+            for k in range(n):
+                t, ch, r, g, b = d[8 + 5 * k:13 + 5 * k]
+                if t == 1: cols.append([ch, [r, g, b]])
+                elif t in (0, 2): parts.append([t, ch])
+            out[int(m.group(1))] = (cols, parts)
+    return out
+
+
+# PARTS BY MOTION: uLobbyNpc 0x6beb38 runs each frame for these NPC numbers only (a switch on the number, +0x16c0) and
+# sets the model's mesh groups from the PLAYING motion's LMT event group 1 (anim +0x34, group base +0x48): 32 u16 group
+# numbers, then (bits, frames) spans; at the current frame (one less once the motion has ended), a set bit k HIDES group
+# slot k and a clear one shows it; a span of no bits, or no span, shows every group (0x13ecd58 over the whole set). The
+# Argosy Captain (52) runs it only while his motion is 124 or 125 (his routine 0x6c73c0 plays them; Raven: when you finish
+# his quest line he gives you the sword -- 124 lifts it, sheathed, off his back at frame 91, and in 125 it is gone: both
+# copies hidden); every other NPC not named here never touches its groups after the subData above.
+# MOTIONS THE CODE PLAYS: the NPC's routine plays these itself, outside the table's ten slots -- the Captain's 0x6c73c0
+# (`mov r1, #0x7c` / `#0x7d` into the motion setter 0x53943c). Shipped as his poses (Raven, 2026-10-23: "Yes").
+ROUTINE_MOTIONS = {52: [124, 125]}
+PARTS_BY_MOTION = {8: True, 46: True, 52: [124, 125], 129: True, 130: True, 323: True, 333: True, 424: True, 521: True,
+                   524: True, 621: True, 701: True, 702: True, 801: True, 802: True, 805: True, 812: True}
+
+
+def motion_parts(lmt):
+    """motion number -> (loop frame, [group per slot], [[bits, frames] ...]) from an LMT's event group 1 (see above)"""
+    d = open(lmt, 'rb').read()
+    n = struct.unpack_from('<H', d, 6)[0]
+    out = {}
+    for m in range(n):
+        o = struct.unpack_from('<I', d, 8 + 4 * m)[0]
+        if not o: continue
+        loop = struct.unpack_from('<i', d, o + 12)[0]
+        ev = struct.unpack_from('<I', d, o + 0x34)[0]
+        groups, spans = [], []
+        if ev:
+            b = ev + 0x48
+            groups = list(struct.unpack_from('<32H', d, b))
+            while groups and not groups[-1]: groups.pop()
+            nf, fp = struct.unpack_from('<II', d, b + 64)
+            spans = [list(struct.unpack_from('<II', d, fp + 8 * k)) for k in range(nf)]
+        out[m] = (loop, groups, spans)
+    return out
 
 
 def model_sources():
@@ -155,6 +222,7 @@ def main():
     os.makedirs(WORK, exist_ok=True)
     recs, names, mot = read_table()
     src = model_sources()
+    pal = palettes()
     # one NPC per (name, model), its lists in record order
     npcs = collections.OrderedDict(); skipped = []
     for i, r in enumerate(recs):
@@ -165,10 +233,15 @@ def main():
         if model not in src:
             skipped.append((r['id'], name, model, 'model not in the ROM')); continue
         if only and model not in only: continue
-        e = npcs.setdefault((name, model), {'name': name, 'ids': [], 'model': model, 'own': [], 'poses': []})
+        cols, parts = pal.get(r['id'], ([], []))
+        pbm = PARTS_BY_MOTION.get(r['id'])
+        # one NPC per name, model, palette AND parts: two records that colour or cut the same model differently stay apart
+        e = npcs.setdefault((name, model, json.dumps(cols), json.dumps(parts), json.dumps(pbm)),
+                            {'name': name, 'ids': [], 'model': model, 'own': [], 'poses': [], 'colours': cols,
+                             'parts': parts, 'partsByMotion': pbm})
         e['ids'].append(r['id'])
         if r['l1'] < len(mot) and r['slots']:
-            e['own'].append((r['id'], mot[r['l1']], r['slots']))
+            e['own'].append((r['id'], mot[r['l1']], r['slots'] + ROUTINE_MOTIONS.get(r['id'], [])))
     motd = extracted(os.path.join('npc', 'mot.arc'))
     out_models = os.path.join(a.out, 'models', 'npcs'); out_poses = os.path.join(a.out, 'poses', 'npcs')
     os.makedirs(out_models, exist_ok=True); os.makedirs(out_poses, exist_ok=True)
@@ -179,7 +252,7 @@ def main():
     CACHE = os.path.join(WORK, 'lists'); os.makedirs(CACHE, exist_ok=True)
     want = {}               # list key -> the clips some NPC is given
     shipped_once = set()
-    for (name, model), e in npcs.items():
+    for (name, model, *_k), e in npcs.items():
         if model not in built:
             ad = extracted(src[model])
             mod = os.path.join(ad, 'npc', 'mod', model, model + '.mod')
@@ -228,8 +301,12 @@ def main():
                 if not any(motion_no(c) == m for c in names_in):
                     notes.append('%s (%s): motion %d is not in %s' % (name, nid, m, lst))
             want.setdefault(key, set()).update(c for k, c in e['poses'] if k == key)
-        res['npcs'].append({'name': name, 'ids': e['ids'], 'model': model,
-                            'lists': [k for k in dict.fromkeys(k for k, _c in e['poses'])], 'poses': e['poses']})
+        row = {'name': name, 'ids': e['ids'], 'model': model,
+               'lists': [k for k in dict.fromkeys(k for k, _c in e['poses'])], 'poses': e['poses'],
+               'colours': e['colours']}
+        if e['parts']: row['parts'] = e['parts']
+        if e['partsByMotion']: row['partsByMotion'] = e['partsByMotion']
+        res['npcs'].append(row)
     # ship each list with only the clips some NPC is given (their own, from the table), nothing else
     for key, clips in want.items():
         full = os.path.join(CACHE, key + '.glb'); dst = os.path.join(out_poses, key + '.glb')
@@ -238,8 +315,18 @@ def main():
         tmp = os.path.join(WORK, 'filter.glb'); HM.glb_write(tmp, js, bin_)
         HM.strip_to_animation(tmp, dst, {n.get('name') for n in js['nodes']})
         compact(dst)
-        res['lists'][key] = {'file': 'poses/npcs/%s.glb' % key, 'list': key.split('_', 1)[1],
-                             'clips': [{'clip': c, 'dur': d} for c, d in HM.clip_list(B.glb_json(dst))]}
+        lst = key.split('_', 1)[1]
+        mp = motion_parts(os.path.join(motd, 'npc', 'mot', lst + '.lmt'))
+        clips = []
+        for c, dur in HM.clip_list(B.glb_json(dst)):
+            row = {'clip': c, 'dur': dur}
+            loop, groups, spans = mp.get(motion_no(c), (-1, [], []))
+            # a clip's parts track, where it has one: the converter splits a looping motion at its loop frame into
+            # "_start" (0..) and "_loop" (loop..), so `at` is the LMT frame the clip's first frame is
+            if any(bits for bits, _n in spans):
+                row['parts'] = {'at': loop if c.endswith('_loop') and loop > 0 else 0, 'groups': groups, 'spans': spans}
+            clips.append(row)
+        res['lists'][key] = {'file': 'poses/npcs/%s.glb' % key, 'list': lst, 'clips': clips}
         shipped_once.add(key)
     # a list no NPC draws from any more leaves the docs (it stays in the cache)
     for f in os.listdir(out_poses):

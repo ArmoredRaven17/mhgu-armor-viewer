@@ -949,6 +949,7 @@ async function playGamePose(idx){
 // called every frame while a game pose is playing
 function stepGamePose(){
   pose.step(figureRoots(pose.figure));
+  if (pose.figure === 'npc' && npcPanel) npcPanel.tick();     // the NPC's mesh groups by its motion's frame
 }
 function repose(){ pose.repose(hunterRoots()); }
 

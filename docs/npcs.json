@@ -36,7 +36,8 @@
      "npc001_lab_1",
      "Motion[192]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Bherna Gal",
@@ -68,7 +69,8 @@
      "npc002_bln_0",
      "Motion[15]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Bherna Market",
@@ -92,6 +94,16 @@
      "npc003_bln_0",
      "Motion[22]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      63,
+      127,
+      191
+     ]
+    ]
    ]
   },
   {
@@ -111,6 +123,16 @@
     [
      "npc004_bln_0",
      "Motion[32]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      56,
+      102,
+      146
+     ]
     ]
    ]
   },
@@ -136,7 +158,8 @@
      "npc005_bln_0",
      "Motion[42]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Purr-prietress",
@@ -168,7 +191,8 @@
      "npc006_bln_0",
      "Motion[54]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Palico Armory",
@@ -200,7 +224,8 @@
      "npc007_bln_0",
      "Motion[62]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Courier",
@@ -232,7 +257,9 @@
      "npc008_par_0",
      "Motion[9]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Flight Cattendant",
@@ -260,7 +287,8 @@
      "npc009_par_0",
      "Motion[12]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Chamberlyne",
@@ -292,7 +320,8 @@
      "npc010_par_0",
      "Motion[22]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Moofy",
@@ -324,7 +353,8 @@
      "npc011_lpet_y",
      "Motion[11]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Poogie",
@@ -356,7 +386,8 @@
      "npc012_lpet_p",
      "Motion[11]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Chief Researcher",
@@ -384,7 +415,8 @@
      "npc014_multi_00",
      "Motion[112]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Master of Style",
@@ -407,6 +439,16 @@
     [
      "npc015_multi_00",
      "Motion[122]"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      178,
+      75,
+      75
+     ]
     ]
    ]
   },
@@ -432,6 +474,16 @@
      "npc003_bln_1",
      "Motion[2]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      242,
+      161,
+      11
+     ]
+    ]
    ]
   },
   {
@@ -451,6 +503,16 @@
     [
      "npc004_bln_1",
      "Motion[12]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      255,
+      165,
+      0
+     ]
     ]
    ]
   },
@@ -480,6 +542,13 @@
      "npc022_bln_1",
      "Motion[22]_loop"
     ]
+   ],
+   "colours": [],
+   "parts": [
+    [
+     0,
+     2
+    ]
    ]
   },
   {
@@ -508,14 +577,62 @@
      "npc124_bln_1",
      "Motion[32]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Village Moofah",
    "ids": [
     24,
+    626
+   ],
+   "model": "npc024",
+   "lists": [
+    "npc024_lpaka"
+   ],
+   "poses": [
+    [
+     "npc024_lpaka",
+     "Motion[1]_loop"
+    ],
+    [
+     "npc024_lpaka",
+     "Motion[8]_loop"
+    ],
+    [
+     "npc024_lpaka",
+     "Motion[3]"
+    ],
+    [
+     "npc024_lpaka",
+     "Motion[5]"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      242,
+      11,
+      11
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     2,
+     2
+    ],
+    [
+     0,
+     1
+    ]
+   ]
+  },
+  {
+   "name": "Village Moofah",
+   "ids": [
     25,
-    626,
     627
    ],
    "model": "npc024",
@@ -539,6 +656,26 @@
      "npc024_lpaka",
      "Motion[5]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      11,
+      80,
+      242
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     2,
+     2
+    ],
+    [
+     0,
+     1
+    ]
    ]
   },
   {
@@ -559,7 +696,8 @@
      "npc026_bln_1",
      "Motion[62]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Jumbo Chief",
@@ -591,7 +729,8 @@
      "npc040_com_0",
      "Motion[2]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Caravaneer",
@@ -611,7 +750,8 @@
      "npc041_com_0",
      "Motion[12]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Ace Commander",
@@ -631,7 +771,8 @@
      "npc042_com_0",
      "Motion[22]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Ace Lancer",
@@ -651,7 +792,8 @@
      "npc043_com_0",
      "Motion[32]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Ace Gunner",
@@ -675,7 +817,8 @@
      "npc044_com_0",
      "Motion[42]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Ace Cadet",
@@ -695,7 +838,8 @@
      "npc045_com_0",
      "Motion[52]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Guildmarm",
@@ -731,7 +875,9 @@
      "npc046_com_0",
      "Motion[65]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Street Cook",
@@ -755,7 +901,8 @@
      "npc047_com_0",
      "Motion[72]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Itinerant Cook",
@@ -787,7 +934,8 @@
      "npc048_com_0",
      "Motion[82]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "The Man",
@@ -807,7 +955,8 @@
      "npc049_com_0",
      "Motion[92]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Lil Miss Forge",
@@ -844,7 +993,8 @@
      "npc050_com_0",
      "Motion[105]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Wycoon",
@@ -872,7 +1022,8 @@
      "npc051_com_0",
      "Motion[113]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Argosy Captain",
@@ -899,7 +1050,30 @@
     [
      "npc052_com_0",
      "Motion[122]_loop"
+    ],
+    [
+     "npc052_com_0",
+     "Motion[124]_start"
+    ],
+    [
+     "npc052_com_0",
+     "Motion[124]_loop"
+    ],
+    [
+     "npc052_com_0",
+     "Motion[125]"
     ]
+   ],
+   "colours": [],
+   "parts": [
+    [
+     0,
+     1
+    ]
+   ],
+   "partsByMotion": [
+    124,
+    125
    ]
   },
   {
@@ -928,7 +1102,8 @@
      "npc053_com_0",
      "Motion[133]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Kayamba",
@@ -952,18 +1127,17 @@
      "npc054_com_0",
      "Motion[143]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Kokoto Chief",
    "ids": [
-    101,
-    725
+    101
    ],
    "model": "npc101",
    "lists": [
-    "npc101_cct_0",
-    "npc101_lab_1"
+    "npc101_cct_0"
    ],
    "poses": [
     [
@@ -977,18 +1151,16 @@
     [
      "npc101_cct_0",
      "Motion[3]_loop"
-    ],
+    ]
+   ],
+   "colours": [
     [
-     "npc101_lab_1",
-     "Motion[201]_loop"
-    ],
-    [
-     "npc101_lab_1",
-     "Motion[202]"
-    ],
-    [
-     "npc101_lab_1",
-     "Motion[203]_loop"
+     3,
+     [
+      114,
+      64,
+      37
+     ]
     ]
    ]
   },
@@ -1022,6 +1194,24 @@
      "npc102_cct_0",
      "Motion[15]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      223,
+      50,
+      30
+     ]
+    ],
+    [
+     1,
+     [
+      184,
+      93,
+      69
+     ]
+    ]
    ]
   },
   {
@@ -1046,6 +1236,22 @@
      "npc103_cct_0",
      "Motion[22]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      58,
+      63,
+      68
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
+    ]
    ]
   },
   {
@@ -1066,6 +1272,16 @@
      "npc104_cct_0",
      "Motion[32]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      119,
+      191,
+      87
+     ]
+    ]
    ]
   },
   {
@@ -1085,6 +1301,16 @@
     [
      "npc104_cct_0",
      "Motion[42]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      73,
+      129,
+      129
+     ]
     ]
    ]
   },
@@ -1126,7 +1352,8 @@
      "npc106_cct_0",
      "Motion[53]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Palico Armory",
@@ -1150,18 +1377,17 @@
      "npc107_cct_0",
      "Motion[62]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Grandmeow",
    "ids": [
-    113,
-    213
+    113
    ],
    "model": "npc113",
    "lists": [
-    "npc113_cct_0",
-    "npc113_pck_0"
+    "npc113_cct_0"
    ],
    "poses": [
     [
@@ -1175,18 +1401,16 @@
     [
      "npc113_cct_0",
      "Motion[103]_loop"
-    ],
+    ]
+   ],
+   "colours": [
     [
-     "npc113_pck_0",
-     "Motion[101]_loop"
-    ],
-    [
-     "npc113_pck_0",
-     "Motion[102]"
-    ],
-    [
-     "npc113_pck_0",
-     "Motion[103]_loop"
+     3,
+     [
+      178,
+      215,
+      141
+     ]
     ]
    ]
   },
@@ -1216,7 +1440,8 @@
      "npc114_cct_0",
      "Motion[113]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Innocent Villager",
@@ -1240,6 +1465,22 @@
      "npc103_cct_1",
      "Motion[2]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      89,
+      120,
+      58
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
+    ]
    ]
   },
   {
@@ -1259,6 +1500,16 @@
     [
      "npc104_cct_1",
      "Motion[12]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      73,
+      129,
+      129
+     ]
     ]
    ]
   },
@@ -1283,6 +1534,22 @@
     [
      "npc103_cct_1",
      "Motion[22]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      120,
+      58,
+      58
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
     ]
    ]
   },
@@ -1312,7 +1579,8 @@
      "npc103_cct_1",
      "Motion[32]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Peddler Man",
@@ -1340,7 +1608,8 @@
      "npc124_cct_1",
      "Motion[42]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Resting Hunter",
@@ -1355,6 +1624,16 @@
     [
      "npc104_cct_1",
      "Motion[51]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      193,
+      112,
+      193
+     ]
     ]
    ]
   },
@@ -1392,7 +1671,8 @@
      "npc126_cct_1",
      "Motion[63]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Minegarde Sweetheart",
@@ -1424,6 +1704,24 @@
      "npc102_cct_1",
      "Motion[75]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      49,
+      81,
+      204
+     ]
+    ],
+    [
+     1,
+     [
+      193,
+      173,
+      100
+     ]
+    ]
    ]
   },
   {
@@ -1452,7 +1750,8 @@
      "npc128_cct_1",
      "Motion[83]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Red Hell Hunter",
@@ -1472,7 +1771,18 @@
      "npc129_cct_1",
      "Motion[92]"
     ]
-   ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      153,
+      65,
+      49
+     ]
+    ]
+   ],
+   "partsByMotion": true
   },
   {
    "name": "Black Hell Hunter",
@@ -1492,7 +1802,18 @@
      "npc129_cct_1",
      "Motion[102]"
     ]
-   ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      80,
+      75,
+      27
+     ]
+    ]
+   ],
+   "partsByMotion": true
   },
   {
    "name": "Dundorma Guardsman",
@@ -1520,7 +1841,8 @@
      "npc131_cct_1",
      "Motion[113]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Cathar Elder",
@@ -1544,7 +1866,8 @@
      "npc132_cct_1",
      "Motion[122]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Pokke Chief",
@@ -1598,7 +1921,8 @@
      "npc201_lab_1",
      "Motion[212]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Pokke Gal",
@@ -1630,6 +1954,24 @@
      "npc202_pck_0",
      "Motion[15]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      184,
+      69,
+      127
+     ]
+    ],
+    [
+     1,
+     [
+      255,
+      255,
+      0
+     ]
+    ]
    ]
   },
   {
@@ -1653,6 +1995,16 @@
     [
      "npc203_pck_0",
      "Motion[22]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      102,
+      137,
+      65
+     ]
     ]
    ]
   },
@@ -1686,7 +2038,8 @@
      "npc204_pck_0",
      "Motion[35]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Pokke Smithy",
@@ -1705,6 +2058,22 @@
     [
      "npc205_pck_0",
      "Motion[42]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      70,
+      102,
+      132
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
     ]
    ]
   },
@@ -1742,7 +2111,8 @@
      "npc206_pck_0",
      "Motion[52]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Palico Armory",
@@ -1766,7 +2136,33 @@
      "npc207_pck_0",
      "Motion[62]_loop"
     ]
-   ]
+   ],
+   "colours": []
+  },
+  {
+   "name": "Grandmeow",
+   "ids": [
+    213
+   ],
+   "model": "npc113",
+   "lists": [
+    "npc113_pck_0"
+   ],
+   "poses": [
+    [
+     "npc113_pck_0",
+     "Motion[101]_loop"
+    ],
+    [
+     "npc113_pck_0",
+     "Motion[102]"
+    ],
+    [
+     "npc113_pck_0",
+     "Motion[103]_loop"
+    ]
+   ],
+   "colours": []
   },
   {
    "name": "Cave Cattendant",
@@ -1799,7 +2195,8 @@
      "npc010_pck_0",
      "Motion[112]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Kind Villager",
@@ -1823,7 +2220,8 @@
      "npc203_pck_1",
      "Motion[2]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Worrywart Villager",
@@ -1843,7 +2241,8 @@
      "npc205_pck_1",
      "Motion[12]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Savvy Felyne",
@@ -1883,7 +2282,8 @@
      "npc010_pck_1",
      "Motion[23]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Wise Wyverian",
@@ -1906,6 +2306,16 @@
     [
      "npc223_pck_1",
      "Motion[33]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      74,
+      66,
+      111
+     ]
     ]
    ]
   },
@@ -1930,6 +2340,16 @@
     [
      "npc224_pck_1",
      "Motion[42]"
+    ]
+   ],
+   "colours": [
+    [
+     1,
+     [
+      116,
+      133,
+      43
+     ]
     ]
    ]
   },
@@ -1967,7 +2387,8 @@
      "npc225_pck_1",
      "Motion[52]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Felcote",
@@ -1999,7 +2420,8 @@
      "npc226_pck_1",
      "Motion[62]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Pokke Manager",
@@ -2026,6 +2448,24 @@
     [
      "npc227_pck_1",
      "Motion[73]"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      229,
+      198,
+      177
+     ]
+    ],
+    [
+     1,
+     [
+      87,
+      46,
+      39
+     ]
     ]
    ]
   },
@@ -2059,6 +2499,24 @@
      "npc102_pck_1",
      "Motion[85]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      213,
+      235,
+      18
+     ]
+    ],
+    [
+     1,
+     [
+      163,
+      39,
+      39
+     ]
+    ]
    ]
   },
   {
@@ -2090,6 +2548,24 @@
     [
      "npc202_pck_1",
      "Motion[95]"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      241,
+      241,
+      191
+     ]
+    ],
+    [
+     1,
+     [
+      216,
+      90,
+      37
+     ]
     ]
    ]
   },
@@ -2129,7 +2605,8 @@
      "npc230_par_0",
      "Motion[72]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Armory Granny",
@@ -2153,7 +2630,8 @@
      "npc231_pck_1",
      "Motion[112]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Yukumo Chief",
@@ -2199,7 +2677,8 @@
      "npc301_lab_1",
      "Motion[223]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Yukumo Gal",
@@ -2231,6 +2710,16 @@
      "npc302_ykm_0",
      "Motion[15]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      191,
+      63,
+      127
+     ]
+    ]
    ]
   },
   {
@@ -2255,6 +2744,16 @@
      "npc303_ykm_0",
      "Motion[22]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      188,
+      244,
+      60
+     ]
+    ]
    ]
   },
   {
@@ -2278,6 +2777,16 @@
     [
      "npc303_ykm_0",
      "Motion[32]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      51,
+      255,
+      255
+     ]
     ]
    ]
   },
@@ -2307,7 +2816,8 @@
      "npc305_ykm_0",
      "Motion[42]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Brew Meowster",
@@ -2339,7 +2849,8 @@
      "npc306_ykm_0",
      "Motion[52]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Palico Armory",
@@ -2375,7 +2886,8 @@
      "npc307_ykm_0",
      "Motion[62]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Grandmyama",
@@ -2399,7 +2911,8 @@
      "npc313_ykm_0",
      "Motion[103]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Gatekeeper Guy",
@@ -2418,6 +2931,16 @@
     [
      "npc320_ykm_1",
      "Motion[2]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      164,
+      237,
+      94
+     ]
     ]
    ]
   },
@@ -2447,6 +2970,16 @@
      "npc224_ykm_1",
      "Motion[13]"
     ]
+   ],
+   "colours": [
+    [
+     1,
+     [
+      172,
+      129,
+      30
+     ]
+    ]
    ]
   },
   {
@@ -2474,6 +3007,16 @@
     [
      "npc322_ykm_1",
      "Motion[22]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      164,
+      237,
+      94
+     ]
     ]
    ]
   },
@@ -2507,7 +3050,9 @@
      "npc323_ykm_1",
      "Motion[34]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Yukumo Manager",
@@ -2535,7 +3080,8 @@
      "npc324_ykm_1",
      "Motion[42]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Yukumo Sweetheart",
@@ -2567,6 +3113,16 @@
      "npc302_ykm_1",
      "Motion[55]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      49,
+      173,
+      204
+     ]
+    ]
    ]
   },
   {
@@ -2591,7 +3147,8 @@
      "npc326_ykm_1",
      "Motion[62]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Head Moga Farmer",
@@ -2615,7 +3172,8 @@
      "npc327_ykm_1",
      "Motion[73]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Moga Chief's Son",
@@ -2651,7 +3209,8 @@
      "npc328_ykm_1",
      "Motion[83]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Fishmongress",
@@ -2675,7 +3234,8 @@
      "npc329_ykm_1",
      "Motion[93]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Moga Sweetheart",
@@ -2707,6 +3267,16 @@
      "npc330_ykm_1",
      "Motion[105]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      151,
+      25,
+      25
+     ]
+    ]
    ]
   },
   {
@@ -2735,7 +3305,8 @@
      "npc331_ykm_1",
      "Motion[112]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Tanzia Sweetheart",
@@ -2767,7 +3338,8 @@
      "npc332_ykm_1",
      "Motion[125]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Loc Lac Chief",
@@ -2795,7 +3367,9 @@
      "npc333_ykm_1",
      "Motion[132]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Captain Tool",
@@ -2823,6 +3397,24 @@
      "npc334_ykm_1",
      "Motion[143]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      184,
+      159,
+      53
+     ]
+    ],
+    [
+     4,
+     [
+      63,
+      191,
+      178
+     ]
+    ]
    ]
   },
   {
@@ -2847,7 +3439,8 @@
      "npc335_ykm_1",
      "Motion[152]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Harth Chief",
@@ -2883,7 +3476,8 @@
      "npc336_ykm_1",
      "Motion[165]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Headwhiskress",
@@ -2907,7 +3501,8 @@
      "npc337_ykm_1",
      "Motion[172]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Moga Chief",
@@ -2931,7 +3526,8 @@
      "npc420_ykm_2",
      "Motion[2]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Minegarde Hermit",
@@ -2959,6 +3555,16 @@
      "npc421_ykm_2",
      "Motion[12]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      167,
+      116,
+      71
+     ]
+    ]
    ]
   },
   {
@@ -2982,6 +3588,16 @@
     [
      "npc422_ykm_2",
      "Motion[22]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      215,
+      59,
+      59
+     ]
     ]
    ]
   },
@@ -3007,6 +3623,16 @@
      "npc423_ykm_2",
      "Motion[33]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      71,
+      99,
+      41
+     ]
+    ]
    ]
   },
   {
@@ -3031,7 +3657,9 @@
      "npc424_ykm_2",
      "Motion[42]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Master Shipwright",
@@ -3051,7 +3679,8 @@
      "npc425_ykm_2",
      "Motion[52]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Spittle-ful Girl",
@@ -3075,7 +3704,8 @@
      "npc426_ykm_2",
      "Motion[62]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Tubular Tabby",
@@ -3090,6 +3720,16 @@
     [
      "npc427_ykm_2",
      "Motion[71]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      191,
+      165,
+      63
+     ]
     ]
    ]
   },
@@ -3127,7 +3767,8 @@
      "npc428_ykm_2",
      "Motion[82]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Wycademy Gal",
@@ -3163,7 +3804,8 @@
      "npc502_mtp_0",
      "Motion[15]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Guild Store Clerk",
@@ -3186,6 +3828,13 @@
     [
      "npc503_mtp_0",
      "Motion[22]_loop"
+    ]
+   ],
+   "colours": [],
+   "parts": [
+    [
+     0,
+     2
     ]
    ]
   },
@@ -3219,7 +3868,8 @@
      "npc520_mtp_1",
      "Motion[2]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Arena Instructor",
@@ -3238,6 +3888,16 @@
     [
      "npc015_mtp_1",
      "Motion[32]"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      178,
+      75,
+      75
+     ]
     ]
    ]
   },
@@ -3271,7 +3931,9 @@
      "npc524_mtp_1",
      "Motion[42]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Wycademy Hunter",
@@ -3298,6 +3960,16 @@
     [
      "npc525_mtp_1",
      "Motion[52]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      206,
+      21,
+      21
+     ]
     ]
    ]
   },
@@ -3327,6 +3999,24 @@
      "npc526_mtp_1",
      "Motion[62]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      209,
+      200,
+      147
+     ]
+    ],
+    [
+     1,
+     [
+      60,
+      36,
+      26
+     ]
+    ]
    ]
   },
   {
@@ -3346,6 +4036,17 @@
     [
      "npc022_multi_02",
      "Motion[32]_loop"
+    ]
+   ],
+   "colours": [],
+   "parts": [
+    [
+     0,
+     2
+    ],
+    [
+     0,
+     1
     ]
    ]
   },
@@ -3393,7 +4094,8 @@
      "npc620_lab_0",
      "Motion[62]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Meowstress",
@@ -3429,7 +4131,8 @@
      "npc613_multi_03",
      "Motion[103]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Ranch Paw",
@@ -3461,7 +4164,8 @@
      "npc620_rnc_1",
      "Motion[2]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "d'Artanyan",
@@ -3493,7 +4197,9 @@
      "npc621_rnc_1",
      "Motion[14]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Palico Dojo Staff",
@@ -3502,7 +4208,8 @@
    ],
    "model": "npc620",
    "lists": [],
-   "poses": []
+   "poses": [],
+   "colours": []
   },
   {
    "name": "Neko (Means \"Cat\")",
@@ -3530,7 +4237,8 @@
      "npc623_rnc_1",
      "Motion[32]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Wyventurer",
@@ -3566,7 +4274,9 @@
      "npc701_multi_01",
      "Motion[2]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Soaratorium Gal",
@@ -3598,7 +4308,9 @@
      "npc702_lab_0",
      "Motion[25]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Soaratorium Market",
@@ -3622,6 +4334,22 @@
      "npc503_lab_0",
      "Motion[32]_loop"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      186,
+      140,
+      94
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
+    ]
    ]
   },
   {
@@ -3642,7 +4370,8 @@
      "npc705_lab_0",
      "Motion[42]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Dairy Meowster",
@@ -3682,6 +4411,16 @@
      "npc106_lab_0",
      "Motion[53]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      35,
+      222,
+      243
+     ]
+    ]
    ]
   },
   {
@@ -3714,7 +4453,8 @@
      "npc708_lab_0",
      "Motion[72]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Soaratorium Crew",
@@ -3742,7 +4482,8 @@
      "npc712_lab_1",
      "Motion[2]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Tanzia Arena Gal",
@@ -3765,6 +4506,30 @@
     [
      "npc721_lab_1",
      "Motion[102]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      177,
+      50,
+      50
+     ]
+    ],
+    [
+     1,
+     [
+      242,
+      184,
+      11
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
     ]
    ]
   },
@@ -3790,7 +4555,8 @@
      "npc716_lab_1",
      "Motion[123]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Legendary Artisan",
@@ -3818,7 +4584,8 @@
      "npc717_lab_1",
      "Motion[132]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Redspear Hunter",
@@ -3838,7 +4605,8 @@
      "npc718_lab_1",
      "Motion[152]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Blackspear Hunter",
@@ -3858,7 +4626,8 @@
      "npc718_lab_1",
      "Motion[162]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Furtive Felyne",
@@ -3890,7 +4659,8 @@
      "npc720_lab_1",
      "Motion[143]"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Tanzia Gong Girl",
@@ -3913,6 +4683,13 @@
     [
      "npc721_lab_1",
      "Motion[172]_loop"
+    ]
+   ],
+   "colours": [],
+   "parts": [
+    [
+     0,
+     1
     ]
    ]
   },
@@ -3942,7 +4719,33 @@
      "npc722_lab_1",
      "Motion[183]_loop"
     ]
-   ]
+   ],
+   "colours": []
+  },
+  {
+   "name": "Kokoto Chief",
+   "ids": [
+    725
+   ],
+   "model": "npc101",
+   "lists": [
+    "npc101_lab_1"
+   ],
+   "poses": [
+    [
+     "npc101_lab_1",
+     "Motion[201]_loop"
+    ],
+    [
+     "npc101_lab_1",
+     "Motion[202]"
+    ],
+    [
+     "npc101_lab_1",
+     "Motion[203]_loop"
+    ]
+   ],
+   "colours": []
   },
   {
    "name": "Pub Manager",
@@ -3951,7 +4754,9 @@
    ],
    "model": "npc801",
    "lists": [],
-   "poses": []
+   "poses": [],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Questender",
@@ -3983,7 +4788,9 @@
      "npc802_bar_0",
      "Motion[12]_loop"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Arena Master",
@@ -4003,7 +4810,8 @@
      "npc803_bar_0",
      "Motion[22]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Pub Market",
@@ -4026,6 +4834,16 @@
     [
      "npc003_bar_0",
      "Motion[32]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      204,
+      65,
+      49
+     ]
     ]
    ]
   },
@@ -4059,7 +4877,9 @@
      "npc805_bkt",
      "Motion[3]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   },
   {
    "name": "Horns Armory & Smithy",
@@ -4078,6 +4898,22 @@
     [
      "npc022_multi_02",
      "Motion[32]_loop"
+    ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      186,
+      140,
+      94
+     ]
+    ]
+   ],
+   "parts": [
+    [
+     0,
+     1
     ]
    ]
   },
@@ -4111,6 +4947,16 @@
      "npc620_multi_02",
      "Motion[62]"
     ]
+   ],
+   "colours": [
+    [
+     3,
+     [
+      75,
+      111,
+      255
+     ]
+    ]
    ]
   },
   {
@@ -4131,7 +4977,8 @@
      "npc811_bar_1",
      "Motion[12]_loop"
     ]
-   ]
+   ],
+   "colours": []
   },
   {
    "name": "Layabout Prowler",
@@ -4159,7 +5006,9 @@
      "npc812_bar_1",
      "Motion[23]"
     ]
-   ]
+   ],
+   "colours": [],
+   "partsByMotion": true
   }
  ],
  "models": {
@@ -13983,11 +14832,47 @@
     },
     {
      "clip": "Motion[64]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[64]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -13997,23 +14882,113 @@
    "clips": [
     {
      "clip": "Motion[1]_loop",
-     "dur": 2.05
+     "dur": 2.05,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        122
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[5]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[5]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[6]",
-     "dur": 1.517
+     "dur": 1.517,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        90
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[9]",
-     "dur": 3.817
+     "dur": 3.817,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        228
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14057,11 +15032,47 @@
     },
     {
      "clip": "Motion[24]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[24]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14375,27 +15386,143 @@
    "clips": [
     {
      "clip": "Motion[61]_loop",
-     "dur": 6.083
+     "dur": 6.083,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "spans": [
+       [
+        6,
+        364
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[62]_start",
-     "dur": 2.833
+     "dur": 2.833,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "spans": [
+       [
+        6,
+        31
+       ],
+       [
+        9,
+        253
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[62]_loop",
-     "dur": 1.9
+     "dur": 1.9,
+     "parts": {
+      "at": 170,
+      "groups": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "spans": [
+       [
+        6,
+        31
+       ],
+       [
+        9,
+        253
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[63]",
-     "dur": 3.45
+     "dur": 3.45,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3,
+       4
+      ],
+      "spans": [
+       [
+        9,
+        153
+       ],
+       [
+        6,
+        53
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[64]",
-     "dur": 5.65
+     "dur": 5.65,
+     "parts": {
+      "at": 0,
+      "groups": [],
+      "spans": [
+       [
+        6,
+        338
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[65]",
-     "dur": 6.117
+     "dur": 6.117,
+     "parts": {
+      "at": 0,
+      "groups": [],
+      "spans": [
+       [
+        6,
+        366
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14435,11 +15562,47 @@
     },
     {
      "clip": "Motion[84]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[84]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14528,6 +15691,77 @@
     {
      "clip": "Motion[123]_loop",
      "dur": 3.767
+    },
+    {
+     "clip": "Motion[124]_start",
+     "dur": 3.567,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        1,
+        91
+       ],
+       [
+        2,
+        285
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "clip": "Motion[124]_loop",
+     "dur": 2.7,
+     "parts": {
+      "at": 214,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        1,
+        91
+       ],
+       [
+        2,
+        285
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
+    },
+    {
+     "clip": "Motion[125]",
+     "dur": 1.35,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        3,
+        80
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14585,24 +15819,6 @@
     },
     {
      "clip": "Motion[3]_loop",
-     "dur": 6.917
-    }
-   ]
-  },
-  "npc101_lab_1": {
-   "file": "poses/npcs/npc101_lab_1.glb",
-   "list": "lab_1",
-   "clips": [
-    {
-     "clip": "Motion[201]_loop",
-     "dur": 3.683
-    },
-    {
-     "clip": "Motion[202]",
-     "dur": 2.783
-    },
-    {
-     "clip": "Motion[203]_loop",
      "dur": 6.917
     }
    ]
@@ -14699,11 +15915,47 @@
     },
     {
      "clip": "Motion[55]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[55]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -14728,24 +15980,6 @@
   "npc113_cct_0": {
    "file": "poses/npcs/npc113_cct_0.glb",
    "list": "cct_0",
-   "clips": [
-    {
-     "clip": "Motion[101]_loop",
-     "dur": 3.683
-    },
-    {
-     "clip": "Motion[102]",
-     "dur": 2.783
-    },
-    {
-     "clip": "Motion[103]_loop",
-     "dur": 6.917
-    }
-   ]
-  },
-  "npc113_pck_0": {
-   "file": "poses/npcs/npc113_pck_0.glb",
-   "list": "pck_0",
    "clips": [
     {
      "clip": "Motion[101]_loop",
@@ -15119,11 +16353,47 @@
     },
     {
      "clip": "Motion[34]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[34]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[35]",
@@ -15167,11 +16437,47 @@
     },
     {
      "clip": "Motion[55]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[55]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15193,6 +16499,24 @@
     }
    ]
   },
+  "npc113_pck_0": {
+   "file": "poses/npcs/npc113_pck_0.glb",
+   "list": "pck_0",
+   "clips": [
+    {
+     "clip": "Motion[101]_loop",
+     "dur": 3.683
+    },
+    {
+     "clip": "Motion[102]",
+     "dur": 2.783
+    },
+    {
+     "clip": "Motion[103]_loop",
+     "dur": 6.917
+    }
+   ]
+  },
   "npc010_pck_0": {
    "file": "poses/npcs/npc010_pck_0.glb",
    "list": "pck_0",
@@ -15211,11 +16535,47 @@
     },
     {
      "clip": "Motion[114]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[114]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15277,11 +16637,47 @@
     },
     {
      "clip": "Motion[25]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[25]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15339,11 +16735,47 @@
     },
     {
      "clip": "Motion[54]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[54]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[55]",
@@ -15369,11 +16801,47 @@
     },
     {
      "clip": "Motion[64]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[64]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15461,11 +16929,47 @@
     },
     {
      "clip": "Motion[104]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[104]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15645,11 +17149,47 @@
     },
     {
      "clip": "Motion[54]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[54]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15675,11 +17215,47 @@
     },
     {
      "clip": "Motion[65]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[65]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15765,23 +17341,132 @@
    "clips": [
     {
      "clip": "Motion[31]_loop",
-     "dur": 13.783
+     "dur": 13.783,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        826
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[32]_start",
-     "dur": 2.033
+     "dur": 2.033,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        65
+       ],
+       [
+        1,
+        36
+       ],
+       [
+        2,
+        189
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[32]_loop",
-     "dur": 2.8
+     "dur": 2.8,
+     "parts": {
+      "at": 122,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        65
+       ],
+       [
+        1,
+        36
+       ],
+       [
+        2,
+        189
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[33]",
-     "dur": 3.55
+     "dur": 3.55,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        9
+       ],
+       [
+        1,
+        194
+       ],
+       [
+        2,
+        9
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[34]",
-     "dur": 3.017
+     "dur": 3.017,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        180
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -15997,19 +17682,83 @@
    "clips": [
     {
      "clip": "Motion[131]_loop",
-     "dur": 4.05
+     "dur": 4.05,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        242
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[132]",
-     "dur": 5.117
+     "dur": 5.117,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        306
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[133]_start",
-     "dur": 2.6
+     "dur": 2.6,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        366
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[133]_loop",
-     "dur": 3.5
+     "dur": 3.5,
+     "parts": {
+      "at": 156,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        366
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16183,15 +17932,63 @@
    "clips": [
     {
      "clip": "Motion[41]_loop",
-     "dur": 3.35
+     "dur": 3.35,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        200
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[42]",
-     "dur": 2.783
+     "dur": 2.783,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        166
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[43]_loop",
-     "dur": 7.917
+     "dur": 7.917,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        474
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16361,23 +18158,121 @@
    "clips": [
     {
      "clip": "Motion[41]_loop",
-     "dur": 2.383
+     "dur": 2.383,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        2,
+        142
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[42]",
-     "dur": 13.917
+     "dur": 13.917,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        2,
+        187
+       ],
+       [
+        4,
+        630
+       ],
+       [
+        2,
+        17
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[44]_start",
-     "dur": 3.6
+     "dur": 3.6,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        2,
+        604
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[44]_loop",
-     "dur": 6.467
+     "dur": 6.467,
+     "parts": {
+      "at": 216,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        2,
+        604
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[45]",
-     "dur": 1.517
+     "dur": 1.517,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        2,
+        90
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16531,11 +18426,47 @@
     },
     {
      "clip": "Motion[4]_start",
-     "dur": 0.4
+     "dur": 0.4,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[4]_loop",
-     "dur": 6.033
+     "dur": 6.033,
+     "parts": {
+      "at": 24,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        386
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16545,23 +18476,116 @@
    "clips": [
     {
      "clip": "Motion[11]_loop",
-     "dur": 2.05
+     "dur": 2.05,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        122
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[12]_start",
-     "dur": 1.933
+     "dur": 1.933,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        320
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[12]_loop",
-     "dur": 3.4
+     "dur": 3.4,
+     "parts": {
+      "at": 116,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        320
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[13]",
-     "dur": 1.283
+     "dur": 1.283,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        76
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[14]",
-     "dur": 7.017
+     "dur": 7.017,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        77
+       ],
+       [
+        1,
+        290
+       ],
+       [
+        2,
+        53
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16601,15 +18625,71 @@
     },
     {
      "clip": "Motion[3]_start",
-     "dur": 3.333
+     "dur": 3.333,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        0,
+        76
+       ],
+       [
+        1,
+        580
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[3]_loop",
-     "dur": 7.6
+     "dur": 7.6,
+     "parts": {
+      "at": 200,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        0,
+        76
+       ],
+       [
+        1,
+        580
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[4]",
-     "dur": 6.95
+     "dur": 6.95,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1
+      ],
+      "spans": [
+       [
+        1,
+        295
+       ],
+       [
+        0,
+        122
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[5]_loop",
@@ -16897,29 +18977,153 @@
     }
    ]
   },
+  "npc101_lab_1": {
+   "file": "poses/npcs/npc101_lab_1.glb",
+   "list": "lab_1",
+   "clips": [
+    {
+     "clip": "Motion[201]_loop",
+     "dur": 3.683
+    },
+    {
+     "clip": "Motion[202]",
+     "dur": 2.783
+    },
+    {
+     "clip": "Motion[203]_loop",
+     "dur": 6.917
+    }
+   ]
+  },
   "npc802_bar_0": {
    "file": "poses/npcs/npc802_bar_0.glb",
    "list": "bar_0",
    "clips": [
     {
      "clip": "Motion[11]_loop",
-     "dur": 12.85
+     "dur": 12.85,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        3,
+        770
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[12]_loop",
-     "dur": 12.95
+     "dur": 12.95,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        3,
+        776
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[13]",
-     "dur": 3.817
+     "dur": 3.817,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        3,
+        82
+       ],
+       [
+        5,
+        126
+       ],
+       [
+        6,
+        20
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[14]_loop",
-     "dur": 4.083
+     "dur": 4.083,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        244
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[15]",
-     "dur": 8.617
+     "dur": 8.617,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3
+      ],
+      "spans": [
+       [
+        6,
+        26
+       ],
+       [
+        5,
+        362
+       ],
+       [
+        3,
+        128
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -16977,7 +19181,27 @@
     },
     {
      "clip": "Motion[4]_loop",
-     "dur": 3.55
+     "dur": 3.55,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2,
+       3,
+       4,
+       5
+      ],
+      "spans": [
+       [
+        14,
+        212
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   },
@@ -17001,19 +19225,115 @@
    "clips": [
     {
      "clip": "Motion[21]_loop",
-     "dur": 2.083
+     "dur": 2.083,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        124
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[22]_start",
-     "dur": 1.267
+     "dur": 1.267,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        3
+       ],
+       [
+        1,
+        6
+       ],
+       [
+        2,
+        9
+       ],
+       [
+        1,
+        108
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[22]_loop",
-     "dur": 0.833
+     "dur": 0.833,
+     "parts": {
+      "at": 76,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        2,
+        3
+       ],
+       [
+        1,
+        6
+       ],
+       [
+        2,
+        9
+       ],
+       [
+        1,
+        108
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     },
     {
      "clip": "Motion[23]",
-     "dur": 1.183
+     "dur": 1.183,
+     "parts": {
+      "at": 0,
+      "groups": [
+       1,
+       2
+      ],
+      "spans": [
+       [
+        1,
+        6
+       ],
+       [
+        2,
+        64
+       ],
+       [
+        0,
+        1
+       ]
+      ]
+     }
     }
    ]
   }

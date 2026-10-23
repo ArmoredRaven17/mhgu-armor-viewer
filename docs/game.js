@@ -192,7 +192,7 @@ window.VIEWER_GAME = {
   // hair / features / clothing) to colour channel 2 on every path (0x2834f4..0x28360c -> 0x53a0e4), a plain multiply over
   // fAlbedoColor (Raven, 2026-10-19: the luminance tint drew the pale end too pale). The Palico's fur is channel 2 as well:
   // its materials (slots 'o...') are left out
-  colourChannel: [{ channel: 4, part: 'paint' }, { channel: 2, part: 'skin', exceptSlot: '^(o|npc)' }],
+  colourChannel: [{ channel: 4, part: 'paint', exceptSlot: '^npc' }, { channel: 2, part: 'skin', exceptSlot: '^(o|npc)' }],
   // PIGMENT (docs/base/ui/pigment.js): the dyeable slots' labels, and the rows GU adds -- the Clothing Color row (Hunter
   // panel) and the Palico's two with their All (Palico tab)
   pigmentSlotLabels: { helm: 'Head', body: 'Chest', arm: 'Arms', wst: 'Waist', leg: 'Legs' },
